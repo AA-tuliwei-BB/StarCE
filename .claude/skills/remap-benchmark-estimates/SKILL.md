@@ -7,7 +7,7 @@ description: 将 End-to-End-CardEst-Benchmark 中的外部基数估计结果（f
 
 ## 概述
 
-`scripts/map_flat_to_benchmark.py` 将 `Stats-CEB/End-to-End-CardEst-Benchmark` 中的预计算估计结果映射到项目 `Benchmark/` 目录的标准格式。
+`scripts/remap/map_benchmark_estimates.py` 将 `Stats-CEB/End-to-End-CardEst-Benchmark` 中的预计算估计结果映射到项目 `Benchmark/` 目录的标准格式。
 
 支持的方法：flat、bayescard、deepdb、neurocard（共 4 个）。
 
@@ -23,7 +23,7 @@ description: 将 End-to-End-CardEst-Benchmark 中的外部基数估计结果（f
 
 ```bash
 # 在项目根目录下运行
-python scripts/map_flat_to_benchmark.py
+python scripts/remap/map_benchmark_estimates.py
 ```
 
 ## 数据流

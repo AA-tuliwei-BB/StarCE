@@ -1,3 +1,8 @@
+---
+name: starce-estimation-internals
+description: StarCE 估计机制详解：DegreeSequence 度序列压缩表示、DSStatistic 多表 join 统计体、EqualSet 等价类、统计信息收集流程（CollectStatistics）、基数估计流程（EstimateCardinality: AttrEset→DSStatistic→谓词过滤→Merge）、AdjustRate/PredMethod/CompressPrecision 参数含义及已知局限性。当用户提到 StarCE 内部机制、度序列、DSStatistic、EqualSet、Merge 点积、AdjustToAverage、统计收集、估计流程时使用。
+---
+
 # StarCE 估计机制详解
 
 ## 核心数据结构

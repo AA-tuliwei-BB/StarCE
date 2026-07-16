@@ -1,6 +1,6 @@
 ---
 name: experiment-workflow
-description: StarCE 实验流程总览：实验目录结构、ExperimentRunner.py 核心驱动逻辑、各 Test notebook（TestStarCE/TestDuckDB/TestSafebound/TestPostgreBasic）的操作流程、各 Evaluate notebook（EvaluateAccuracy/EvaluateCompress/EvaluateBuild/EvaluatePerformance）的分析方式，以及 checkpoint 目录的文件组织。当用户提到实验流程、如何运行实验、ExperimentRunner、基数收集、Q-Error 计算、精度对比、构建时间、性能测试、find_worst_subqueries 时使用。
+description: StarCE 实验流程总览：实验目录结构、ExperimentRunner.py 核心驱动逻辑、各 Test notebook（TestStarCE/TestDuckDB/TestSafebound）的操作流程、各 Evaluate notebook（EvaluateAccuracy/EvaluateCompress/EvaluateBuild/EvaluatePerformance）的分析方式，以及 checkpoint 目录的文件组织。当用户提到实验流程、如何运行实验、ExperimentRunner、基数收集、Q-Error 计算、精度对比、构建时间、性能测试、find_worst_subqueries 时使用。
 ---
 
 # StarCE 实验流程
@@ -14,7 +14,6 @@ description: StarCE 实验流程总览：实验目录结构、ExperimentRunner.p
   TestStarCE.ipynb       → checkpoint/StarCE/card_*.txt
   TestDuckDB.ipynb       → checkpoint/DuckDB/card_*.txt
   TestSafebound.ipynb    → checkpoint/SafeBound/SafeBound_3_*_evaluate_results.txt
-  TestPostgreBasic.ipynb → checkpoint/Postgre/card_*.txt
 
 阶段二：结果分析与可视化
   EvaluateAccuracy.ipynb   → Q-Error boxplot + histogram（精度对比）
@@ -50,9 +49,6 @@ experiment/
 │   │   ├── SafeBound_3_{benchmark}.pkl
 │   │   ├── SafeBound_3_{benchmark}_evaluate_results.txt
 │   │   └── benchmark_times.csv
-│   ├── Postgre/
-│   │   ├── card_*.txt
-│   │   └── pg_stats_summary.csv
 │   └── figures/            ← 所有生成的 PDF 图表
 ├── ExperimentRunner.py     ← 核心驱动模块
 ├── find_worst_subqueries.py
@@ -60,7 +56,6 @@ experiment/
 ├── TestStarCE.ipynb
 ├── TestDuckDB.ipynb
 ├── TestSafebound.ipynb
-├── TestPostgreBasic.ipynb
 ├── EvaluateAccuracy.ipynb
 ├── EvaluateCompress.ipynb
 ├── EvaluateBuild.ipynb
@@ -181,23 +176,6 @@ DuckDB 不经过 StarCE，直接调用 `duckdb` 可执行文件，解析 EXPLAIN
 ```
 
 注意：Stats/JOBM 使用 `subquery.sql`；JOBLight/JOBLightRanges 使用 `subquery2.sql`。
-
-### TestPostgreBasic.ipynb
-
-```
-连接信息：host=127.0.0.1 port=5432，psql=/usr/local/pgsql/13.1/bin/psql
-数据库映射：STATS→stats，JOBLight→imdblight，JOBLightRanges→imdblightranges，JOBM→imdbm
-
-for benchmark:
-    1. ANALYZE（收集 PG 统计信息，PG_PARALLELISM=8）
-    2. 转换 SQL：count(*) → *，加 EXPLAIN 前缀
-    3. psql -f explain.sql -o pg_{benchmark}_explain.txt
-    4. extract_card_from_pg_plan.extract_cardinalities() 解析计划文本
-    5. 写 checkpoint/Postgre/card_{benchmark}.txt
-
-汇总 → checkpoint/Postgre/pg_stats_summary.csv
-```
-
 ---
 
 ## 各 Evaluate Notebook 说明
@@ -213,7 +191,6 @@ for benchmark:
 | StarCE | `checkpoint/StarCE/card_{benchmark}.txt` |
 | DuckDB | `checkpoint/DuckDB/card_{benchmark}.txt` |
 | SafeBound | `checkpoint/SafeBound/SafeBound_3_{benchmark}_evaluate_results.txt` |
-| Postgre | `checkpoint/Postgre/card_{benchmark}.txt` |
 | FactorJoin | `checkpoint/FactorJoin/card_{benchmark}.txt` |
 | 真实基数 | `Benchmark/workloads/{benchmark}/subquery/result/real.txt` |
 
@@ -237,17 +214,16 @@ for benchmark:
 **数据来源**（各方法 CSV 经 `load_method_data()` 统一重命名）：
 - StarCE：`checkpoint/StarCE/benchmark_times.csv`
 - SafeBound：`checkpoint/SafeBound/benchmark_times.csv`
-- Postgre：`checkpoint/Postgre/pg_stats_summary.csv`
 
 **输出图表**：构建时间柱状图（log 纵轴）+ 统计信息大小柱状图（线性纵轴，MB）
 
 **实测数据参考**（秒）：
 
-| Benchmark | Postgre | SafeBound | StarCE |
-|-----------|---------|-----------|--------|
-| JOBLight | 0.76 | 0.35 | 0.08 |
-| JOBM | 0.78 | 3.40 | 1.46 |
-| STATS | 0.62 | 1.21 | 0.15 |
+| Benchmark | SafeBound | StarCE |
+|-----------|-----------|--------|
+| JOBLight | 0.35 | 0.08 |
+| JOBM | 3.40 | 1.46 |
+| STATS | 1.21 | 0.15 |
 
 ### EvaluatePerformance.ipynb — 端到端性能对比
 

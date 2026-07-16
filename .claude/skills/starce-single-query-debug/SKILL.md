@@ -1,3 +1,8 @@
+---
+name: starce-single-query-debug
+description: 特化单条查询调参测试：running_space 配置、参数速查（PredMethod/CompressPrecision/AdjustRate/UseSingleTableCard）、对照实验（DuckDB 原生/TrueCard 注入/RecordingSubquery）、切换统计信息精度、误差分析工作流。当用户提到单查询测试、调参对比、config.json 参数、RecordingSubquery、UseSubqueryCard、UseSingleTableCard、PredMethod、CompressPrecision 切换时使用。
+---
+
 # StarCE 单查询特化测试方法
 
 ## 目的

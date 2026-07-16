@@ -1,3 +1,8 @@
+---
+name: starce-error-diagnosis
+description: 排查某条查询估计偏差的方法论与工具链：定位问题查询→确认偏差方向→分析 join 图→查找 EqualSet 统计→分析谓词过滤→定位误差来源（EqualSet 本身 vs Merge vs 谓词处理）。当用户提到 StarCE 高估/低估原因分析、误差排查、Q-Error 定位、EqualSet 统计查看、max_degree、谓词过滤效果时使用。
+---
+
 # StarCE 估计偏差排查方法论
 
 ## 总体流程

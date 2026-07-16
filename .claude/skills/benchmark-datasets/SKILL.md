@@ -1,6 +1,6 @@
 ---
 name: benchmark-datasets
-description: 基准数据集（STATS、IMDB/JOB）的目录位置、结构、表定义、数据文件和查询工作集说明。在 methods/SafeBound 和 benchmark/workloads 等位置。包含数据加载脚本、Schema 文件、CSV 数据文件和查询集合。适用于定位数据集、理解基准数据库结构、查看样例查询、运行基准实验时。
+description: 基准数据集（STATS、IMDB/JOB）的目录位置、结构、表定义、数据文件和查询工作集说明。在 methods/SafeBound 和 Benchmark/workloads 等位置。包含数据加载脚本、Schema 文件、CSV 数据文件和查询集合。适用于定位数据集、理解基准数据库结构、查看样例查询、运行基准实验时。
 ---
 
 # 基准数据集
@@ -11,14 +11,14 @@ description: 基准数据集（STATS、IMDB/JOB）的目录位置、结构、表
 
 | 数据集 | 路径 | 用途 |
 |--------|------|------|
-| STATS | `methods/SafeBound/Data/Stats/` 或 `benchmark/workloads/stats-ceb/` | Stack Overflow 数据集，用于 STATS-CEB 基准 |
+| STATS | `methods/SafeBound/Data/Stats/` 或 `Benchmark/workloads/STATS-CEB/` | Stack Overflow 数据集，用于 STATS-CEB 基准 |
 | IMDB/JOB | `methods/SafeBound/Data/IMDB/` | 互联网电影数据库，用于 JOB/JOBLight 基准 |
 | Workloads | `methods/SafeBound/Workloads/` | SafeBound 方法的查询集合 |
 
 ## STATS 数据集
 
 ### 路径
-`methods/SafeBound/Data/Stats/` 或 `benchmark/workloads/stats-ceb/`
+`methods/SafeBound/Data/Stats/` 或 `Benchmark/workloads/STATS-CEB/`
 
 ### 表结构
 Stack Overflow 数据集包含 7 个主要表：
