@@ -18,7 +18,7 @@ bool RecordingSingleQuery = false;
 
 bool EnableStarSplit = false;
 int MaxStarSize = 3;
-int PredMethod = 0; // 0: 调整率, 1: 均匀假设
+int PredMethod = 0; // 0: adjustment rate, 1: uniformity assumption
 
 bool RefreshStatistics = false;
 bool IsCollectingRelErr = false;
@@ -51,7 +51,7 @@ bool TryReadStatistics(const char *path) {
     if (!file.is_open()) {
         return false;
     }
-    // 读取文件内容
+    // Read file contents
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string jsonStr = buffer.str();
@@ -64,7 +64,7 @@ bool TryReadStatistics(const char *path) {
 }
 
 void CollectStatistics(const char *db_path, const char *path) {
-    // 收集统计信息使用单独的连接
+    // Use a separate connection for statistics collection
     duckdb::DBConfig config;
     config.options.maximum_threads = CollectParallel;
     duckdb::DuckDB db(db_path);
@@ -91,14 +91,14 @@ void CollectStatistics(const char *db_path, const char *path) {
 
     starce::StatisticManager &sm = starce::StatisticManager::GetInstance();
     
-    // 对每个 EqualSet 进行处理
+    // Process each EqualSet
     for (const auto &eset : esets) {
         std::map<std::map<std::string, int64_t>, int64_t> count_num;
         std::cout << "eset size: " << eset.Entries.size() << std::endl;
         
-        // 优化的方式：使用SQL进行GROUP BY、连接、投影、聚合，直接计算count_num
+        // Optimized approach: use SQL GROUP BY, join, projection, and aggregation to compute count_num directly
         
-        // 步骤1: 构建子查询 - 对每个表的列进行GROUP BY聚合
+        // Step 1: Build subquery - GROUP BY aggregation on each table column
         std::string aggregateQueries = "";
         std::vector<std::pair<std::string, std::string>> tableColumnPairs;
         
@@ -110,7 +110,7 @@ void CollectStatistics(const char *db_path, const char *path) {
             tableColumnPairs.push_back({entry.TableName, entry.ColumnName});
         }
         
-        // 步骤2: 对所有值进行聚合，使用CASE WHEN为每个表投影计数
+        // Step 2: Aggregate all values, project counts per table using CASE WHEN
         std::string caseStatements = "";
         for (size_t i = 0; i < tableColumnPairs.size(); ++i) {
             if (i > 0) caseStatements += ", ";
@@ -119,11 +119,11 @@ void CollectStatistics(const char *db_path, const char *path) {
                              "' THEN cnt ELSE 0 END), 0) AS " + tableName + "_cnt";
         }
         
-        // 步骤3: 构建中间查询 - 对每个值汇总所有表的计数
+        // Step 3: Build intermediate query - summarize counts of all tables per value
         std::string pivotQuery = "SELECT val, " + caseStatements + " FROM (" + 
                                 aggregateQueries + ") AS agg_data GROUP BY val";
         
-        // 步骤4: 构建最终查询 - 对所有计数组合进行GROUP BY，计算count_num
+        // Step 4: Build final query - GROUP BY all count combinations to compute count_num
         std::string countNumColumns = "";
         for (size_t i = 0; i < tableColumnPairs.size(); ++i) {
             if (i > 0) countNumColumns += ", ";
@@ -135,11 +135,11 @@ void CollectStatistics(const char *db_path, const char *path) {
         
         // std::cerr << "Executing optimized query for count_num calculation..." << std::endl;
         
-        // 步骤5: 执行查询并直接读取count_num
+        // Step 5: Execute query and read count_num directly
         auto countNumResult = con.Query(countNumQuery);
         // std::cerr << "Query done, RowCount: " << countNumResult->RowCount() << std::endl;
         
-        // 步骤6: 从结果中读取count_num映射
+        // Step 6: Read count_num mapping from results
         std::unique_ptr<duckdb::DataChunk> chunk;
         while ((chunk = countNumResult->Fetch()) != nullptr) {
             int numTables = tableColumnPairs.size();
@@ -148,13 +148,13 @@ void CollectStatistics(const char *db_path, const char *path) {
                 std::map<std::string, int64_t> countMap;
                 int64_t frequency = 0;
                 
-                // 从前numTables列读取每个表的计数
+                // Read each table count from the first numTables columns
                 for (int t = 0; t < numTables; ++t) {
                     auto countValue = chunk->GetValue(t, row);
                     countMap[tableColumnPairs[t].first] = countValue.GetValue<int64_t>();
                 }
                 
-                // 最后一列是频率
+                // The last column is frequency
                 auto freqValue = chunk->GetValue(numTables, row);
                 frequency = freqValue.GetValue<int64_t>();
                 
@@ -164,15 +164,15 @@ void CollectStatistics(const char *db_path, const char *path) {
         
         // std::cerr << "count_num size: " << count_num.size() << std::endl;
 
-        // 步骤2: 初始化 PrepareCollection
+        // Step 2: Initialize PrepareCollection
         sm.PrepareCollection(eset);
         
-        // 步骤3: 获取所有 subset
+        // Step 3: Get all subsets
         const std::vector<starce::EqualSet>& subsets = sm.GetCurrentSubsets();
         const std::vector<starce::DSStatistic*>& subsetStats = sm.GetCurrentSubsetStatistics();
         const std::vector<bool>& skipFlags = sm.GetCurrentSkipFlags();
         
-        // 步骤4: 并行处理不同的 subset
+        // Step 4: Process different subsets in parallel
         int hwThreads = static_cast<int>(std::thread::hardware_concurrency());
         if (hwThreads <= 0) {
             hwThreads = 1;
@@ -184,12 +184,12 @@ void CollectStatistics(const char *db_path, const char *path) {
         
         for (int t = 0; t < numThreads; ++t) {
             threads.emplace_back([&](int threadId) {
-                // 每个线程处理分配给它的 subset
+                // Each thread processes its assigned subset
                 for (size_t s = threadId; s < subsets.size(); s += numThreads) {
                     if (skipFlags[s]) continue;
                     
-                    // 将 count_num 中的所有 count 添加到该 subset
-                    // count_num 是只读的，无需加锁
+                    // Add all counts from count_num to this subset
+                    // count_num is read-only, no locking needed
                     for (const auto &pair : count_num) {
                         subsetStats[s]->AddDegree(pair.first, pair.second);
                     }
@@ -201,12 +201,12 @@ void CollectStatistics(const char *db_path, const char *path) {
             sm.AddDegreeForSingleDS(pair.first, pair.second);
         }
 
-        // 等待所有线程完成
+        // Wait for all threads to complete
         for (auto &thread : threads) {
             thread.join();
         }
 
-        // 步骤5: 完成该 EqualSet 的处理
+        // Step 5: Finish processing this EqualSet
         sm.FinishCollection();
     }
     
@@ -273,21 +273,21 @@ void Test4(duckdb::Connection &con)
 
 void ExecuteSql(duckdb::Connection &con, const char *path)
 {
-    // 打开文件
+    // Open file
     std::ifstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file: " + std::string(path));
     }
     int sqlid = 0;
-    // 逐行读取文件内容
+    // Read file line by line
     std::string sql;
     while (std::getline(file, sql)) {
         sqlid++;
-        // 去除行首行尾的空格
+        // Trim leading and trailing whitespace
         sql.erase(0, sql.find_first_not_of(" \t\n\r"));
         sql.erase(sql.find_last_not_of(" \t\n\r") + 1);
         if (sql.empty()) {
-            continue; // 跳过空行
+            continue; // Skip empty lines
         }
         auto &sm = starce::StatisticManager::GetInstance();
         sm.ParsePredicate(sql);
@@ -299,7 +299,7 @@ void ExecuteSql(duckdb::Connection &con, const char *path)
             }
         }
 
-        // 执行SQL语句
+        // Execute SQL statement
         auto start = std::chrono::high_resolution_clock::now();
         try {
             auto result = con.Query(sql);
@@ -363,7 +363,7 @@ void OutputSubqueryTime(starce::StatisticManager &sm) {
 }
 
 void ReadSubqueryCard(starce::StatisticManager &sm) {
-    // 打开文件
+    // Open file
     std::ifstream file_subquery(SUBQUERY_PATH);
     std::ifstream file_result(SUBQUERY_RESULT_PATH);
     if (!file_subquery.is_open()) {
@@ -373,7 +373,7 @@ void ReadSubqueryCard(starce::StatisticManager &sm) {
         throw std::runtime_error("Failed to open file: " + std::string(SUBQUERY_RESULT_PATH));
     }
 
-    // 逐行读取文件内容
+    // Read file line by line
     int idx = 0;
     std::string subquery;
     double card;
@@ -385,7 +385,7 @@ void ReadSubqueryCard(starce::StatisticManager &sm) {
 }
 
 void OutputSingleQuery(starce::StatisticManager &sm) {
-    // 打开文件
+    // Open file
     std::ofstream file(SINGLE_QUERY_PATH);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file: " + std::string(SINGLE_QUERY_PATH));
@@ -397,7 +397,7 @@ void OutputSingleQuery(starce::StatisticManager &sm) {
 }
 
 void ReadSingleQueryCard(starce::StatisticManager &sm) {
-    // 打开文件
+    // Open file
     std::ifstream file_subquery(SINGLE_QUERY_PATH);
     std::ifstream file_result(SINGLE_QUERY_RESULT_PATH);
     if (!file_subquery.is_open()) {
@@ -407,7 +407,7 @@ void ReadSingleQueryCard(starce::StatisticManager &sm) {
         throw std::runtime_error("Failed to open file: " + std::string(SINGLE_QUERY_RESULT_PATH));
     }
 
-    // 逐行读取文件内容
+    // Read file line by line
     std::string query;
     double card;
     while (std::getline(file_subquery, query)) {
@@ -417,7 +417,7 @@ void ReadSingleQueryCard(starce::StatisticManager &sm) {
 }
 
 void ReadRealCard(starce::StatisticManager &sm) {
-    // 打开文件
+    // Open file
     std::ifstream file_subquery(SUBQUERY_PATH);
     std::ifstream file_result(REAL_CARD_PATH);
     if (!file_subquery.is_open()) {
@@ -427,7 +427,7 @@ void ReadRealCard(starce::StatisticManager &sm) {
         throw std::runtime_error("Failed to open file: " + std::string(REAL_CARD_PATH));
     }
 
-    // 逐行读取文件内容
+    // Read file line by line
     std::string subquery;
     double card;
     while (std::getline(file_subquery, subquery)) {
@@ -439,7 +439,7 @@ void ReadRealCard(starce::StatisticManager &sm) {
 }
 
 void OutputRelErr(starce::StatisticManager &sm) {
-    // 打开文件
+    // Open file
     std::ofstream file(REL_ERR_PATH);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file: " + std::string(REL_ERR_PATH));
@@ -462,17 +462,17 @@ void OutputStatsSize() {
 }
 
 void ReadConfig(const char *path) {
-    // 打开文件
+    // Open file
     std::ifstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file: " + std::string(path));
     }
-    // 读取文件内容
+    // Read file contents
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string jsonStr = buffer.str();
 
-    // 解析JSON
+    // Parse JSON
     nlohmann::json jsonData = nlohmann::json::parse(jsonStr);
 
     EnableStarCE = jsonData["EnableStarCE"].get<int>();
@@ -510,9 +510,9 @@ void ReadConfig(const char *path) {
 }
 
 int main() {
-    // 创建配置对象
+    // Create configuration object
     duckdb::DBConfig config;
-    config.options.maximum_threads = 1; // 设置线程数为 1
+    config.options.maximum_threads = 1; // Set thread count to 1
 
     // con.Query("PRAGMA explain_output = 'all';");
     // auto start = std::chrono::high_resolution_clock::now();
@@ -562,7 +562,7 @@ int main() {
 
     // auto end = std::chrono::high_resolution_clock::now();
     // std::chrono::duration<double, std::milli> elapsed = end - start;
-    // std::cout << "读取时间" << elapsed.count() << " ms" << std::endl;
+    // std::cout << "Read time: " << elapsed.count() << " ms" << std::endl;
 
     // Test4(con);
     ExecuteSql(con, SQL_PATH.c_str());

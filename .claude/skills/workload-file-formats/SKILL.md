@@ -1,128 +1,128 @@
 ---
 name: workload-file-formats
-description: 描述 Benchmark/workloads/ 下各 workload（STATS-CEB、JOBLight、JOBLightRanges、JOBM）的目录结构与文件格式：queries.sql、subquery.sql、subquery2.sql、single_query.sql、result/*.txt（real/duckDB/factorjoin/safebound/starce）、pg_est.txt、real.txt、schema JSON、config.json 的格式约定与行对应关系。当用户提到 workload 文件格式、queries.sql、subquery.sql、subquery2.sql、single_query.sql、result txt、pg_est、schema json、Benchmark/workloads 时使用。
+description: Describes the directory structure and file formats of each workload (STATS-CEB, JOBLight, JOBLightRanges, JOBM) under Benchmark/workloads/: queries.sql, subquery.sql, subquery2.sql, single_query.sql, result/*.txt (real/duckDB/factorjoin/safebound/starce), pg_est.txt, real.txt, schema JSON, config.json format conventions and line correspondence relationships. Use when mentioning workload file formats, queries.sql, subquery.sql, subquery2.sql, single_query.sql, result txt, pg_est, schema json, Benchmark/workloads.
 ---
 
-# Benchmark/workloads 文件格式速查
+# Benchmark/workloads File Format Quick Reference
 
-## 目录结构总览
+## Directory Structure Overview
 
 ```
 Benchmark/workloads/
-├── dummy_query.sql                # 空占位文件
-├── STATS-CEB/                     # Stack Exchange 统计基准
-├── JOBLight/                      # JOB-Light（IMDB 简化 join）
-├── JOBLightRanges/                # JOB-Light + 范围谓词
-└── JOBM/                          # JOB-M（IMDB 多表 join）
+├── dummy_query.sql                # Empty placeholder file
+├── STATS-CEB/                     # Stack Exchange statistics benchmark
+├── JOBLight/                      # JOB-Light (IMDB simplified join)
+├── JOBLightRanges/                # JOB-Light + range predicates
+└── JOBM/                          # JOB-M (IMDB multi-table join)
 ```
 
-每个 workload 子目录的典型布局：
+Typical layout of each workload subdirectory:
 
 ```
 <workload>/
-├── queries.sql                    # 原始基准查询
-├── schema_<name>.json             # Schema 定义（STATS-CEB 无此文件）
-├── config.json                    # StarCE 运行配置（仅 STATS-CEB、JOBM）
+├── queries.sql                    # Original benchmark queries
+├── schema_<name>.json             # Schema definition (not present for STATS-CEB)
+├── config.json                    # StarCE runtime config (STATS-CEB, JOBM only)
 ├── single_query/
-│   ├── single_query.sql           # 单表查询集合
-│   ├── pg_est.txt                 # PostgreSQL 基数估计
-│   └── real.txt                   # 真实基数（非所有 workload 都有）
+│   ├── single_query.sql           # Single-table query set
+│   ├── pg_est.txt                 # PostgreSQL cardinality estimates
+│   └── real.txt                   # True cardinalities (not all workloads have this)
 └── subquery/
-    ├── subquery.sql               # 子查询集合（SELECT COUNT(*)）
-    ├── subquery2.sql              # 子查询集合（SELECT *，STATS-CEB 无此文件）
+    ├── subquery.sql               # Subquery set (SELECT COUNT(*))
+    ├── subquery2.sql              # Subquery set (SELECT *, not present for STATS-CEB)
     └── result/
-        ├── real.txt               # 真实基数
-        ├── duckDB.txt             # DuckDB 估计
-        ├── factorjoin.txt         # FactorJoin 估计（仅 STATS-CEB）
-        ├── safebound.txt          # SafeBound 估计
-        └── starce.txt             # StarCE 估计（仅 STATS-CEB）
+        ├── real.txt               # True cardinalities
+        ├── duckDB.txt             # DuckDB estimates
+        ├── factorjoin.txt         # FactorJoin estimates (STATS-CEB only)
+        ├── safebound.txt          # SafeBound estimates
+        └── starce.txt             # StarCE estimates (STATS-CEB only)
 ```
 
-## 各文件格式详解
+## File Format Details
 
-### 1. queries.sql — 原始基准查询
+### 1. queries.sql — Original Benchmark Queries
 
-- 每行一条 SQL，无空行、无注释
-- 格式：`SELECT COUNT(*) FROM t1 AS a, t2 AS b WHERE a.col=b.col AND ...;`（末尾有分号）
-- 表使用别名（`AS`），谓词包含等值 join 条件 + 范围/等值过滤
-- STATS-CEB 使用 `::timestamp` 转型；JOB 系列使用数值比较
+- One SQL per line, no blank lines, no comments
+- Format: `SELECT COUNT(*) FROM t1 AS a, t2 AS b WHERE a.col=b.col AND ...;` (trailing semicolon)
+- Tables use aliases (`AS`), predicates include equi-join conditions + range/equality filters
+- STATS-CEB uses `::timestamp` casts; JOB series uses numeric comparisons
 
-示例（STATS-CEB）：
+Example (STATS-CEB):
 ```sql
 select count(*) FROM badges as b, users as u WHERE b.UserId= u.Id AND u.UpVotes>=0;
 ```
 
-示例（JOBLight）：
+Example (JOBLight):
 ```sql
 SELECT COUNT(*) FROM movie_companies AS mc,title AS t,movie_info_idx AS mi_idx WHERE t.id=mc.movie_id AND t.id=mi_idx.movie_id AND mi_idx.info_type_id=112 AND mc.company_type_id=2;
 ```
 
-### 2. subquery/subquery.sql — 子查询集合（COUNT）
+### 2. subquery/subquery.sql — Subquery Set (COUNT)
 
-- 每行一条 SQL，格式同 queries.sql：`SELECT COUNT(*) FROM ... WHERE ...;`
-- 由原始 queries 展开得到的所有"子集子查询"（子集的表 + 相关 join + 相关谓词）
-- 表别名统一为 `<TableName>1` 形式（如 `badges AS badges1`）
-- 行数远大于 queries.sql（如 STATS-CEB 146→2471，JOBM 112→6424）
+- One SQL per line, same format as queries.sql: `SELECT COUNT(*) FROM ... WHERE ...;`
+- All "subset subqueries" expanded from original queries (subset of tables + relevant joins + relevant predicates)
+- Table aliases use `<TableName>1` form uniformly (e.g., `badges AS badges1`)
+- Row count far larger than queries.sql (e.g., STATS-CEB 146→2471, JOBM 112→6424)
 
-### 3. subquery/subquery2.sql — 子查询集合（SELECT *）
+### 3. subquery/subquery2.sql — Subquery Set (SELECT *)
 
-- 与 subquery.sql **逐行对应**、行数相同
-- 唯一区别：`SELECT COUNT(*)` 替换为 `SELECT *`
-- 用途：供 SafeBound 等需要 `SELECT *` 格式的方法使用
-- **STATS-CEB 没有此文件**
+- **Line-by-line correspondence** with subquery.sql, same row count
+- Only difference: `SELECT COUNT(*)` replaced with `SELECT *`
+- Purpose: used by methods requiring `SELECT *` format like SafeBound
+- **STATS-CEB does not have this file**
 
-### 4. single_query/single_query.sql — 单表查询集合
+### 4. single_query/single_query.sql — Single-Table Query Set
 
-- 每行一条 SQL，只涉及**单张表**
-- 格式：`SELECT COUNT(*) FROM <table> WHERE <predicates>;`
-- 由 subquery 中的各表谓词拆解而来（去重后排列）
+- One SQL per line, involving only **a single table**
+- Format: `SELECT COUNT(*) FROM <table> WHERE <predicates>;`
+- Derived from decomposing per-table predicates in subqueries (deduplicated and permuted)
 
-示例：
+Example:
 ```sql
 SELECT COUNT(*) FROM badges WHERE badges.Date<='2014-08-02 12:24:29'::timestamp;
 ```
 
-### 5. result/*.txt — 子查询基数结果
+### 5. result/*.txt — Subquery Cardinality Results
 
-- 纯文本，每行一个数值，与 subquery.sql **逐行一一对应**
-- `real.txt`：真实基数（整数）
-- `duckDB.txt` / `duckdb.txt`：DuckDB 估计值（整数）
-- `factorjoin.txt`：FactorJoin 估计值（浮点数）
-- `safebound.txt`：SafeBound 估计值（浮点数）
-- `starce.txt`：StarCE 估计值（浮点数）
+- Plain text, one value per line, **line-by-line correspondence** with subquery.sql
+- `real.txt`: true cardinality (integer)
+- `duckDB.txt` / `duckdb.txt`: DuckDB estimate (integer)
+- `factorjoin.txt`: FactorJoin estimate (float)
+- `safebound.txt`: SafeBound estimate (float)
+- `starce.txt`: StarCE estimate (float)
 
-示例（real.txt）：
+Example (real.txt):
 ```
 14929017
 3203614
 9940949
 ```
 
-示例（factorjoin.txt）：
+Example (factorjoin.txt):
 ```
 17089313.997781295
 2691939.532955823
 14130747.971743993
 ```
 
-### 6. single_query/pg_est.txt — PostgreSQL 单表估计
+### 6. single_query/pg_est.txt — PostgreSQL Single-Table Estimates
 
-- 每行一个整数，与 single_query.sql **逐行一一对应**
-- 值为 PostgreSQL 对该单表查询的基数估计
+- One integer per line, **line-by-line correspondence** with single_query.sql
+- Values are PostgreSQL's cardinality estimates for the corresponding single-table queries
 
-### 7. single_query/real.txt — 单表真实基数
+### 7. single_query/real.txt — Single-Table True Cardinalities
 
-- 每行一个整数，与 single_query.sql **逐行一一对应**
-- 值为对应单表查询的真实行数
-- 非所有 workload 都有（JOBLight/JOBLightRanges 无此文件）
+- One integer per line, **line-by-line correspondence** with single_query.sql
+- Values are true row counts for the corresponding single-table queries
+- Not present in all workloads (JOBLight/JOBLightRanges lack this file)
 
-### 8. schema_\<name\>.json — Schema 定义
+### 8. schema_\<name\>.json — Schema Definition
 
-- JSON 对象，两个顶层字段：
-  - `PredColumns`：谓词列列表，每项 `{"TableName":"...", "ColumnName":"..."}`
-  - `EqualSets`：等值 join 集合，每组 `{"Entries": [{"TableName":"...", "ColumnName":"..."},...]}`
+- JSON object with two top-level fields:
+  - `PredColumns`: list of predicate columns, each `{"TableName":"...", "ColumnName":"..."}`
+  - `EqualSets`: equi-join sets, each group `{"Entries": [{"TableName":"...", "ColumnName":"..."},...]}`
 
-示例片段：
+Example fragment:
 ```json
 {
   "PredColumns": [
@@ -139,30 +139,30 @@ SELECT COUNT(*) FROM badges WHERE badges.Date<='2014-08-02 12:24:29'::timestamp;
 }
 ```
 
-注意：STATS-CEB 的 schema 文件不在 workloads 目录下，而是在 `benchmark/stats-ceb/schema.json`（由 config.json 的 `SCHEMA_PATH` 指定）。
+Note: STATS-CEB's schema file is not under the workloads directory; it is at `benchmark/stats-ceb/schema.json` (specified by `SCHEMA_PATH` in config.json).
 
-### 9. config.json — StarCE 运行配置
+### 9. config.json — StarCE Runtime Configuration
 
-- JSON 对象，包含功能开关和路径配置
-- 仅 STATS-CEB 和 JOBM 目录下有
-- 详细字段说明见 skill `starce-usage`
+- JSON object containing feature switches and path configuration
+- Only present under STATS-CEB and JOBM directories
+- Detailed field descriptions in skill `starce-usage`
 
-## 行对应关系（关键约束）
+## Line Correspondence (Critical Constraint)
 
-| 文件 A | 文件 B | 关系 |
+| File A | File B | Relationship |
 |--------|--------|------|
-| subquery.sql | subquery2.sql | 逐行对应，行数相同 |
-| subquery.sql | result/*.txt（所有） | 逐行对应，行数相同 |
-| single_query.sql | pg_est.txt | 逐行对应，行数相同 |
-| single_query.sql | real.txt | 逐行对应，行数相同 |
+| subquery.sql | subquery2.sql | Line-by-line correspondence, same row count |
+| subquery.sql | result/*.txt (all) | Line-by-line correspondence, same row count |
+| single_query.sql | pg_est.txt | Line-by-line correspondence, same row count |
+| single_query.sql | real.txt | Line-by-line correspondence, same row count |
 
-破坏行对应关系会导致 StarCE 或评估脚本产生错误结果。
+Breaking line correspondence will cause StarCE or evaluation scripts to produce incorrect results.
 
-## 各 workload 规模
+## Workload Scales
 
-| Workload | queries | subquery | single_query | 有 subquery2 | 有 config |
+| Workload | queries | subquery | single_query | Has subquery2 | Has config |
 |----------|---------|----------|--------------|---------------|-----------|
-| STATS-CEB | 146 | 2471 | 350 | 否 | 是 |
-| JOBLight | 70 | 451 | 45 | 是 | 否 |
-| JOBLightRanges | 999 | 8292 | — | 是 | 否 |
-| JOBM | 112 | 6424 | 127 | 是 | 是 |
+| STATS-CEB | 146 | 2471 | 350 | No | Yes |
+| JOBLight | 70 | 451 | 45 | Yes | No |
+| JOBLightRanges | 999 | 8292 | — | Yes | No |
+| JOBM | 112 | 6424 | 127 | Yes | Yes |

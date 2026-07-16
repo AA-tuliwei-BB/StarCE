@@ -1,8 +1,8 @@
 """
-测试 IN 谓词对 SafeBound JOBM 估计时间的影响
+Test the impact of IN predicates on SafeBound JOBM estimation time.
 
-对 JOBM 子查询采样，比较带 IN 和不带 IN 谓词的估计时间，
-量化 IN 谓词组合爆炸在总评估开销中的占比。
+Sample JOBM subqueries, compare estimation time with and without IN predicates,
+quantify the proportion of IN predicate combinatorial explosion in total evaluation overhead.
 """
 import sys
 import os
@@ -13,7 +13,7 @@ import random
 from pathlib import Path
 import numpy as np
 
-# 路径设置
+# path setup
 project_root = Path(__file__).resolve().parent.parent
 safeBound_root = os.path.join(project_root, 'methods/SafeBound')
 sys.path.append(os.path.join(safeBound_root, 'Source'))
@@ -22,25 +22,25 @@ from SafeBoundUtils import *
 from JoinGraphUtils import *
 from SQLParser import *
 
-# 加载统计对象
+# load statistics object
 stat_path = os.path.join(project_root, 'experiment/checkpoint/SafeBound/SafeBound_3_JOBM.pkl')
-print(f'加载统计对象: {stat_path}')
+print(f'Loading statistics object: {stat_path}')
 t0 = time.time()
 stats = pickle.load(open(stat_path, 'rb'))
-print(f'加载耗时: {time.time()-t0:.1f}s, 统计对象内存: {stats.memory()} bytes')
+print(f'Load time: {time.time()-t0:.1f}s, stats object memory: {stats.memory()} bytes')
 
-# 读取子查询
+# read subqueries
 sql_path = os.path.join(project_root, 'Benchmark/workloads/JOBM/subquery/subquery2.sql')
 with open(sql_path) as f:
     all_queries = [l.strip() for l in f.readlines() if l.strip()]
-print(f'总查询数: {len(all_queries)}')
+print(f'Total queries: {len(all_queries)}')
 
-# 采样
+# sample
 random.seed(42)
 sample_size = 500
 sample = random.sample(all_queries, min(sample_size, len(all_queries)))
 
-# 统计所有查询的 IN 谓词信息（快速扫描，不运行估计）
+# collect IN predicate info for all queries (fast scan, no estimation)
 in_query_count = 0
 in_value_products = []
 for sql in all_queries:
@@ -56,46 +56,46 @@ for sql in all_queries:
             in_query_count += 1
             in_value_products.append(int(np.prod(in_counts)))
 
-print(f'\n=== 全量统计（{len(all_queries)} 条查询）===')
-print(f'含 IN 谓词的查询: {in_query_count} ({100*in_query_count/len(all_queries):.1f}%)')
-print(f'IN 组合数分布:')
-print(f'  最小: {min(in_value_products)}')
-print(f'  最大: {max(in_value_products)}')
-print(f'  平均: {np.mean(in_value_products):.1f}')
-print(f'  中位数: {np.median(in_value_products):.1f}')
-print(f'  总组合数（所有查询的 IN product 之和）: {sum(in_value_products)}')
-print(f'  如果无 IN 则总循环次数 = {len(all_queries)}（每条查询一次）')
-print(f'  有 IN 则总循环次数 ≈ {len(all_queries) - in_query_count + sum(in_value_products)}')
+print(f'\n=== Full population stats ({len(all_queries)} queries) ===')
+print(f'Queries with IN predicates: {in_query_count} ({100*in_query_count/len(all_queries):.1f}%)')
+print(f'IN combination count distribution:')
+print(f'  min: {min(in_value_products)}')
+print(f'  max: {max(in_value_products)}')
+print(f'  mean: {np.mean(in_value_products):.1f}')
+print(f'  median: {np.median(in_value_products):.1f}')
+print(f'  total combinations (sum of IN products across all queries): {sum(in_value_products)}')
+print(f'  without IN, total loop count = {len(all_queries)} (once per query)')
+print(f'  with IN, total loop count ~= {len(all_queries) - in_query_count + sum(in_value_products)}')
 total_loops_with_in = len(all_queries) - in_query_count + sum(in_value_products)
-print(f'  IN 导致的循环膨胀倍数: {total_loops_with_in / len(all_queries):.1f}x')
+print(f'  IN-caused loop explosion factor: {total_loops_with_in / len(all_queries):.1f}x')
 
-# 按 IN product 分组统计
+# group stats by IN product
 bins = [(1, 1), (2, 5), (6, 10), (11, 20), (21, 50), (51, 100), (101, 1000)]
-print(f'\n  IN 组合数分布详情:')
+print(f'\n  IN combination count distribution detail:')
 for lo, hi in bins:
     count = sum(1 for p in in_value_products if lo <= p <= hi)
     if count > 0:
-        print(f'    [{lo}, {hi}]: {count} 条查询 ({100*count/len(in_value_products):.1f}%)')
+        print(f'    [{lo}, {hi}]: {count} queries ({100*count/len(in_value_products):.1f}%)')
 
-print(f'\n=== 采样 {sample_size} 条查询进行实际计时测试 ===')
+print(f'\n=== Sample {sample_size} queries for actual timing test ===')
 
-# 对采样查询进行实际计时
+# actual timing on sampled queries
 results = []
 parse_failures = 0
 
 for i, sql in enumerate(sample):
     if i % 50 == 0:
-        print(f'  进度: {i}/{sample_size}')
+        print(f'  progress: {i}/{sample_size}')
 
     try:
-        # 解析原始查询
+        # parse original query
         jgs = SQLQueriesToJoinQueryGraphs(sql)
         if not jgs:
             parse_failures += 1
             continue
         jg = jgs[0]
 
-        # 统计 IN 谓词
+        # count IN predicates
         in_counts = []
         for v in jg.vertexDict.values():
             for p in list(v.predicates):
@@ -105,18 +105,18 @@ for i, sql in enumerate(sample):
         num_tables = len(jg.vertexDict)
         num_joins = sum(len(v.edgeAliases) for v in jg.vertexDict.values()) // 2
 
-        # 计时：原始查询
+        # timing: original query
         t0 = time.perf_counter()
         bound_orig = stats.functionalFrequencyBound(jg.copy())
         t_orig = time.perf_counter() - t0
 
         if in_counts:
-            # 创建无 IN 谓词的版本：从 JoinQueryGraph 中移除 IN 谓词
+            # create version without IN predicates: remove IN predicates from JoinQueryGraph
             jg_no_in = jg.copy()
             for v in jg_no_in.vertexDict.values():
                 v.predicates = [p for p in v.predicates if p.predType != 'IN']
 
-            # 计时：无 IN 谓词
+            # timing: without IN predicates
             t0 = time.perf_counter()
             bound_no_in = stats.functionalFrequencyBound(jg_no_in)
             t_no_in = time.perf_counter() - t0
@@ -148,43 +148,43 @@ for i, sql in enumerate(sample):
         parse_failures += 1
         continue
 
-print(f'\n解析失败: {parse_failures}')
-print(f'成功测试: {len(results)} 条查询')
+print(f'\nParse failures: {parse_failures}')
+print(f'Successful tests: {len(results)} queries')
 
-# 分类统计
+# categorized stats
 with_in = [r for r in results if r['has_in']]
 without_in = [r for r in results if not r['has_in']]
 
-print(f'\n=== 计时结果 ===')
-print(f'无 IN 谓词的查询: {len(without_in)} 条')
+print(f'\n=== Timing Results ===')
+print(f'Queries without IN predicates: {len(without_in)}')
 if without_in:
     times = [r['time_orig'] for r in without_in]
-    print(f'  平均估计时间: {np.mean(times)*1000:.2f} ms')
-    print(f'  中位数估计时间: {np.median(times)*1000:.2f} ms')
-    print(f'  总时间: {sum(times):.2f} s')
+    print(f'  avg estimation time: {np.mean(times)*1000:.2f} ms')
+    print(f'  median estimation time: {np.median(times)*1000:.2f} ms')
+    print(f'  total time: {sum(times):.2f} s')
 
-print(f'\n有 IN 谓词的查询: {len(with_in)} 条')
+print(f'\nQueries with IN predicates: {len(with_in)}')
 if with_in:
     times_orig = [r['time_orig'] for r in with_in]
     times_no_in = [r['time_no_in'] for r in with_in]
     speedups = [r['speedup'] for r in with_in]
     products = [r['in_product'] for r in with_in]
 
-    print(f'  原始总时间（带 IN）: {sum(times_orig):.2f} s')
-    print(f'  去 IN 总时间: {sum(times_no_in):.2f} s')
-    print(f'  总加速比: {sum(times_orig)/sum(times_no_in):.1f}x')
-    print(f'  平均单查询时间（带 IN）: {np.mean(times_orig)*1000:.2f} ms')
-    print(f'  平均单查询时间（去 IN）: {np.mean(times_no_in)*1000:.2f} ms')
-    print(f'  中位数单查询时间（带 IN）: {np.median(times_orig)*1000:.2f} ms')
-    print(f'  中位数单查询时间（去 IN）: {np.median(times_no_in)*1000:.2f} ms')
-    print(f'  加速比分布:')
-    print(f'    最小: {min(speedups):.1f}x')
-    print(f'    最大: {max(speedups):.1f}x')
-    print(f'    平均: {np.mean(speedups):.1f}x')
-    print(f'    中位数: {np.median(speedups):.1f}x')
+    print(f'  original total time (with IN): {sum(times_orig):.2f} s')
+    print(f'  total time without IN: {sum(times_no_in):.2f} s')
+    print(f'  total speedup: {sum(times_orig)/sum(times_no_in):.1f}x')
+    print(f'  avg per-query time (with IN): {np.mean(times_orig)*1000:.2f} ms')
+    print(f'  avg per-query time (without IN): {np.mean(times_no_in)*1000:.2f} ms')
+    print(f'  median per-query time (with IN): {np.median(times_orig)*1000:.2f} ms')
+    print(f'  median per-query time (without IN): {np.median(times_no_in)*1000:.2f} ms')
+    print(f'  speedup distribution:')
+    print(f'    min: {min(speedups):.1f}x')
+    print(f'    max: {max(speedups):.1f}x')
+    print(f'    mean: {np.mean(speedups):.1f}x')
+    print(f'    median: {np.median(speedups):.1f}x')
 
-# 按 IN product 分组分析
-print(f'\n=== 按 IN 组合数分组的加速比 ===')
+# speedup grouped by IN product
+print(f'\n=== Speedup by IN combination count ===')
 product_bins = [(1, 5), (6, 10), (11, 20), (21, 50), (51, 100), (101, 500)]
 for lo, hi in product_bins:
     group = [r for r in with_in if lo <= r['in_product'] <= hi]
@@ -192,34 +192,34 @@ for lo, hi in product_bins:
         avg_speedup = np.mean([r['speedup'] for r in group])
         avg_time_orig = np.mean([r['time_orig'] for r in group]) * 1000
         avg_time_no_in = np.mean([r['time_no_in'] for r in group]) * 1000
-        print(f'  IN product [{lo}, {hi}]: {len(group)} 条, '
-              f'平均加速 {avg_speedup:.1f}x, '
-              f'平均时间(带IN) {avg_time_orig:.1f}ms, '
-              f'平均时间(去IN) {avg_time_no_in:.1f}ms')
+        print(f'  IN product [{lo}, {hi}]: {len(group)} queries, '
+              f'avg speedup {avg_speedup:.1f}x, '
+              f'avg time (with IN) {avg_time_orig:.1f}ms, '
+              f'avg time (without IN) {avg_time_no_in:.1f}ms')
 
-# 最重要的统计：如果去掉所有 IN 谓词，评价时间能从 260s 降到多少？
-print(f'\n=== 推算全量评估时间 ===')
-# 从采样推算
-ratio_in_sample = len(with_in) / len(results)  # 含 IN 查询的比例
+# Key question: if we remove all IN predicates, how much does evaluation time drop?
+print(f'\n=== Projected full evaluation time ===')
+# project from sample
+ratio_in_sample = len(with_in) / len(results)  # proportion of queries with IN
 avg_time_no_in_all = np.mean([r['time_no_in'] if r['has_in'] else r['time_orig'] for r in results])
 avg_time_orig_all = np.mean([r['time_orig'] for r in results])
 
-# 全量查询数
+# total query count
 total_queries = len(all_queries)
-# 推算原始总时间
+# projected original total time
 estimated_total_orig = total_queries * avg_time_orig_all
-# 推算去 IN 总时间
+# projected total time without IN
 estimated_total_no_in = total_queries * avg_time_no_in_all
 
-print(f'采样平均时间（原始）: {avg_time_orig_all*1000:.2f} ms/query')
-print(f'采样平均时间（去 IN）: {avg_time_no_in_all*1000:.2f} ms/query')
-print(f'推算全量原始总时间: {estimated_total_orig:.1f} s')
-print(f'推算全量去 IN 总时间: {estimated_total_no_in:.1f} s')
-print(f'去 IN 可节省: {estimated_total_orig - estimated_total_no_in:.1f} s ({(estimated_total_orig - estimated_total_no_in)/estimated_total_orig*100:.1f}%)')
+print(f'sample avg time (original): {avg_time_orig_all*1000:.2f} ms/query')
+print(f'sample avg time (without IN): {avg_time_no_in_all*1000:.2f} ms/query')
+print(f'projected full original total time: {estimated_total_orig:.1f} s')
+print(f'projected full total time without IN: {estimated_total_no_in:.1f} s')
+print(f'savings from removing IN: {estimated_total_orig - estimated_total_no_in:.1f} s ({(estimated_total_orig - estimated_total_no_in)/estimated_total_orig*100:.1f}%)')
 
-# 按表数分组
-print(f'\n=== 按表数分组的单查询时间（去 IN 后） ===')
+# grouped by table count
+print(f'\n=== Per-query time by table count (after removing IN) ===')
 for t in sorted(set(r['tables'] for r in results)):
     group = [r for r in results if r['tables'] == t]
     times = [r['time_no_in'] if r['has_in'] else r['time_orig'] for r in group]
-    print(f'  {t} 表: {len(group)} 条, 平均 {np.mean(times)*1000:.1f} ms')
+    print(f'  {t} tables: {len(group)} queries, avg {np.mean(times)*1000:.1f} ms')

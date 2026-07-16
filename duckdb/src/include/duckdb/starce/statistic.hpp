@@ -15,7 +15,7 @@ class DegreeSequence
 public:
     std::vector<double> maxDegree;
     std::vector<int64_t> count;
-    // sum 仅在收集过程中使用，FinishCollection 后即清空，不参与序列化
+    // sum is only used during collection; cleared after FinishCollection; not serialized
     std::vector<double> sum;
     DegreeSequence() = default;
 
@@ -41,7 +41,7 @@ public:
     {
         maxDegree.clear();
         count.clear();
-        sum.clear(); // 收集期结构，反序列化后不可用
+        sum.clear(); // Collection-phase structure; unusable after deserialization
         for (const auto &degree : j) {
             maxDegree.push_back(degree.at("MaxDegree").get<double>());
             count.push_back(degree.at("Count").get<int64_t>());
@@ -76,7 +76,7 @@ public:
         std::reverse(maxDegree.begin(), maxDegree.end());
         std::reverse(count.begin(), count.end());
         std::reverse(sum.begin(), sum.end());
-        // 剔除count为0的元素
+        // Remove elements with zero count
         for (size_t i = 0; i < count.size(); i++) {
             if (count[i] == 0 || maxDegree[i] == 0) {
                 maxDegree.erase(maxDegree.begin() + i);
@@ -85,7 +85,7 @@ public:
                 i--;
             }
         }
-        // sum 修正：将 count 收紧到 ceil(sum / maxDegree)，修正 sub-1 坍缩带来的 count 膨胀
+        // sum correction: tighten count to ceil(sum / maxDegree), fixing count inflation from sub-1 collapsing
         for (size_t i = 0; i < count.size(); i++) {
             double adjusted = std::ceil(sum[i] / maxDegree[i]);
             if (adjusted < static_cast<double>(count[i])) {
@@ -496,7 +496,7 @@ public:
 
     void MergeByCenter(const DSStatistic &other)
     {
-        // 给ds里面临时添加__star_center表，用centralDs作为其度序列，然后调用Merge
+        // Temporarily add __star_center table to ds, using centralDs as its degree sequence, then call Merge
         std::string centerTable = "__star_center";
         this->tables.push_back(centerTable);
         this->ds[centerTable] = this->centralDs;
@@ -558,10 +558,10 @@ public:
     }
 
     void ApplyFilterCoefficient(double filter_coeff) {
-        // 遍历所有表的度序列
+        // Iterate over degree sequences of all tables
         for (const auto &table : tables) {
             DegreeSequence &ds_ref = this->ds[table];
-            // 所有度序列的值都乘以过滤系数
+            // Multiply all degree sequence values by the filter coefficient
             for (size_t i = 0; i < ds_ref.maxDegree.size(); ++i) {
                 ds_ref.maxDegree[i] *= filter_coeff;
                 if (ds_ref.maxDegree[i] < 1) {
@@ -573,12 +573,12 @@ public:
                 }
             }
         }
-        // 整体基数乘以过滤系数
+        // Multiply overall cardinality by the filter coefficient
         card *= filter_coeff;
         if (card < 1) {
             card = 1;
         }
-        // 处理centralDs
+        // Process centralDs
         for (size_t i = 0; i < centralDs.maxDegree.size(); ++i) {
             centralDs.maxDegree[i] *= filter_coeff;
             if (centralDs.maxDegree[i] < 1) {

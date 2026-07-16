@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-TestLpBound — LpBound 方法的 Build Time、Estimate Time 和 Accuracy 测试
+TestLpBound — Build Time, Estimate Time, and Accuracy tests for the LpBound method
 
-将 LpBound 的统计信息构建时间、基数估计时间和 JOBLightRanges 子查询精度
-接入 StarCE 实验体系，结果保存到 experiment/checkpoint/LpBound/。
+Connects LpBound's statistics build time, cardinality estimation time, and JOBLightRanges subquery accuracy
+to the StarCE experiment system, results saved to experiment/checkpoint/LpBound/.
 
-使用方法:
+Usage:
     cd experiment/
-    conda activate TestEnv          # 当前项目环境（用于运行本脚本）
-    python TestLpBound.py           # 运行全部（Build + Estimate）
+    conda activate TestEnv          # current project environment (for running this script)
+    python TestLpBound.py           # run all (Build + Estimate)
     python TestLpBound.py --build-only
     python TestLpBound.py --est-only
-    python TestLpBound.py --accuracy           # 额外运行 JOBLightRanges 子查询精度估计
-    python TestLpBound.py --accuracy --est-only  # 仅 Estimate + 精度估计
+    python TestLpBound.py --accuracy           # additionally run JOBLightRanges subquery accuracy estimation
+    python TestLpBound.py --accuracy --est-only  # only Estimate + accuracy estimation
 
-依赖: conda 环境 'lpbound' 需已创建并配置好（见 methods/LpBound 的 setup 说明）
+Depends on: conda environment 'lpbound' must be created and configured (see methods/LpBound setup instructions)
 """
 
 import argparse
@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Optional
 
 # ============================================================
-# 路径配置
+# Path configuration
 # ============================================================
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -40,7 +40,7 @@ LPBOUND_DIR = PROJECT_ROOT / "methods" / "LpBound"
 CHECKPOINT_DIR = SCRIPT_DIR / "checkpoint" / "LpBound"
 RESULT_FILE = CHECKPOINT_DIR / "result.txt"
 
-# LpBound → StarCE benchmark 名称映射
+# LpBound → StarCE benchmark  name mapping
 BENCHMARK_MAP = {
     "stats": "STATS",
     "joblight": "JOBLight",
@@ -49,31 +49,31 @@ BENCHMARK_MAP = {
     "subgraph_matching": "SubgraphMatching",
 }
 
-# Build Time 的 benchmark 列表（全部 5 个数据集）
+# Build Time  benchmark list (all 5 datasets)
 BUILD_BENCHMARKS = ["stats", "joblight", "jobrange", "jobjoin", "subgraph_matching"]
 
-# Estimate Time 的 benchmark 列表（C++ 二进制支持的 3 个）
+# Estimate Time  benchmark list (3 supported by C++ binary)
 EST_BENCHMARKS = ["stats", "joblight", "jobjoin"]
 
-# JOBLightRanges 子查询精度估计
+# JOBLightRanges subquery accuracy estimation
 JOBLR_SUBQUERY_FILE = PROJECT_ROOT / "Benchmark" / "workloads" / "JOBLightRanges" / "subquery" / "subquery.sql"
 JOBLR_OUTPUT_FILE = PROJECT_ROOT / "Benchmark" / "workloads" / "JOBLightRanges" / "subquery" / "result" / "lpbound.txt"
 
 
 def ensure_lpbound_environment() -> bool:
     """
-    检查并修复 LpBound 环境的常见问题。
-    返回 True 表示环境就绪，False 表示需要手动干预。
+    Check and fix common LpBound environment issues.
+    Returns True if environment is ready, False if manual intervention is needed.
     """
     all_ok = True
 
-    # 1. 大小写 CSV 符号链接
+    # 1. Case-sensitive CSV symlinks
     for dir_name, csv_source in [
         ("stats", LPBOUND_DIR / "data" / "datasets" / "stats"),
         ("imdb", LPBOUND_DIR / "data" / "datasets" / "imdb"),
     ]:
         if not csv_source.is_dir():
-            log(f"  [WARN] CSV 目录不存在: {csv_source}")
+            log(f"  [WARN] CSV directory does not exist: {csv_source}")
             all_ok = False
             continue
         created = []
@@ -87,15 +87,15 @@ def ensure_lpbound_environment() -> bool:
                     lower_path.symlink_to(f.name)
                     created.append(f"  {f.name} -> {lower_name}")
         if created:
-            log(f"  创建小写符号链接 ({dir_name}):")
+            log(f"  Created lowercase symlinks ({dir_name}):")
             for c in created:
                 log(c)
 
-    # 2. C++ 二进制
+    # 2. C++ binary
     cpp_bin = LPBOUND_DIR / "src/lpbound/cpp_solver/lpbound_parallel/build/lpbound_parallel"
     if not cpp_bin.exists():
-        log(f"  [WARN] C++ 二进制不存在: {cpp_bin}")
-        log(f"  编译方法: cd {LPBOUND_DIR}/src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
+        log(f"  [WARN] C++ binary not found: {cpp_bin}")
+        log(f"  Build instructions: cd {LPBOUND_DIR}/src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
         all_ok = False
 
     return all_ok
@@ -115,7 +115,7 @@ def log(msg: str, to_console: bool = True):
 
 
 def run_lpbound_module(module_name: str, *extra_args) -> subprocess.CompletedProcess:
-    """在 lpbound conda 环境中运行 Python 模块"""
+    """Run a Python module in the lpbound conda environment"""
     cmd = [
         "conda", "run", "-n", "lpbound", "python", "-c",
         f"import sys; sys.path.insert(0, 'src'); {module_name}",
@@ -134,7 +134,7 @@ def run_lpbound_module(module_name: str, *extra_args) -> subprocess.CompletedPro
 # ============================================================
 
 def _run_build_benchmark(benchmark: str, p_max: int) -> Optional[float]:
-    """运行单个 build 测试，返回 overall time（秒），失败返回 None。"""
+    """Run a single build test, return overall time (seconds), None on failure."""
     import tempfile
 
     code = f"""
@@ -171,7 +171,7 @@ print(json.dumps({{"benchmark": "{benchmark}", "p_max": {p_max}, "overall": over
         )
 
         if proc.returncode != 0:
-            log(f"    [ERROR] 失败: {proc.stderr[-300:] if proc.stderr else 'unknown'}")
+            log(f"    [ERROR] failed: {proc.stderr[-300:] if proc.stderr else 'unknown'}")
             return None
 
         for line in proc.stdout.splitlines():
@@ -186,14 +186,14 @@ print(json.dumps({{"benchmark": "{benchmark}", "p_max": {p_max}, "overall": over
 
 def run_build_time() -> dict:
     """
-    运行 Build Time 实验。
-    对每个 benchmark 分别用 p_max=1 (L1) 和 p_max=10 (all norms) 两种配置，
-    调用 build_lpbound_statistics() 测量时间。
+    Run Build Time experiments.
+    For each benchmark, use p_max=1 (L1) and p_max=10 (all norms) configurations,
+    call build_lpbound_statistics() to measure time.
 
-    返回: { l1: {benchmark: seconds}, all: {benchmark: seconds} }
+    Returns: { l1: {benchmark: seconds}, all: {benchmark: seconds} }
     """
     log("=" * 60)
-    log("  Build Time — 统计信息构建时间")
+    log("  Build Time — Statistics build time")
     log("=" * 60)
 
     results_l1 = {}
@@ -219,15 +219,15 @@ def run_build_time() -> dict:
 
 def run_estimate_time() -> dict:
     """
-    运行 Estimate Time 实验。
-    调用 C++ lpbound_parallel 二进制，分别运行 sequential 和 parallel 模式。
+    Run Estimate Time experiments.
+    Call C++ lpbound_parallel binary, run sequential and parallel modes separately.
 
-    返回: { benchmark: { "sequential_ms": float, "parallel_ms": float,
+    Returns: { benchmark: { "sequential_ms": float, "parallel_ms": float,
                         "build_us": float, "solve_us": float,
                         "total_subqueries": int } }
     """
     log("\n" + "=" * 60)
-    log("  Estimate Time — 基数估计时间")
+    log("  Estimate Time — Cardinality estimation time")
     log("=" * 60)
 
     cpp_bin = LPBOUND_DIR / "src/lpbound/cpp_solver/lpbound_parallel/build/lpbound_parallel"
@@ -236,28 +236,28 @@ def run_estimate_time() -> dict:
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     if not cpp_bin.exists():
-        log(f"[ERROR] C++ 二进制不存在: {cpp_bin}")
-        log(f"  编译方法: cd {LPBOUND_DIR}/src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
+        log(f"[ERROR] C++ binary not found: {cpp_bin}")
+        log(f"  Build instructions: cd {LPBOUND_DIR}/src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
         return {}
 
-    # 检查哪些 benchmark 的输入数据存在
+    # Check which benchmarks have input data
     available = [b for b in EST_BENCHMARKS if (input_dir / b).is_dir()]
     missing = [b for b in EST_BENCHMARKS if not (input_dir / b).is_dir()]
     if missing:
-        log(f"  缺少输入数据的 benchmark (将跳过): {missing}")
-        log(f"  生成方法: conda activate lpbound && python src/lpbound/cpp_solver/lpbound_parallel/create_input_files.py")
+        log(f"  Benchmarks missing input data (will be skipped): {missing}")
+        log(f"  Generation method: conda activate lpbound && python src/lpbound/cpp_solver/lpbound_parallel/create_input_files.py")
     if not available:
-        log("[ERROR] 没有任何 benchmark 的输入数据")
+        log("[ERROR] No benchmarks have input data")
         return {}
 
-    log(f"  可用 benchmark: {available}")
+    log(f"  Available benchmarks: {available}")
 
     env = os.environ.copy()
     env["OMP_NUM_THREADS"] = "8"
 
     # --- Sequential ---
     log("\n  Running sequential mode (OMP_NUM_THREADS=8)...")
-    log("  (处理所有 benchmark 可能需要几分钟)")
+    log("  (processing all benchmarks may take a few minutes)")
     proc_seq = subprocess.run(
         [str(cpp_bin), "--sequential",
          "--input-dir", str(input_dir),
@@ -265,13 +265,13 @@ def run_estimate_time() -> dict:
         cwd=str(LPBOUND_DIR),
         capture_output=True,
         text=True,
-        timeout=1200,  # 20 分钟超时
+        timeout=1200,  # 20  minute timeout
         env=env,
     )
     if proc_seq.returncode != 0:
-        log(f"  [ERROR] Sequential 模式失败 (exit={proc_seq.returncode}): {proc_seq.stderr[-500:] if proc_seq.stderr else ''}")
+        log(f"  [ERROR] Sequential  mode failed (exit={proc_seq.returncode}): {proc_seq.stderr[-500:] if proc_seq.stderr else ''}")
     else:
-        log("  Sequential 模式完成")
+        log("  Sequential  mode completed")
 
     # --- Parallel ---
     log("  Running parallel mode (OMP_NUM_THREADS=8)...")
@@ -286,11 +286,11 @@ def run_estimate_time() -> dict:
         env=env,
     )
     if proc_par.returncode != 0:
-        log(f"  [ERROR] Parallel 模式失败 (exit={proc_par.returncode}): {proc_par.stderr[-500:] if proc_par.stderr else ''}")
+        log(f"  [ERROR] Parallel  mode failed (exit={proc_par.returncode}): {proc_par.stderr[-500:] if proc_par.stderr else ''}")
     else:
-        log("  Parallel 模式完成")
+        log("  Parallel  mode completed")
 
-    # --- 解析结果 ---
+    # --- Parse results ---
     results = {}
     for benchmark in available:
         seq_file = raw_dir / f"runtimes_{benchmark}_lpbound_optimized_full_lattice_sequential.txt"
@@ -298,7 +298,7 @@ def run_estimate_time() -> dict:
         par_file = raw_dir / f"runtimes_{benchmark}_lpbound_optimized_full_lattice_parallel.txt"
 
         if not seq_file.exists():
-            log(f"  [WARN] {benchmark}: 未找到 sequential 结果文件，跳过")
+            log(f"  [WARN] {benchmark}: sequential result file not found, skipping")
             continue
 
         entry = {}
@@ -310,7 +310,7 @@ def run_estimate_time() -> dict:
             if rows:
                 runtimes_ns = [float(r["runtime"]) for r in rows]
                 entry["sequential_ms"] = round(sum(runtimes_ns) / len(runtimes_ns) / 1_000_000, 4)
-                entry["total_subqueries"] = len(rows) // 4  # 4 runs (去除 warmup)
+                entry["total_subqueries"] = len(rows) // 4  # 4 runs (remove warmup)
 
         # Sequential detailed (build_time / solve_time)
         if seq_detailed.exists():
@@ -329,7 +329,7 @@ def run_estimate_time() -> dict:
             if rows:
                 total_times = [float(r["total_time"]) for r in rows]
                 entry["parallel_ms"] = round(sum(total_times) / len(total_times) / 1_000_000, 4)
-                # 总并行估计时间：每查询平均 × 查询数 → 秒
+                # Total parallel estimation time: avg per query x num queries -> seconds
                 unique_qids = set(r["query_id"] for r in rows)
                 entry["num_queries"] = len(unique_qids)
                 avg_ns = sum(total_times) / len(total_times)
@@ -338,7 +338,7 @@ def run_estimate_time() -> dict:
         if entry:
             results[benchmark] = entry
 
-        # 保存每 LP 估计时间到 checkpoint
+        # Save per-LP estimation time to checkpoint
         if seq_detailed.exists():
             _save_per_lp_time(benchmark, seq_detailed)
 
@@ -347,10 +347,10 @@ def run_estimate_time() -> dict:
 
 def _save_per_lp_time(benchmark: str, detailed_file: Path) -> None:
     """
-    从 C++ detailed CSV 提取每个 LP 的 build+solve 时间，写入 checkpoint。
+    Extract each LP's build+solve time from C++ detailed CSV, write to checkpoint.
 
-    每行 = 一个 LP 求解 = 一次基数估计，时间单位秒。
-    对多次 run 取平均（跳过 warmup run_id=1）。
+    Each row = one LP solve = one cardinality estimation, time unit seconds.
+    Multiple runs averaged (skip warmup run_id=1).
     """
     from collections import defaultdict
 
@@ -377,25 +377,25 @@ def _save_per_lp_time(benchmark: str, detailed_file: Path) -> None:
 
 
 # ============================================================
-# Accuracy — JOBLightRanges 子查询基数估计
+# Accuracy — JOBLightRanges subquery cardinality estimation
 # ============================================================
 
 def run_accuracy() -> dict:
     """
-    对 JOBLightRanges 的 8292 条子查询逐条运行 LpBound 估计，
-    结果写入 Benchmark/workloads/JOBLightRanges/subquery/result/lpbound.txt，
-    同时备份到 checkpoint/LpBound/。
+    Run LpBound estimation on each of JOBLightRanges's 8292 subqueries,
+    write results to Benchmark/workloads/JOBLightRanges/subquery/result/lpbound.txt,
+    also back up to checkpoint/LpBound/.
 
-    返回: { "subqueries": int, "success": int, "failed": int,
+    Returns: { "subqueries": int, "success": int, "failed": int,
              "time_min": float, "output": str }
     """
     log("\n" + "=" * 60)
-    log("  Accuracy — JOBLightRanges 子查询基数估计")
+    log("  Accuracy — JOBLightRanges subquery cardinality estimation")
     log("=" * 60)
 
     script_path = LPBOUND_DIR / "benchmarks" / "experiments" / "estimate_subqueries.py"
     if not script_path.exists():
-        log(f"[ERROR] 脚本不存在: {script_path}")
+        log(f"[ERROR] Script not found: {script_path}")
         return {}
 
     JOBLR_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -417,56 +417,56 @@ def run_accuracy() -> dict:
     )
     elapsed = time.perf_counter() - t0
 
-    # 输出脚本的 stdout
+    # Output the script's stdout
     for line in proc.stdout.splitlines():
         if line.strip():
             log(f"  {line.strip()}")
 
     result = {}
     if proc.returncode != 0:
-        log(f"[ERROR] 精度估计失败 (exit={proc.returncode})")
+        log(f"[ERROR] Accuracy estimation failed (exit={proc.returncode})")
         if proc.stderr:
             for line in proc.stderr.splitlines()[-10:]:
                 log(f"  [stderr] {line.strip()}")
         return result
 
-    # 解析最终输出获取统计信息
+    # Parse final output for statistics
     for line in proc.stdout.splitlines():
-        if "完成!" in line:
-            m = re.search(r'共 (\d+) 条.*耗时 ([\d.]+) min', line)
+        if "done!" in line:
+            m = re.search(r'Total (\d+)  entries, took ([\d.]+) min', line)
             if m:
                 result["subqueries"] = int(m.group(1))
                 result["time_min"] = float(m.group(2))
-        elif "成功:" in line:
-            m = re.search(r'成功: (\d+).*失败: (\d+)', line)
+        elif "Success:" in line:
+            m = re.search(r'Success: (\d+).*failed: (\d+)', line)
             if m:
                 result["success"] = int(m.group(1))
                 result["failed"] = int(m.group(2))
 
     result["wall_time_min"] = round(elapsed / 60, 1)
 
-    # 备份到 checkpoint
+    # Backup to checkpoint
     if JOBLR_OUTPUT_FILE.exists():
         ckpt_copy = CHECKPOINT_DIR / "lpbound_JOBLightRanges.txt"
         shutil.copy2(JOBLR_OUTPUT_FILE, ckpt_copy)
-        log(f"  已备份到: {ckpt_copy}")
+        log(f"  Backed up to: {ckpt_copy}")
 
     return result
 
 
 # ============================================================
-# 汇总 & 保存
+# Summary & Save
 # ============================================================
 
 def run_space_usage() -> dict:
     """
-    查询 DuckDB norms 表行数，计算统计信息占用空间。
-    返回: { benchmark: bytes }
+    Query DuckDB norms table row count, compute statistics space usage.
+    Returns: { benchmark: bytes }
     """
     import tempfile
 
     log("\n" + "=" * 60)
-    log("  Space Usage — 统计信息占用空间")
+    log("  Space Usage — Statistics space usage")
     log("=" * 60)
 
     code = """
@@ -503,10 +503,10 @@ print(json.dumps(results))
 
         results = {}
         if proc.returncode != 0:
-            log(f"  [ERROR] Space usage 失败: {proc.stderr[-300:] if proc.stderr else 'unknown'}")
+            log(f"  [ERROR] Space usage failed: {proc.stderr[-300:] if proc.stderr else 'unknown'}")
             return results
 
-        # 取最后一行 JSON（前面的行是 build_lpbound_statistics 的进度输出）
+        # Take the last JSON line (preceding lines are build_lpbound_statistics progress output)
         for line in reversed(proc.stdout.splitlines()):
             line = line.strip()
             if line.startswith('{'):
@@ -523,17 +523,17 @@ print(json.dumps(results))
 
 
 def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
-    """保存结果到 checkpoint/LpBound/"""
+    """Save results to checkpoint/LpBound/"""
     ensure_dirs()
 
     # --- result.txt ---
-    # 清空重写
+    # Clear and rewrite
     RESULT_FILE.write_text("")
-    log("LpBound 实验结果", to_console=True)
-    log(f"时间: {datetime.now().isoformat()}", to_console=True)
+    log("LpBound experiment results", to_console=True)
+    log(f"Time: {datetime.now().isoformat()}", to_console=True)
     log("", to_console=True)
 
-    # Build Time 表格
+    # Build Time table
     log("--- Build Time (seconds) ---")
     log(f"  {'Benchmark':<20} {'L1 only':>10} {'All norms':>10}")
     log("  " + "-" * 40)
@@ -544,7 +544,7 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
         al_s = f"{al:.1f}" if al is not None else "N/A"
         log(f"  {BENCHMARK_MAP.get(b, b):<20} {l1_s:>10} {al_s:>10}")
 
-    # Estimate Time 表格
+    # Estimate Time table
     log("\n--- Estimate Time ---")
     log(f"  {'Benchmark':<20} {'Par avg(ms)':>12} {'Queries':>8} {'Total(s)':>10} {'#Subqueries':>12}")
     log("  " + "-" * 67)
@@ -562,21 +562,21 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
                 f"{e.get('total_subqueries', 'N/A'):>12}"
             )
 
-    log("\n  * Par avg = parallel 模式每查询平均时间（ms）")
-    log("  * Total = Par avg × Queries，即全量估计总时间（s）")
+    log("\n  * Par avg = parallel mode average time per query (ms)")
+    log("  * Total = Par avg × Queries, i.e., total estimation time (s)")
 
-    # Accuracy 表格
+    # Accuracy table
     if accuracy and accuracy.get("subqueries"):
-        log("\n--- JOBLightRanges 子查询精度估计 ---")
-        log(f"  子查询数: {accuracy.get('subqueries', 'N/A')}")
-        log(f"  成功: {accuracy.get('success', 'N/A')}")
-        log(f"  失败: {accuracy.get('failed', 'N/A')}")
-        log(f"  耗时: {accuracy.get('time_min', 'N/A')} min")
-        log(f"  输出: Benchmark/workloads/JOBLightRanges/subquery/result/lpbound.txt")
+        log("\n--- JOBLightRanges subquery accuracy estimation ---")
+        log(f"  Subquery count: {accuracy.get('subqueries', 'N/A')}")
+        log(f"  Success: {accuracy.get('success', 'N/A')}")
+        log(f"  failed: {accuracy.get('failed', 'N/A')}")
+        log(f"  Time: {accuracy.get('time_min', 'N/A')} min")
+        log(f"  Output: Benchmark/workloads/JOBLightRanges/subquery/result/lpbound.txt")
 
     # --- benchmark_times.csv ---
-    # 与现有实验体系保持一致的 CSV 格式
-    # 先读取已有 CSV，避免新数据为空时覆盖旧值
+    # Keep CSV format consistent with existing experiment system
+    # Read existing CSV first, avoid overwriting old values when new data is empty
     csv_path = CHECKPOINT_DIR / "benchmark_times.csv"
     old_rows: dict[str, dict[str, str]] = {}
     if csv_path.exists():
@@ -586,9 +586,9 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
                 old_rows[row["Benchmark"]] = row
         cols = list(old_rows[next(iter(old_rows))].keys()) if old_rows else []
         if "BuildTime_L1" not in cols or "BuildTime_All" not in cols:
-            old_rows.clear()  # 旧格式，不兼容，重新生成
+            old_rows.clear()  # Old format, incompatible, regenerate
 
-    # 统一用显示名作为 key，避免内部名/显示名重复
+    # Use display name as key uniformly, avoid internal/display name duplicates
     display_names = set(old_rows.keys())
     for d in [build["l1"], build["all"], est, space]:
         for k in d:
@@ -601,7 +601,7 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
             "EstSeq_ms", "EstPar_ms", "EstBuild_us", "EstSolve_us", "NumSubqueries",
             "StatisticsSize",
         ])
-        # internal -> display 反向映射，便于从显示名查内部数据
+        # internal -> display reverse mapping, for looking up internal data from display name
         display_to_internal = {v: k for k, v in BENCHMARK_MAP.items()}
         for display_name in sorted(display_names):
             internal = display_to_internal.get(display_name, display_name)
@@ -611,7 +611,7 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
             sz = space.get(internal)
             old = old_rows.get(display_name, {})
 
-            # 新数据优先，为空则回退到旧数据
+            # New data first, fallback to old data if empty
             l1_s = f"{l1:.1f}" if l1 is not None else old.get("BuildTime_L1", "")
             al_s = f"{al:.1f}" if al is not None else old.get("BuildTime_All", "")
 
@@ -626,10 +626,10 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
                 e.get("total_subqueries", "") or old.get("NumSubqueries", ""),
                 f"{sz:.0f}" if sz is not None else old.get("StatisticsSize", ""),
             ])
-    log(f"\n  CSV 已保存: {csv_path}")
+    log(f"\n  CSV saved: {csv_path}")
 
-    # --- JSON 详情 ---
-    # 先读取已有 JSON，避免新数据为空时覆盖旧 build_time
+    # --- JSON details ---
+    # Read existing JSON first, avoid overwriting old build_time when new data is empty
     json_path = CHECKPOINT_DIR / "timing_details.json"
     old_build_time = {}
     if json_path.exists():
@@ -655,7 +655,7 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
         "estimate_time": est,
     }
     json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    log(f"  JSON 已保存: {json_path}")
+    log(f"  JSON saved: {json_path}")
 
 
 # ============================================================
@@ -663,11 +663,11 @@ def save_results(build: dict, est: dict, space: dict = {}, accuracy: dict = {}):
 # ============================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="LpBound Build Time & Estimate Time 测试")
-    parser.add_argument("--build-only", action="store_true", help="仅运行 Build Time")
-    parser.add_argument("--est-only", action="store_true", help="仅运行 Estimate Time")
+    parser = argparse.ArgumentParser(description="LpBound Build Time & Estimate Time test")
+    parser.add_argument("--build-only", action="store_true", help="Run Build Time only")
+    parser.add_argument("--est-only", action="store_true", help="Run Estimate Time only")
     parser.add_argument("--accuracy", action="store_true",
-                        help="运行 JOBLightRanges 子查询精度估计（约需 10 分钟）")
+                        help="Run JOBLightRanges subquery accuracy estimation (about 10 minutes)")
     args = parser.parse_args()
 
     run_build = not args.est_only
@@ -676,9 +676,9 @@ def main():
 
     ensure_dirs()
 
-    log("检查 LpBound 环境...")
+    log("Checking LpBound environment...")
     if not ensure_lpbound_environment():
-        log("[WARN] 环境检查发现问题，部分功能可能不可用")
+        log("[WARN] Environment check found issues, some features may be unavailable")
 
     build_results = {"l1": {}, "all": {}}
     est_results = {}
@@ -701,7 +701,7 @@ def main():
     save_results(build_results, est_results, space_results, accuracy_results)
 
     elapsed = time.perf_counter() - t_start
-    log(f"\n总耗时: {elapsed:.0f}s")
+    log(f"\nTotal elapsed: {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

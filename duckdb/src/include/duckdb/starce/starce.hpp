@@ -13,11 +13,11 @@ namespace starce
 
 class StatisticManager
 {
-// 完整统计信息
+// Complete statistics
 private:
     std::map<EqualSet, DSStatistic *> statistics;
 
-// 用于收集统计信息的临时变量
+// Temporary variables for statistics collection
 private:
     mutable EqualSet eset;
     std::vector<EqualSet> subset;
@@ -25,7 +25,7 @@ private:
     std::vector<bool> skip;
     std::map<std::string, DegreeSequence> singleDS;
 
-// 用于基数估计的信息
+// Information for cardinality estimation
 private:
     typedef std::pair<idx_t, idx_t> Attribute;
     typedef std::set<Attribute> AttrEset;
@@ -43,7 +43,7 @@ private:
     double rateSum = 0.0;
     int64_t rateCount = 0;
 
-// 分离子查询功能
+// Subquery extraction functionality
 public:
     bool IsRecordingSubquery = false;
     bool IsRecordEstimateTime = false;
@@ -67,24 +67,24 @@ public:
 public:
     bool IsCollectingRelErr = false;
     double CompressPrecision = 2.0;
-    // 真实基数，便于实验对照使用
+    // Real cardinality, for experiment comparison
     std::map<std::string, int64_t> realCard;
     int query_id = 0;
     std::vector<std::pair<int, double>> relErr;
 
 private:
     mutable bool prepared = false;
-    // 用于线程安全的锁
+    // Lock for thread safety
     mutable std::mutex statistics_mutex;
 
-// 用于大star拆分特性的变量
+// Variables for large star splitting feature
 public:
     bool EnableStarSplit = false;
     int MaxStarSize = 3;
     std::map<int, int> esetSizeCount;
 
 public:
-    int PredMethod = 0; // 0: 调整率, 1: 均匀假设, 2: PM1与上界的度序列平均
+    int PredMethod = 0; // 0: adjustment rate, 1: uniformity assumption, 2: PM1 and UB degree sequence average
 
 private:
     StatisticManager() = default;
@@ -141,7 +141,7 @@ public:
         size_t from_pos = sql.find("FROM");
         size_t where_pos = sql.find("WHERE");
         if (where_pos == std::string::npos) {
-            // 没有谓词，略过
+            // No predicates, skip
             return;
         }
         if (from_pos != std::string::npos) {
@@ -149,20 +149,20 @@ public:
         } else {
             throw std::runtime_error("Invalid SQL: no FROM clause found");
         }
-        where_clause = sql.substr(where_pos + 6); // 6 is the length of "WHERE "
+        where_clause = sql.substr(where_pos + 6); 
         if (*--where_clause.end() == ';') {
-            where_clause.erase(where_clause.end() - 1); // 去掉末尾的分号
+            where_clause.erase(where_clause.end() - 1); // Remove trailing semicolon
         }
-        // 去除连接条件如 [table_name].[column_name] = [table_name].[column_name]
+        // Remove join conditions like [table_name].[column_name] = [table_name].[column_name]
 
-        // 将剩余的where_clause按 " AND "分离为一组string
+        // Split the remaining where_clause by " AND " into a set of strings
         std::vector<std::string> predicates;
         std::vector<bool> visited;
         size_t pos = 0;
         std::regex join_regex(R"((\w+)\.(\w+)\s*=\s*(\w+)\.(\w+))");
         while ((pos = where_clause.find(" AND ")) != std::string::npos) {
             std::string str = where_clause.substr(0, pos);
-            where_clause.erase(0, pos + 5); // 5 is the length of " AND "
+            where_clause.erase(0, pos + 5); 
             std::smatch match;
             if (std::regex_search(str, match, join_regex)) {
                 continue;
@@ -178,11 +178,11 @@ public:
             }
         }
 
-        // 解析from_clause，获取表名和别名
-        // 按", "分割
+        // Parse from_clause, extract table names and aliases
+        // Split by ", "
         std::vector<std::string> tables;
         std::vector<std::string> alias;
-        // 匹配所有 table_name AS alias_name模式
+        // Match all table_name AS alias_name patterns
         std::regex table_regex(R"((\w+)(?:\s[aA][sS]\s+(\w+))?)");
         std::sregex_iterator it(from_clause.begin(), from_clause.end(), table_regex);
         std::sregex_iterator end;
@@ -197,8 +197,8 @@ public:
             ++it;
         }
 
-        // 枚举每张表，在predicates中查找是否有该表的谓词
-        // 如果有，标记visited，如果已经visited，报错
+        // For each table, check if there are predicates matching it
+        // If found, mark visited; if already visited, report error
         for (size_t i = 0; i < tables.size(); ++i) {
             std::string table = tables[i];
             std::string table_alias = alias[i];
@@ -206,13 +206,13 @@ public:
             bool first = true;
             for (size_t j = 0; j < predicates.size(); ++j) {
                 std::string predicate = " " + predicates[j];
-                // 匹配 table_alias + "."，要求table_alias全字匹配
+                // Match table_alias + ".", requiring exact word match for table_alias
                 if (predicate.find(" " + table_alias + ".") != std::string::npos) {
                     if (visited[j]) {
                         throw std::runtime_error("Duplicate table for predicate: " + predicate);
                     }
                     visited[j] = true;
-                    // 将谓词中的别名替换为字符串"__table_name"
+                    // Replace alias in predicates with the string "__table_name"
                     std::regex alias_regex(" " + table_alias + R"(\.(\w+))");
                     predicate = std::regex_replace(predicate, alias_regex, " __table_name.$1");
                     if (first) {
@@ -230,7 +230,7 @@ public:
 
     int64_t GetTableCard(idx_t idx)
     {
-        // 为了保持记录的单表子查询稳定，没有filter不记录
+        // To keep recorded single-table subqueries stable, skip when no filter
         if (filterString.at(idx).empty()) {
             return static_cast<int64_t>(tabelCard.at(idx));
         }
@@ -320,7 +320,7 @@ public:
             if (skip[s]) { continue; }
             subsetStatistics[s]->FinishCollection();
         }
-        // 计算均化参数
+        // Compute averaging parameters
         for (const auto &entry : eset.Entries) {
             const std::string &table_name = entry.TableName;
             if (singleDS.count(table_name) == 0) {
@@ -559,7 +559,7 @@ public:
                     filter.replace(pos, 12, to_alias(rel));
                     pos += to_alias(rel).length();
                 }
-                // 对filter再进行一些处理：先按" AND "拆分，然后排序，然后将排好序的一一加入predicates
+                // Further process the filter: split by " AND ", sort, then add to predicates one by one
                 std::vector<std::string> filter_predicates;
                 size_t pred_pos = 0;
                 std::string filter_copy = filter;
@@ -766,16 +766,16 @@ public:
                         int64_t ndv = GetNDV(tableName.at(rel_id));
                         double filter_coeff = filtered_card / static_cast<double>(ndv);
                         double k = PredicateAdjustRate;
-                        // k 权重 UB 侧（PM0 惯例：低=保守/PM1，高=上界）
-                        // overlap: PM1_weight * fc + UB_weight * 1
+                        // k weights the UB side (PM0 convention: low = conservative/PM1, high = UB)
+                        
                         double overlap_factor = filter_coeff * (1.0 - k) + 1.0 * k;
-                        // tail: PM1_weight * fc + UB_weight * 0
+                        
                         double tail_factor = filter_coeff * (1.0 - k);
 
                         DegreeSequence &orig_ds = dsStats[i].ds[table_name];
                         DegreeSequence filter_ds;
-                        // 按 distinct value 计数划分（与 UB 的 all-1 序列长度 filtered_card 一致）
-                        // PM2 始终保留 tail（PM1 保留它，UB 置零，加权平均后非零）
+                        // Partition by distinct value count (consistent with UB all-1 sequence length filtered_card)
+                        // PM2 always preserves tail (PM1 preserves it, UB zeroes it, weighted average yields nonzero)
                         int64_t fc_vals = static_cast<int64_t>(filtered_card);
                         int64_t pos = 0;
                         for (size_t j = 0; j < orig_ds.count.size(); j++) {
@@ -801,7 +801,7 @@ public:
             }
         } else {
             for (int i = 0; i < attrEsets.size(); ++i) {
-                // 首先计算出所有 filter_coeff
+                // First compute all filter_coeff values
                 std::vector<std::pair<double, Attribute>> table_coeffs;
                 for (const auto &attr : attrEsets[i]) {
                     idx_t rel_id = attr.first;
@@ -810,12 +810,12 @@ public:
                         table_coeffs.emplace_back(filter_coeff, attr);
                     }
                 }
-                // 对 coeffs 按小到大排序
+                // Sort coeffs in ascending order
                 std::sort(table_coeffs.begin(), table_coeffs.end(),
                         [] (const std::pair<double, Attribute> &lhs, const std::pair<double, Attribute> &rhs) {
                             return lhs.first < rhs.first;
                         });
-                // 对每个 coeff 进行 pow(val, 1 / (idx+1)) 处理
+                // Apply pow(val, 1 / (idx+1)) to each coeff
                 double coeff = 1;
                 AttrEset refine_attr_eset;
                 for (size_t j = 0; j < table_coeffs.size(); ++j) {
@@ -824,7 +824,7 @@ public:
                     idx_t rel_id = attr.first;
                     coeff *= std::pow(single_coeff, 1.0 / static_cast<double>(j + 1));
 
-                    // 维护 refine equalset
+                    // Maintain refine equalset
                     refine_attr_eset.insert(attr);
                     std::map<std::string, idx_t> table_idx;
                     EqualSet refine_eset = GetEqualSetFromAttrEset(refine_attr_eset, table_idx);
@@ -910,17 +910,17 @@ public:
         return card;
     }
 
-    // 获取当前准备的 subset 列表（用于并行处理）
+    // Get the current prepared subset list (for parallel processing)
     const std::vector<EqualSet>& GetCurrentSubsets() const {
         return subset;
     }
 
-    // 获取当前准备的 subset 对应的统计信息（用于并行处理）
+    // Get the statistics for the current prepared subsets (for parallel processing)
     const std::vector<DSStatistic*>& GetCurrentSubsetStatistics() const {
         return subsetStatistics;
     }
 
-    // 获取当前的 skip 标记（用于并行处理）
+    // Get the current skip flags (for parallel processing)
     const std::vector<bool>& GetCurrentSkipFlags() const {
         return skip;
     }
@@ -931,7 +931,7 @@ public:
         json j;
         size_t total = 0;
 
-        // statistics: 主统计数据
+        // statistics: main statistics data
         {
             size_t stats_total = sizeof(statistics);
             for (const auto &kv : statistics) {
@@ -947,7 +947,7 @@ public:
             total += stats_total;
         }
 
-        // singleDS: 最后处理的 EqualSet 的单表度序列
+        // singleDS: single-table degree sequences of the last processed EqualSet
         {
             size_t sds_total = sizeof(singleDS);
             for (const auto &kv : singleDS) {
@@ -960,7 +960,7 @@ public:
             total += sds_total;
         }
 
-        // 收集临时变量: subset, subsetStatistics, skip
+        // Collection temporary variables: subset, subsetStatistics, skip
         {
             size_t tmp_total = sizeof(subset) + sizeof(subsetStatistics) + sizeof(skip);
             tmp_total += subset.capacity() * sizeof(EqualSet);
@@ -973,7 +973,7 @@ public:
             total += tmp_total;
         }
 
-        // 估计相关结构: tableName, columnName, tabelCard, filterString, relNDV, attrEsets
+        // Estimation-related structures: tableName, columnName, tabelCard, filterString, relNDV, attrEsets
         {
             size_t est_total = sizeof(tableName) + sizeof(columnName) + sizeof(tabelCard)
                              + sizeof(filterString) + sizeof(relNDV) + sizeof(attrEsets);
@@ -1004,7 +1004,7 @@ public:
             total += est_total;
         }
 
-        // 子查询/实验相关结构
+        // Subquery/experiment-related structures
         {
             size_t sq_total = sizeof(Subqueries) + sizeof(RecordingSubqueryCards)
                             + sizeof(SubqueriesByMainQuery) + sizeof(SingleQueries)
@@ -1041,7 +1041,7 @@ public:
             total += sq_total;
         }
 
-        // 标量成员
+        // Scalar members
         {
             size_t scalar_total = sizeof(AdjustRate) + sizeof(PredicateAdjustRate)
                                 + sizeof(rateSum) + sizeof(rateCount)
@@ -1059,15 +1059,15 @@ public:
 
         j["total"] = total;
 
-        // data_only: 纯数据大小（对齐 LpBound 统计口径，不含容器/序列化开销）
+        // data_only: raw data size (aligned with LpBound statistics, excluding container/serialization overhead)
         {
             size_t data_only = 0;
             for (const auto &kv : statistics) {
-                // EqualSet key: 表名+列名字符串的字节数
+                // EqualSet key: bytes of table name + column name strings
                 for (const auto &entry : kv.first.Entries) {
                     data_only += entry.TableName.size() + entry.ColumnName.size();
                 }
-                // DSStatistic: card + 所有 degree sequence bucket
+                // DSStatistic: card + all degree sequence buckets
                 if (kv.second) {
                     data_only += kv.second->DataSize();
                 }

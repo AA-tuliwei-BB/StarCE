@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-收集 LpBound 在各数据集上的 EstimateTime 和 BuildTime
+Collect LpBound EstimateTime and BuildTime on various datasets
 
-使用方法:
-    cd methods/LpBound  # 需要在项目根目录下运行
+Usage:
+    cd methods/LpBound  # run from project root
     conda activate lpbound
-    python collect_timings.py              # 运行全部
-    python collect_timings.py --build-only # 仅 BuildTime
-    python collect_timings.py --est-only   # 仅 EstimateTime
+    python collect_timings.py              # Run all
+    python collect_timings.py --build-only # BuildTime only
+    python collect_timings.py --est-only   # EstimateTime only
 """
 
 import argparse
@@ -30,18 +30,18 @@ from lpbound.utils.sql_execution import get_overall_time
 
 
 # ============================================================
-# 配置
+# Configuration
 # ============================================================
 
 BUILD_BENCHMARKS = ["stats", "joblight", "jobrange", "jobjoin", "subgraph_matching"]
-EST_BENCHMARKS = ["stats", "joblight", "jobjoin"]  # C++ 二进制支持的三个
+EST_BENCHMARKS = ["stats", "joblight", "jobjoin"]  # The three supported by C++ binary
 
 CPP_BINARY = LpBoundPaths.PROJ_ROOT_DIR / "src/lpbound/cpp_solver/lpbound_parallel/build/lpbound_parallel"
 INPUT_DATA_DIR = LpBoundPaths.PROJ_ROOT_DIR / "src/lpbound/cpp_solver/lpbound_parallel/input_data"
 RAW_RESULTS_DIR = LpBoundPaths.RESULTS_DIR / "estimation_time" / "raw_results"
 OUTPUT_FILE = LpBoundPaths.PROJ_ROOT_DIR / "timing_results.json"
 
-N_RUNS = 5  # C++ 二进制运行次数（首次为预热）
+N_RUNS = 5  # Number of C++ binary runs (first is warmup)
 
 
 # ============================================================
@@ -50,15 +50,15 @@ N_RUNS = 5  # C++ 二进制运行次数（首次为预热）
 
 def run_build_time(benchmarks: list[str]) -> dict:
     """
-    运行统计信息构建时间实验，返回 { benchmark: { "l1": seconds, "all": seconds } }
+    Run build time experiment, return { benchmark: { "l1": seconds, "all": seconds } }
     """
     print("=" * 60)
-    print("  Build Time (统计信息构建时间)")
+    print("  Build Time (statistics build time)")
     print("=" * 60)
 
     results = {}
 
-    # --- p_max=1 (仅 L1) ---
+    # --- p_max=1 (L1 only) ---
     print("\n--- LpBound L1 only ---")
     for benchmark in benchmarks:
         cfg = LpBoundConfig(
@@ -80,7 +80,7 @@ def run_build_time(benchmarks: list[str]) -> dict:
         print(f"    -> {overall:.1f}s (wall: {elapsed:.1f}s)")
         results.setdefault(benchmark, {})["l1"] = round(overall, 1)
 
-    # --- p_max=10 (全部 lp-norms) ---
+    # --- p_max=10 (all lp-norms) ---
     print("\n--- LpBound all lp-norms (L0-L10 + Linf) ---")
     for benchmark in benchmarks:
         cfg = LpBoundConfig(
@@ -108,7 +108,7 @@ def run_build_time(benchmarks: list[str]) -> dict:
 # ============================================================
 
 def run_estimate_time(run_parallel: bool) -> None:
-    """运行 C++ estimate time 实验"""
+    """Run C++ estimate time experiment"""
     RAW_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     mode_flag = "--parallel" if run_parallel else "--sequential"
@@ -141,7 +141,7 @@ def run_estimate_time(run_parallel: bool) -> None:
         print(f"  stderr: {result.stderr}")
         return
 
-    # 打印 C++ 输出中的关键行
+    # Print key lines from C++ output
     for line in result.stdout.splitlines():
         if any(kw in line.lower() for kw in ["running", "query", "finished", "loaded"]):
             print(f"    {line.strip()}")
@@ -149,7 +149,7 @@ def run_estimate_time(run_parallel: bool) -> None:
 
 def parse_estimate_results() -> dict:
     """
-    解析 raw_results 中的 CSV 文件，返回:
+    Parse CSV files in raw_results, return:
     { benchmark: {"sequential_ms": float, "parallel_ms": float, "build_us": float, "solve_us": float} }
     """
     import csv
@@ -168,7 +168,7 @@ def parse_estimate_results() -> dict:
                 reader = csv.DictReader(f)
                 rows = list(reader)
             if rows:
-                # runtime 列是纳秒，转毫秒
+                # runtime column is nanoseconds, convert to milliseconds
                 runtimes = [float(r["runtime"]) for r in rows]
                 avg_ns = sum(runtimes) / len(runtimes)
                 results[benchmark]["sequential_ms"] = round(avg_ns / 1_000_000, 4)
@@ -201,7 +201,7 @@ def parse_estimate_results() -> dict:
                 results[benchmark]["parallel_ms"] = round(avg_ns / 1_000_000, 4)
                 results[benchmark]["parallel_count"] = len(rows)
 
-                # 总并行估计时间：每查询平均 × 查询数 → 秒
+                # Total parallel estimation time: per-query avg * query count -> seconds
                 unique_qids = set(r["query_id"] for r in rows)
                 num_queries = len(unique_qids)
                 results[benchmark]["num_queries"] = num_queries
@@ -213,14 +213,14 @@ def parse_estimate_results() -> dict:
 
 
 # ============================================================
-# 汇总输出
+# Summary output
 # ============================================================
 
 def print_summary(build_results: dict, est_results: dict) -> None:
-    """打印汇总表格"""
+    """Print summary table"""
     print("\n")
     print("=" * 60)
-    print("  结果汇总")
+    print("  Results summary")
     print("=" * 60)
 
     # Build Time
@@ -252,20 +252,20 @@ def print_summary(build_results: dict, est_results: dict) -> None:
                 f"{d.get('solve_us', 'N/A'):>10}"
             )
 
-    print("\n  * Par avg = parallel 模式每查询平均时间（ms）")
-    print("  * Total = Par avg × Queries，即全量估计总时间（s）")
-    print("  * Build/Solve 来自 sequential detailed 文件（μs/unit）")
+    print("\n  * Par avg = parallel mode per-query average time (ms)")
+    print("  * Total = Par avg x Queries, i.e., full estimation total time (s)")
+    print("  * Build/Solve from sequential detailed file (us/unit)")
 
 
 def save_results(build_results: dict, est_results: dict, output_path: Path) -> None:
-    """保存结果到 JSON 文件"""
+    """Save results to JSON file"""
     payload = {
         "timestamp": datetime.now().isoformat(),
         "build_time": build_results,
         "estimate_time": est_results,
     }
     output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    print(f"\n结果已保存至: {output_path}")
+    print(f"\nResults saved to: {output_path}")
 
 
 # ============================================================
@@ -273,18 +273,18 @@ def save_results(build_results: dict, est_results: dict, output_path: Path) -> N
 # ============================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="收集 LpBound EstimateTime 和 BuildTime")
-    parser.add_argument("--build-only", action="store_true", help="仅运行 BuildTime")
-    parser.add_argument("--est-only", action="store_true", help="仅运行 EstimateTime")
+    parser = argparse.ArgumentParser(description="Collect LpBound EstimateTime and BuildTime")
+    parser.add_argument("--build-only", action="store_true", help="Run BuildTime only")
+    parser.add_argument("--est-only", action="store_true", help="Run EstimateTime only")
     args = parser.parse_args()
 
     run_build = not args.est_only
     run_est = not args.build_only
 
-    # 检查 C++ 二进制
+    # Check C++ binary
     if run_est and not CPP_BINARY.exists():
-        print(f"[ERROR] C++ 二进制不存在: {CPP_BINARY}")
-        print("  请先编译: cd src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
+        print(f"[ERROR] C++ binary does not exist: {CPP_BINARY}")
+        print("  Please compile first: cd src/lpbound/cpp_solver/lpbound_parallel && bash compile.sh")
         sys.exit(1)
 
     build_results = {}
@@ -297,7 +297,7 @@ def main():
 
     if run_est:
         print("\n" + "=" * 60)
-        print("  Estimate Time (估计时间)")
+        print("  Estimate Time (estimation time)")
         print("=" * 60)
         print("\n  Running sequential mode...")
         run_estimate_time(run_parallel=False)
@@ -306,13 +306,13 @@ def main():
 
         est_results = parse_estimate_results()
 
-    # 汇总输出
+    # Summary output
     if build_results or est_results:
         print_summary(build_results, est_results)
         save_results(build_results, est_results, OUTPUT_FILE)
 
     elapsed = time.perf_counter() - t_start
-    print(f"\n总耗时: {elapsed:.0f}s")
+    print(f"\nTotal time: {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-解析 StarCE 统计 JSON 文件，交互式查看 Equalset 的度序列统计信息。
+Parse StarCE statistics JSON file, interactively view EqualSet degree sequence statistics.
 
-用法:
+Usage:
     python parse_starce_stats.py [json_file_path]
 
-如果不指定文件路径，自动使用 running_space 下第一个找到的 statistics_*.json 文件。
+If no file path is specified, automatically uses the first statistics_*.json file found under running_space.
 """
 
 import json
@@ -20,9 +20,9 @@ def load_json(filepath):
 
 def is_subset_of(small_entries, large_entries):
     """
-    检查 small 的 entries 是否是 large 的 entries 的子集。
-    宽松匹配：当 small 中某条的 ColumnName 为空字符串时（单表 Equalset），
-    只要 TableName 在 large 中即视为匹配。
+    Check whether small entries are a subset of large entries.
+    Loose matching: when ColumnName in a small entry is an empty string (single-table EqualSet),
+    it is considered a match as long as TableName exists in large.
     """
     large_set = {(e["TableName"], e["ColumnName"]) for e in large_entries}
     for se in small_entries:
@@ -36,7 +36,7 @@ def is_subset_of(small_entries, large_entries):
 
 
 def is_strict_subset(small_entries, large_entries):
-    """严格子集：small 是 large 的子集且条目数更少"""
+    """Strict subset: small is a subset of large and has fewer entries"""
     if len(small_entries) >= len(large_entries):
         return False
     return is_subset_of(small_entries, large_entries)
@@ -44,8 +44,8 @@ def is_strict_subset(small_entries, large_entries):
 
 def find_maximal_equalsets(stats):
     """
-    找出所有极大 Equalset 的索引。
-    一个 Equalset 是极大的，当且仅当不存在另一个 Equalset 严格包含它。
+    Find indices of all maximal EqualSets.
+    An EqualSet is maximal iff no other EqualSet strictly contains it.
     """
     n = len(stats)
     maximal_indices = []
@@ -64,7 +64,7 @@ def find_maximal_equalsets(stats):
 
 
 def get_sub_equalsets(stats, parent_idx):
-    """获取属于某个极大 Equalset 的所有子 Equalset 的索引（包括自身）"""
+    """Get indices of all sub-Equalsets belonging to a maximal Equalset (including itself)"""
     parent_entries = stats[parent_idx]["EqualSet"]["Entries"]
     sub_indices = []
     for i, s in enumerate(stats):
@@ -74,7 +74,7 @@ def get_sub_equalsets(stats, parent_idx):
 
 
 def format_equalset(entries):
-    """将 Equalset entries 格式化为可读字符串"""
+    """Format Equalset entries as a readable string"""
     parts = []
     for e in entries:
         if e["ColumnName"]:
@@ -85,7 +85,7 @@ def format_equalset(entries):
 
 
 def format_cardinality(card):
-    """人性化显示基数"""
+    """Human-readable cardinality display"""
     if card >= 1e9:
         return f"{card/1e9:.2f}B"
     elif card >= 1e6:
@@ -97,13 +97,13 @@ def format_cardinality(card):
 
 
 def print_degree_sequence(ds_list, indent=2):
-    """打印度序列，bin 数量多时截断显示"""
+    """Print degree sequence, truncate display when bin count is large"""
     prefix = " " * indent
     if not ds_list:
-        print(f"{prefix}(空)")
+        print(f"{prefix}(empty)")
         return
 
-    print(f"{prefix}共 {len(ds_list)} 个 bin:")
+    print(f"{prefix}Total {len(ds_list)} bins:")
     max_show = 20
     if len(ds_list) <= max_show:
         for bin_data in ds_list:
@@ -116,7 +116,7 @@ def print_degree_sequence(ds_list, indent=2):
             cnt = bin_data["Count"]
             print(f"{prefix}  MaxDegree={md:>14.2f}  Count={cnt:>10,}")
         skipped = len(ds_list) - max_show
-        print(f"{prefix}  ... 省略 {skipped} 个 bin ...")
+        print(f"{prefix}  ... skipping {skipped} bins ...")
         for bin_data in ds_list[-10:]:
             md = bin_data["MaxDegree"]
             cnt = bin_data["Count"]
@@ -124,53 +124,53 @@ def print_degree_sequence(ds_list, indent=2):
 
 
 def print_dsstatistic(ds_stat):
-    """打印完整的 DSStatistic 信息"""
+    """Print complete DSStatistic info"""
     card = ds_stat["Cardinality"]
-    print(f"基数 (Cardinality): {card:,.0f}  ({format_cardinality(card)})")
+    print(f"Cardinality: {card:,.0f}  ({format_cardinality(card)})")
     print()
 
-    print("中心度序列 (CentralDS) — 各 join-key 值的行数乘积的分布:")
+    print("Central degree sequence (CentralDS) — distribution of row count products for each join-key value:")
     print_degree_sequence(ds_stat.get("CentralDS", []), indent=2)
     print()
 
-    # 各表度序列
+    # per-table degree sequences
     per_table = ds_stat.get("DSStatistic", [])
     if per_table:
-        print(f"各表度序列 ({len(per_table)} 个表):")
+        print(f"Per-table degree sequences ({len(per_table)} tables):")
         for table_ds in per_table:
             table_name = table_ds["Table"]
             ds = table_ds.get("DegreeSequence", [])
-            # 计算该表的总条目数
+            # compute total entry count for this table
             total_count = sum(bin_["Count"] for bin_ in ds)
-            print(f"\n  [{table_name}] — {total_count:,} 个不同值, {len(ds)} 个 bin:")
+            print(f"\n  [{table_name}] — {total_count:,} distinct values, {len(ds)} bins:")
             print_degree_sequence(ds, indent=4)
 
 
 def main():
-    # --- 1. 加载 JSON 文件 ---
+    # --- 1. Load JSON file ---
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
     else:
         running_space = Path(__file__).parent / "running_space"
         json_files = sorted(running_space.glob("statistics_*.json"))
         if not json_files:
-            print("错误: 未找到统计 JSON 文件，请指定文件路径")
-            print(f"用法: python {Path(__file__).name} <json_file_path>")
+            print("Error: no statistics JSON file found, please specify a file path")
+            print(f"Usage: python {Path(__file__).name} <json_file_path>")
             sys.exit(1)
         filepath = str(json_files[0])
 
-    print(f"加载统计文件: {filepath}")
+    print(f"Loading statistics file: {filepath}")
     data = load_json(filepath)
     stats = data["Statistics"]
     print(f"AdjustRate: {data['AdjustRate']:.4f}")
-    print(f"共 {len(stats)} 个 Equalset 条目\n")
+    print(f"Total {len(stats)} Equalset entries\n")
 
-    # --- 2. 找极大 Equalset ---
+    # --- 2. Find maximal Equalsets ---
     maximal_idx = find_maximal_equalsets(stats)
-    # 按 size 降序排列
+    # Sort by size descending
     maximal_idx.sort(key=lambda i: len(stats[i]["EqualSet"]["Entries"]), reverse=True)
 
-    print(f"找到 {len(maximal_idx)} 个极大 (maximal) Equalset:\n")
+    print(f"Found {len(maximal_idx)} maximal Equalset(s):\n")
     for display_idx, orig_i in enumerate(maximal_idx):
         es = stats[orig_i]["EqualSet"]["Entries"]
         card = stats[orig_i]["DSStatistic"]["Cardinality"]
@@ -179,21 +179,21 @@ def main():
             f"{format_equalset(es)}"
         )
 
-    # --- 3. 用户选择大 Equalset ---
+    # --- 3. User selects a large Equalset ---
     print()
-    choice = input(f"选择一个大 Equalset [0-{len(maximal_idx)-1}] (q 退出): ").strip()
+    choice = input(f"Select a maximal Equalset [0-{len(maximal_idx)-1}] (q to quit): ").strip()
     if choice.lower() == "q":
         return
     selected_parent = maximal_idx[int(choice)]
 
-    # --- 4. 列出子 Equalset ---
+    # --- 4. List sub-Equalsets ---
     sub_idx_list = get_sub_equalsets(stats, selected_parent)
-    # 按 size 升序（从小到大），方便看层级关系
+    # Sort by size ascending (small to large), easier to see hierarchy
     sub_idx_list.sort(key=lambda i: len(stats[i]["EqualSet"]["Entries"]))
 
     parent_es = stats[selected_parent]["EqualSet"]["Entries"]
-    print(f"\n父 Equalset: {format_equalset(parent_es)}")
-    print(f"共有 {len(sub_idx_list)} 个子 Equalset（含自身）:\n")
+    print(f"\nParent Equalset: {format_equalset(parent_es)}")
+    print(f"Total {len(sub_idx_list)} sub-Equalsets (including self):\n")
     for display_idx, orig_i in enumerate(sub_idx_list):
         es = stats[orig_i]["EqualSet"]["Entries"]
         card = stats[orig_i]["DSStatistic"]["Cardinality"]
@@ -202,17 +202,17 @@ def main():
             f"{format_equalset(es)}"
         )
 
-    # --- 5. 用户选择子 Equalset ---
+    # --- 5. User selects a sub-Equalset ---
     print()
-    choice = input(f"选择一个子 Equalset [0-{len(sub_idx_list)-1}] (q 退出): ").strip()
+    choice = input(f"Select a sub-Equalset [0-{len(sub_idx_list)-1}] (q to quit): ").strip()
     if choice.lower() == "q":
         return
     selected_sub = sub_idx_list[int(choice)]
 
-    # --- 6. 输出度序列统计 ---
+    # --- 6. Output degree sequence statistics ---
     es = stats[selected_sub]["EqualSet"]["Entries"]
     print(f"\n{'='*65}")
-    print(f"选中 Equalset: {format_equalset(es)}")
+    print(f"Selected Equalset: {format_equalset(es)}")
     print(f"{'='*65}\n")
     print_dsstatistic(stats[selected_sub]["DSStatistic"])
 

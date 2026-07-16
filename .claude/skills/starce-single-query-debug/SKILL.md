@@ -1,37 +1,37 @@
 ---
 name: starce-single-query-debug
-description: 特化单条查询调参测试：running_space 配置、参数速查（PredMethod/CompressPrecision/AdjustRate/UseSingleTableCard）、对照实验（DuckDB 原生/TrueCard 注入/RecordingSubquery）、切换统计信息精度、误差分析工作流。当用户提到单查询测试、调参对比、config.json 参数、RecordingSubquery、UseSubqueryCard、UseSingleTableCard、PredMethod、CompressPrecision 切换时使用。
+description: Specialized single-query parameter tuning test: running_space configuration, parameter quick reference (PredMethod/CompressPrecision/AdjustRate/UseSingleTableCard), control experiments (DuckDB native/TrueCard injection/RecordingSubquery), switching statistics precision, error analysis workflow. Use when mentioning single-query testing, parameter comparison, config.json parameters, RecordingSubquery, UseSubqueryCard, UseSingleTableCard, PredMethod, CompressPrecision switching.
 ---
 
-# StarCE 单查询特化测试方法
+# StarCE Single-Query Specialized Testing
 
-## 目的
+## Purpose
 
-将 running_space 配置为只跑一条（或少数几条）查询，快速迭代调参，观察执行时间和估计值的变化。
+Configure running_space to run only one (or a few) queries for rapid parameter iteration, observing changes in execution time and estimated values.
 
 ---
 
-## 基本步骤
+## Basic Steps
 
-### 1. 提取目标查询
+### 1. Extract Target Query
 
 ```bash
-# 以下命令在项目根目录下运行
+# Run from project root directory
 cd experiment/running_space
 
-# 从 queries.sql 提取第 N 行（查询编号从 1 开始）
+# Extract the Nth line from queries.sql (query numbering starts at 1)
 sed -n '58p' ../../Benchmark/workloads/STATS-CEB/queries.sql > q58_only.sql
 
-# 也可以手动写入多条查询
+# Can also manually write multiple queries
 cat > my_queries.sql << 'EOF'
 select count(*) FROM ...;
 select count(*) FROM ...;
 EOF
 ```
 
-### 2. 修改 config.json
+### 2. Modify config.json
 
-关键字段：
+Key fields:
 
 ```json
 {
@@ -54,55 +54,55 @@ EOF
 }
 ```
 
-### 3. 运行并计时
+### 3. Run and Time
 
 ```bash
 cd experiment/running_space
 time ./starce
 ```
 
-输出中 `runtime: XXXX ms` 是 DuckDB 实际执行时间，`time` 命令的 total 包含进程启动开销。
+Output line `runtime: XXXX ms` is DuckDB's actual execution time; the `time` command's total includes process startup overhead.
 
 ---
 
-## 可调参数速查
+## Tunable Parameter Quick Reference
 
-| 参数 | 含义 | 典型值 |
+| Parameter | Meaning | Typical Values |
 |------|------|--------|
-| `EnableStarCE` | 是否启用 StarCE 估计 | 0=DuckDB原生（对照），1=StarCE |
-| `PredMethod` | 谓词处理方式 | 0=调整率，1=均匀假设 |
-| `CompressPrecision` | 度序列分桶精度 | 1.1/1.2/1.5/2.0 |
-| `ADJUST_RATE` | Merge 后向均值收缩比例 | 0.1~1.0 |
-| `PREDICATE_ADJUST_RATE` | 谓词过滤时的收缩比例 | 0.1~1.0 |
-| `UseAssignedAdjustRate` | 是否使用手动指定的 AdjustRate | 0=从统计文件读取，1=用上面两个值 |
-| `EnableStarSplit` | 是否拆分大 EqualSet | 0/1 |
-| `UseSingleTableCard` | 是否用外部单表基数 | 0=DuckDB估计，1=注入 |
+| `EnableStarCE` | Whether to enable StarCE estimation | 0=DuckDB native (control), 1=StarCE |
+| `PredMethod` | Predicate handling method | 0=adjustment rate, 1=uniformity assumption |
+| `CompressPrecision` | Degree sequence bucketing precision | 1.1/1.2/1.5/2.0 |
+| `ADJUST_RATE` | Shrinkage ratio toward mean after Merge | 0.1~1.0 |
+| `PREDICATE_ADJUST_RATE` | Shrinkage ratio during predicate filtering | 0.1~1.0 |
+| `UseAssignedAdjustRate` | Whether to use manually specified AdjustRate | 0=read from statistics file, 1=use the two values above |
+| `EnableStarSplit` | Whether to split large EqualSets | 0/1 |
+| `UseSingleTableCard` | Whether to use external single-table cardinalities | 0=DuckDB estimate, 1=inject |
 
-### 切换统计信息精度（无需重新收集）
+### Switching Statistics Precision (No Recollection Needed)
 
-running_space 中已有不同 CompressPrecision 的预计算文件：
+Precomputed files with different CompressPrecision already exist in running_space:
 
 ```
-statistics_STATS_cp1.1.json   # 最精细
+statistics_STATS_cp1.1.json   # Finest
 statistics_STATS_cp1.2.json
 statistics_STATS_cp1.5.json
-statistics_STATS_cp2.json     # 最粗糙
-statistics_stats.json         # 默认（cp2.0）
+statistics_STATS_cp2.json     # Coarsest
+statistics_stats.json         # Default (cp2.0)
 ```
 
-修改 `STATS_PATH` 直接切换，无需改 `CompressPrecision`（CompressPrecision 只在收集阶段生效）。
+Modify `STATS_PATH` to switch directly; no need to change `CompressPrecision` (CompressPrecision only takes effect during collection).
 
 ---
 
-## 常用对照实验
+## Common Control Experiments
 
-### 对照1：关闭 StarCE，看 DuckDB 原生性能
+### Control 1: Disable StarCE, Observe DuckDB Native Performance
 
 ```json
 "EnableStarCE": 0
 ```
 
-### 对照2：注入真实子查询基数（TrueCard 上界）
+### Control 2: Inject True Subquery Cardinalities (TrueCard Upper Bound)
 
 ```json
 "UseSubqueryCard": 1,
@@ -111,12 +111,12 @@ statistics_stats.json         # 默认（cp2.0）
 "SUBQUERY_RESULT_PATH": "../../Benchmark/workloads/STATS-CEB/subquery/result/real.txt"
 ```
 
-**重要**：`SUBQUERY_PATH` 的行数必须与 `SUBQUERY_RESULT_PATH` 一致，否则基数对应关系错乱，会注入错误的基数导致计划更差。
+**Important**: `SUBQUERY_PATH` line count must match `SUBQUERY_RESULT_PATH`, otherwise cardinality mappings become misaligned, injecting wrong cardinalities and producing worse plans.
 
-- JOBLight：`subquery.sql` 有 836 行，`real.txt` 有 451 行，**不匹配**，需确认用哪个版本
-- 注入后务必先跑 EXPLAIN 验证计划是否合理，再执行实际查询
+- JOBLight: `subquery.sql` has 836 lines, `real.txt` has 451 lines, **mismatch** — confirm which version to use
+- After injection, always run EXPLAIN first to verify the plan is reasonable before executing the actual query
 
-### 对照3：记录 StarCE 对每条子查询的估计值
+### Control 3: Record StarCE's Estimates for Each Subquery
 
 ```json
 "RecordingSubquery": 1,
@@ -124,80 +124,80 @@ statistics_stats.json         # 默认（cp2.0）
 "SUBQUERY_RESULT_PATH": "q58_starce_cards.txt"
 ```
 
-先生成 explain 版本：
+First generate the EXPLAIN version:
 ```bash
 echo "EXPLAIN $(cat q58_only.sql)" > explain_q58.sql
 ```
 
 ---
 
-## 典型工作流：调参对比
+## Typical Workflow: Parameter Tuning Comparison
 
 ```bash
 cd experiment/running_space
 
-# 基准：StarCE 当前配置
+# Baseline: StarCE current config
 time ./starce 2>&1 | grep runtime
 
-# 改一个参数
+# Change one parameter
 sed -i 's/"PredMethod": 1/"PredMethod": 0/' config.json
 time ./starce 2>&1 | grep runtime
 
-# 换统计文件
+# Switch statistics file
 sed -i 's/statistics_stats.json/statistics_STATS_cp1.1.json/' config.json
 time ./starce 2>&1 | grep runtime
 
-# 恢复
-git checkout config.json  # 或手动改回
+# Restore
+git checkout config.json  # or manually revert
 ```
 
 ---
 
-## 注意事项
+## Notes
 
-- `SQL_PATH` 填相对路径时，相对于 `running_space/` 目录
-- `STATS_PATH` 填相对路径时，相对于 `running_space/` 目录；`SCHEMA_PATH`、`SUBQUERY_PATH` 等相对于 `running_space/` 目录
-- `RefreshStatistics: 1` 会重新收集统计信息（耗时），调参时保持为 0
-- `UseAssignedAdjustRate: 0` 时，`ADJUST_RATE` 和 `PREDICATE_ADJUST_RATE` 从统计文件中读取，手动设置无效
-- STATS benchmark 对应 `stats.db`；JOBM/JOBLight 对应 `imdb.db`
-- **config.json 会被实验框架（EvaluatePerformanceBreakdown 等 notebook）频繁覆盖**，每次跑前先 `cat config.json` 确认内容正确
-- **query_idx 是 1-indexed**，报告中的 Q59 对应 `queries.sql` 第 59 行（`sed -n '59p'`）
-- running_space 里单次执行时间（~100ms 量级）与实验框架测出的时间（秒级）差距巨大，是因为实验框架每条查询独立启动进程（无 page cache 预热），running_space 里连续跑有缓存。**两者不可直接比较**，要对比两个方案的相对差异需在同等条件下跑
+- `SQL_PATH` when using relative paths: relative to `running_space/` directory
+- `STATS_PATH` when using relative paths: relative to `running_space/` directory; `SCHEMA_PATH`, `SUBQUERY_PATH`, etc. are relative to `running_space/` directory
+- `RefreshStatistics: 1` will recollect statistics (time-consuming); keep at 0 when tuning parameters
+- When `UseAssignedAdjustRate: 0`, `ADJUST_RATE` and `PREDICATE_ADJUST_RATE` are read from the statistics file; manual settings are ignored
+- STATS benchmark corresponds to `stats.db`; JOBM/JOBLight correspond to `imdb.db`
+- **config.json is frequently overwritten by the experiment framework (EvaluatePerformanceBreakdown and other notebooks)**; always `cat config.json` before running to verify correct content
+- **query_idx is 1-indexed**; Q59 in reports corresponds to line 59 of `queries.sql` (`sed -n '59p'`)
+- Single execution time in running_space (~100ms scale) is vastly different from times measured by the experiment framework (seconds), because the framework launches a separate process per query (no page cache warmup), while running_space has cache from consecutive runs. **The two are not directly comparable**; comparing relative differences between two configurations must be done under identical conditions
 
 ---
 
-## 误差分析工作流（针对特定查询）
+## Error Analysis Workflow (for Specific Queries)
 
-当发现某条查询性能异常时，推荐以下步骤：
+When performance anomalies are found for a particular query, the following steps are recommended:
 
-### 1. 确认查询内容
+### 1. Confirm Query Content
 
 ```bash
-# query_idx=59 对应第 60 行
+# query_idx=59 corresponds to line 60
 sed -n '60p' /path/to/queries.sql
 ```
 
-### 2. 用 RecordingSubquery 记录 StarCE 的子查询估计
+### 2. Record StarCE's Subquery Estimates Using RecordingSubquery
 
 ```json
 "RecordingSubquery": 1,
-"SQL_PATH": "explain_q59.sql",          // 必须是 EXPLAIN 版本
+"SQL_PATH": "explain_q59.sql",          // must be EXPLAIN version
 "SUBQUERY_RESULT_PATH": "q59_starce_cards.txt"
 ```
 
-运行后 `q59_starce_cards.txt` 前半部分是估计值，后半部分是对应 SQL。
+After running, the first half of `q59_starce_cards.txt` contains estimates, and the second half contains the corresponding SQL.
 
-### 3. 对比真实基数
+### 3. Compare Against True Cardinalities
 
-用 duckdb 跑每条子查询的真实基数，与 StarCE 估计对比，找出 Q-Error 最大的子查询。
+Use duckdb to run true cardinalities for each subquery and compare against StarCE estimates to find the subquery with the largest Q-Error.
 
-### 4. 注入真实基数看最优计划
+### 4. Inject True Cardinalities to See Optimal Plan
 
 ```json
 "UseSubqueryCard": 1,
 "UseSingleTableCard": 0,
-"SUBQUERY_PATH": "...",        // 行数必须与 real.txt 一致
+"SUBQUERY_PATH": "...",        // line count must match real.txt
 "SUBQUERY_RESULT_PATH": "..."  // real.txt
 ```
 
-先跑 EXPLAIN 对比两个计划的结构差异，再执行确认时间差。
+First run EXPLAIN to compare structural differences between the two plans, then execute to confirm time differences.

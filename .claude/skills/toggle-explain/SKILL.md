@@ -1,30 +1,30 @@
 ---
 name: toggle-explain
-description: 为 SQL 文件批量添加、移除或切换 EXPLAIN 前缀（保持 EXPLAIN 与 SQL 同行），用于用 EXPLAIN 测试 StarCE/duckdb 估计器而不实际执行查询。适用于“每行一条 SQL”的 workload 文件（如 STATS-CEB subquery/single_query），并保留注释与空行。
+description: Batch add, remove, or toggle EXPLAIN prefix for SQL files (keeping EXPLAIN on the same line as the SQL), used for testing StarCE/duckdb estimator via EXPLAIN without actually executing queries. Works with "one SQL per line" workload files (e.g., STATS-CEB subquery/single_query), preserving comments and blank lines.
 ---
 
 # toggle-explain
 
-## 适用场景
+## Use Cases
 
-- 需要用 `EXPLAIN <SQL>` 触发 StarCE 估计器，但不执行查询
-- 需要对大量子查询/单表查询批量加/去掉 `EXPLAIN`
+- Need to trigger StarCE estimator with `EXPLAIN <SQL>` without executing queries
+- Need to batch add/remove `EXPLAIN` for large sets of subqueries/single-table queries
 
-## 约束与行为
+## Constraints and Behavior
 
-- 只支持“每行一条 SQL 语句”的 `.sql` 文件
-- 空行、以 `--` 或 `#` 开头的注释行会原样保留
-- `EXPLAIN` 会被加到同一行行首：`EXPLAIN <原SQL行去掉左侧空格后的内容>`
-- 识别大小写不敏感：`explain`/`EXPLAIN` 都会被当作已存在
-- 行尾换行符会保留（`\n` 或 `\r\n`）
+- Only supports `.sql` files with "one SQL statement per line"
+- Blank lines and comment lines starting with `--` or `#` are preserved as-is
+- `EXPLAIN` is prepended to the same line: `EXPLAIN <original SQL line with leading whitespace stripped>`
+- Case-insensitive detection: both `explain`/`EXPLAIN` are treated as already present
+- Line endings are preserved (`\n` or `\r\n`)
 
-## 快速用法
+## Quick Usage
 
-脚本位置：`scripts/toggle_explain.py`
+Script location: `scripts/toggle_explain.py`
 
-### 生成“带 EXPLAIN”的新文件（推荐）
+### Generate "With EXPLAIN" New File (Recommended)
 
-把 `Benchmark/workloads/STATS-CEB/subquery/subquery.sql` 生成到 `experiment/running_space/`：
+Generate from `Benchmark/workloads/STATS-CEB/subquery/subquery.sql` to `experiment/running_space/`:
 
 ```bash
 python3 scripts/toggle_explain.py \
@@ -33,9 +33,9 @@ python3 scripts/toggle_explain.py \
   -o experiment/running_space
 ```
 
-默认会写出：`experiment/running_space/subquery_explain.sql`
+Default output: `experiment/running_space/subquery_explain.sql`
 
-如果想改后缀名：
+To change the suffix:
 
 ```bash
 python3 scripts/toggle_explain.py \
@@ -45,7 +45,7 @@ python3 scripts/toggle_explain.py \
   --suffix _explain
 ```
 
-### 原地修改（谨慎）
+### In-Place Modification (Caution)
 
 ```bash
 python3 scripts/toggle_explain.py \
@@ -54,7 +54,7 @@ python3 scripts/toggle_explain.py \
   --in-place
 ```
 
-### 去掉 EXPLAIN（生成新文件）
+### Remove EXPLAIN (Generate New File)
 
 ```bash
 python3 scripts/toggle_explain.py \
@@ -64,10 +64,9 @@ python3 scripts/toggle_explain.py \
   --suffix _noexplain
 ```
 
-## 常见工作流（StarCE）
+## Common Workflow (StarCE)
 
-1. 先把输入 workload 生成 explain 版本（如上）
-2. 在 `experiment/running_space/config.json` 把 `SQL_PATH` 指向 explain 版本
-3. 运行 StarCE，把输出重定向到文件
-4. （可选）用 `scripts/extract_card_from_explain.py` 从输出里抽取估计基数
-
+1. First generate EXPLAIN version of input workload (as above)
+2. Set `SQL_PATH` in `experiment/running_space/config.json` to point to the EXPLAIN version
+3. Run StarCE, redirect output to file
+4. (Optional) Use `scripts/extract_card_from_explain.py` to extract estimated cardinalities from output

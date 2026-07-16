@@ -340,15 +340,15 @@ class Bayescard_BN(BN_Single):
                 if coverage is None:
                     n_d_temp = None
                     if type(query[attr]) in (tuple, list):
-                        # 确保 query[attr] 是包含两个元素的序列
+                        # Ensure query[attr] is a sequence with two elements
                         if len(query[attr]) < 2:
                             return None, None
                         
-                        # 递归处理：如果元素本身是 list/tuple，展平它
+                        # Recursive handling: if element itself is list/tuple, flatten it
                         def flatten_value(v):
                             if isinstance(v, (list, tuple)):
                                 return flatten_value(v[0]) if len(v) > 0 else None
-                            # 转换为 float
+                            # Convert to float
                             try:
                                 return float(v)
                             except (ValueError, TypeError):
@@ -378,19 +378,19 @@ class Bayescard_BN(BN_Single):
                 else:
                     n_distinct[attr] = coverage[attr]
             elif type(query[attr]) in (tuple, list):
-                # 对于 list/tuple 类型的查询，可能是：
-                # 1. IN 查询：直接包含所有匹配值的 list，如 [1, 2, 3]
-                # 2. 范围查询（非 continuous）：从 construct_table_query 返回的所有满足范围的值，如 [1.0, 2.0, 3.0]
-                # 3. 范围边界（continuous）：包含 (min, max) 的 tuple，如 (-inf, 100.0)
-                
-                # 判断是否是范围边界格式（tuple with exactly 2 elements, used for continuous)
-                # vs. 值列表格式（list of values, used for categorical/discrete range queries or IN)
+                # For list/tuple type queries, they can be:
+                # 1. IN query: list directly containing all matching values, e.g., [1, 2, 3]
+                # 2. Range query (non-continuous): all values satisfying the range returned from construct_table_query, e.g., [1.0, 2.0, 3.0]
+                # 3. Range boundary (continuous): tuple containing (min, max), e.g., (-inf, 100.0)
+
+                # Determine if it's range boundary format (tuple with exactly 2 elements, used for continuous)
+                # vs. value list format (list of values, used for categorical/discrete range queries or IN)
                 if (isinstance(query[attr], tuple) and len(query[attr]) == 2 and 
                     not isinstance(query[attr][0], (list, tuple)) and
                     not isinstance(query[attr][1], (list, tuple))):
-                    # 这是一个范围边界 (min, max)，用于 continuous 属性的后备处理
-                    # 实际上不应该到这里，continuous 属性应该在上面的分支处理
-                    # 但为了安全，还是处理一下
+                    # This is a range boundary (min, max), fallback handling for continuous attribute
+                    # Actually shouldn't reach here, continuous attribute should be handled in the branch above
+                    # But handle it anyway for safety
                     query_list = []
                     try:
                         min_val = float(query[attr][0]) if isinstance(query[attr][0], str) else query[attr][0]
@@ -421,8 +421,8 @@ class Bayescard_BN(BN_Single):
                     n_distinct[attr] = self.apply_ndistinct_to_value(encode_value, query_list, attr)
                     query[attr], n_distinct[attr] = self.realign(encode_value, n_distinct[attr])
                 else:
-                    # 这是一个值列表（IN 查询或范围查询的结果），直接使用
-                    # query[attr] 已经是满足条件的值的列表，如 [1.0, 2.0, 3.0]
+                    # This is a value list (result of IN query or range query), use directly
+                    # query[attr] is already a list of values satisfying the conditions, e.g., [1.0, 2.0, 3.0]
                     if len(query[attr]) == 0:
                         return None, None
                     encode_value = self.apply_encoding_to_value(query[attr], attr)
@@ -605,7 +605,7 @@ class Bayescard_BN(BN_Single):
         if self.infer_algo == "exact-jit" or self.infer_algo == "exact-jit-torch":
             if n_distinct is None:
                 query, n_distinct = self.query_decoding(query)
-            # 如果查询无效（没有满足条件的值），返回空概率
+            # If the query is invalid (no values satisfy the conditions), return empty probability
             if query is None or n_distinct is None:
                 if len(id_attrs) == 1:
                     return id_attrs, np.zeros(self.bin_size[id_attrs[0]])

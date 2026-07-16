@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-BayesCard 实验编排模块（纯 BayesCard 路径）。
+BayesCard experiment orchestration module (pure BayesCard path).
 
-训练与推理复用 methods/SafeBound/test_benchmark.py 对应的 BayesCard 组件。
+Training and inference reuse the corresponding BayesCard components from methods/SafeBound/test_benchmark.py.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ class BayesCardRunner:
             "statsjoin": "STATSJOIN",
         }
         if token not in mapping:
-            raise ValueError(f"未知 benchmark: {benchmark}")
+            raise ValueError(f"Unknown benchmark: {benchmark}")
         return mapping[token]
 
     @staticmethod
@@ -80,21 +80,21 @@ class BayesCardRunner:
         normalized = BayesCardRunner._normalize_benchmark_name(benchmark)
         if normalized == "JOBM":
             reason = (
-                "不支持纯 BayesCard：当前仓库中 JOBM 的可靠路径依赖采样/额外处理，"
-                "并非纯 BayesCard BN 推理。"
+                "Does not support pure BayesCard: JOBM's reliable path in the current repo depends on sampling/extra processing,"
+                "not pure BayesCard BN inference."
             )
             return False, reason
         if normalized == "STATSJOIN":
-            return True, "支持：复用 STATS BN 模型，仅推理无需训练。"
+            return True, "Supported: reuses STATS BN model, inference only, no training needed."
         if normalized in {"STATS", "JOBLight", "JOBLightRanges"}:
-            return True, "支持：可走 methods/SafeBound/bayescard 的纯 BayesCard 训练与推理路径。"
-        raise ValueError(f"未处理的 benchmark: {benchmark}")
+            return True, "Supported: can follow the pure BayesCard training and inference path under methods/SafeBound/bayescard."
+        raise ValueError(f"Unhandled benchmark: {benchmark}")
 
     def _build_config(self, benchmark: str) -> BenchmarkConfig:
         normalized = self._normalize_benchmark_name(benchmark)
         supported, reason = self.evaluate_benchmark_capability(normalized)
         if not supported:
-            raise ValueError(f"{normalized} 不可运行。原因: {reason}")
+            raise ValueError(f"{normalized} Not runnable. Reason: {reason}")
 
         if normalized == "STATS":
             return BenchmarkConfig(
@@ -145,7 +145,7 @@ class BayesCardRunner:
     @staticmethod
     def _require_file(path: Path) -> None:
         if not path.is_file():
-            raise FileNotFoundError(f"缺少文件: {path}")
+            raise FileNotFoundError(f"Missing file: {path}")
 
     @staticmethod
     def _read_non_empty_lines(path: Path) -> list[str]:
@@ -270,7 +270,7 @@ class BayesCardRunner:
         latencies: list[float] = []
         errors: list[str] = []
 
-        # 预解析所有查询（不计入估计时间）
+        # Pre-parse all queries (not counted towards estimation time)
         pre_parsed = []
         for idx, query in enumerate(queries):
             sql = query.split("||")[0].rstrip(";").strip()
@@ -314,7 +314,7 @@ class BayesCardRunner:
         sql_count = len(self._read_non_empty_lines(sql_path))
         result_count = len(self._read_non_empty_lines(result_path))
         if sql_count != result_count:
-            raise RuntimeError(f"行数不对齐: {sql_path}={sql_count}, {result_path}={result_count}")
+            raise RuntimeError(f"Line count mismatch: {sql_path}={sql_count}, {result_path}={result_count}")
 
     def _preprocess_stats_queries(self, src_sql: Path, dst_sql: Path) -> Path:
         self._require_file(src_sql)
@@ -338,12 +338,12 @@ class BayesCardRunner:
 
     def _preprocess_stats_csv(self, src_csv_pattern: str, dst_dir: Path) -> str:
         """
-        将 STATS CSV 中的时间列统一转换为相对起始时间的整数。
-        这样 BayesCard 会把时间列当连续值处理范围谓词。
+        Convert time columns in STATS CSVs to integers relative to start time.
+        This way BayesCard treats time columns as continuous values for range predicates.
         """
         src_dir = Path(src_csv_pattern.replace("{}.csv", "")).resolve()
         if not src_dir.is_dir():
-            raise FileNotFoundError(f"STATS 源目录不存在: {src_dir}")
+            raise FileNotFoundError(f"STATS source directory not found: {src_dir}")
 
         dst_dir.mkdir(parents=True, exist_ok=True)
         for src_file in src_dir.glob("*.csv"):
@@ -366,16 +366,16 @@ class BayesCardRunner:
             total += int(p.stat().st_size)
             found = True
         if not found:
-            raise FileNotFoundError(f"模型目录为空或无 .pkl 文件: {model_dir}")
+            raise FileNotFoundError(f"Model directory empty or no .pkl files: {model_dir}")
         return total
 
     def _upsert_summary_row(self, row: dict[str, Any]) -> pd.DataFrame:
         if self.summary_csv_path.exists():
             df = pd.read_csv(self.summary_csv_path)
             if "benchmark" in df.columns:
-                # 删除同名 row
+                # Delete rows with same name
                 df = df[df["benchmark"] != row["benchmark"]]
-                # 同时删除 normalize 后相同的 alias 行（如 STATS-CEB → STATS）
+                # Also delete alias rows that normalize to the same (e.g. STATS-CEB -> STATS)
                 try:
                     target = BayesCardRunner._normalize_benchmark_name(row["benchmark"])
                     mask = df["benchmark"].apply(
@@ -401,7 +401,7 @@ class BayesCardRunner:
             "statistics_size_bytes",
             "seed",
         ]
-        # 丢弃旧版遗留的 model_path 等列
+        # Drop legacy model_path columns
         df = df[[c for c in preferred if c in df.columns]]
         df.to_csv(self.summary_csv_path, index=False)
         return df
@@ -413,18 +413,18 @@ class BayesCardRunner:
         config = self._build_config(benchmark)
         self._require_file(config.query_file)
 
-        # STATSJOIN 复用 STATS 模型，不自行训练
+        # STATSJOIN reuses STATS model, does not train itself
         if config.benchmark == "STATSJOIN":
             force_retrain = False
 
-        # force_retrain：删除已有模型文件，强制从零训练
+        # force_retrain: delete existing model files, force training from scratch
         if force_retrain and config.model_dir.exists():
             import shutil
             for pkl in config.model_dir.glob("*.pkl"):
                 pkl.unlink()
             if config.hdf_dir.exists():
                 shutil.rmtree(config.hdf_dir)
-            print(f"  force_retrain: 已清理 {config.model_dir} 和 {config.hdf_dir}")
+            print(f"  force_retrain: cleaned up {config.model_dir} and {config.hdf_dir}")
 
         preprocess_time_sec = 0.0
         data_path_for_schema = config.data_path_pattern
@@ -439,7 +439,7 @@ class BayesCardRunner:
             preprocess_time_sec = time.time() - t0
         elif config.benchmark == "JOBLightRanges":
             if config.preprocessed_dir is None or config.preprocessed_query_file is None:
-                raise ValueError("JOBLightRanges 缺少预处理配置")
+                raise ValueError("JOBLightRanges missing preprocessing config")
             config.preprocessed_dir.mkdir(parents=True, exist_ok=True)
             t0 = time.time()
             data_path_for_schema = self._sb.preprocess_joblr_csv(
@@ -454,7 +454,7 @@ class BayesCardRunner:
             query_for_eval = config.preprocessed_query_file
             self._require_file(query_for_eval)
 
-        # 训练（模型已存在且非 force_retrain 时跳过；STATSJOIN 复用 STATS 模型也跳过）
+        # Training (skip if model exists and not force_retrain; STATSJOIN also skips as it reuses STATS model)
         train_time_sec = 0.0
         if not any(config.model_dir.glob("*.pkl")):
             t0 = time.time()

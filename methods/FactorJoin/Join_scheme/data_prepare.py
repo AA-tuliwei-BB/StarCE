@@ -111,18 +111,18 @@ def convert_str_type_to_int_for_job_light_ranges(schema, query_path, target_dir)
         sql_queries = f.readlines()
     new_queries = []
     for query in sql_queries:
-        # 修改正则表达式以匹配任何表别名（例如 title1, title2, t 等）
+        # Modify regex to match any table alias (e.g., title1, title2, t, etc.)
         pattern = r"(\w+)\.phonetic_code\s*(<=|>=|=|<|>)\s*'([A-Z]\d+)'"
         matches = re.findall(pattern, query)
         for alias, operator, phonetic_code in matches:
             int_rep = str(convert_phonetic_code_to_int(phonetic_code))
             query = query.replace(f"{alias}.phonetic_code{operator}'{phonetic_code}'", f"{alias}.phonetic_code{operator}{int_rep}")
-        # 处理特殊情况：单字母 phonetic_code
+        # Handle special case: single-letter phonetic_code
         pattern_single = r"(\w+)\.phonetic_code\s*(<=|>=|=|<|>)\s*'([A-Z])'"
         matches_single = re.findall(pattern_single, query)
         for alias, operator, letter in matches_single:
-            # P -> 200000, G -> 100000, 其他字母也转换
-            int_rep = ord(letter) * 10000  # 简单映射：A=650000, P=800000
+            # P -> 200000, G -> 100000, other letters also converted
+            int_rep = ord(letter) * 10000  # Simple mapping: A=650000, P=800000
             query = query.replace(f"{alias}.phonetic_code{operator}'{letter}'", f"{alias}.phonetic_code{operator}{int_rep}")
 
         pattern = r"(\w+)\.series_years\s*(<=|>=|=|<|>)\s*'(\d{4}|[?]{4})-(\d{4}|[?]{4})'"
@@ -136,7 +136,7 @@ def convert_str_type_to_int_for_job_light_ranges(schema, query_path, target_dir)
         pattern = r"(\w+)\.imdb_index\s*(<=|>=|=|<|>)\s*'([IVXLCDM]+)'"
         matches = re.findall(pattern, query)
 
-        # 转换罗马数字为整数
+        # Convert Roman numerals to integers
         for alias, operator, roman_numeral in matches:
             int_value = roman_to_int(roman_numeral)
             query = query.replace(f"{alias}.imdb_index{operator}'{roman_numeral}'", f"{alias}.imdb_index{operator}{str(int_value)}")

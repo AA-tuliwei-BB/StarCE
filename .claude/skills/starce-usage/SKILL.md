@@ -1,124 +1,123 @@
 ---
 name: starce-usage
-description: 总结 StarCE 在本仓库的运行与测试方法：通过修改 `experiment/running_space/config.json` 控制输入 SQL、统计信息、数据库与输出路径；支持最差 SQL 定点测试、EXPLAIN 触发估计器（不实际执行）、RecordingSubquery/RecordingSingleQuery 记录子查询与单表查询集合、收集相对误差（rel err）。当用户提到 starce、config.json、RecordingSubquery、RecordingSingleQuery、UseSingleTableCard、EXPLAIN、subquery、q-error/rel err 时使用。
+description: Summary of running and testing StarCE in this repo: control input SQL, statistics, database and output paths by modifying experiment/running_space/config.json; support worst-SQL pinpoint testing, EXPLAIN-triggered estimator (no actual execution), RecordingSubquery/RecordingSingleQuery to record subquery and single-table query sets, collecting relative error (rel err). Use when mentioning starce, config.json, RecordingSubquery, RecordingSingleQuery, UseSingleTableCard, EXPLAIN, subquery, q-error/rel err.
 ---
 
-# StarCE 用法（本仓库）
+# StarCE Usage (This Repo)
 
-## 核心思路
+## Core Concept
 
-- StarCE 通过 `experiment/running_space/config.json` 控制行为
-- 最常用的测试方法是：
-  - 把要跑的 SQL 文件放到 `experiment/running_space/`（避免路径/权限问题）
-  - 需要“只测估计器”时，对每条 SQL 加 `EXPLAIN`（同一行，不换行）
-  - 在 `experiment/running_space/` 目录下运行 `./starce`（让程序能直接找到同目录的 `config.json`）
+- StarCE behavior is controlled via `experiment/running_space/config.json`
+- The most common testing approach is:
+  - Place the SQL file to run in `experiment/running_space/` (to avoid path/permission issues)
+  - When "estimator-only testing" is needed, prepend `EXPLAIN` to each SQL (same line, no line break)
+  - Run `./starce` from the `experiment/running_space/` directory (so the program can find `config.json` in the same directory)
 
-## 必改配置项速查（`experiment/running_space/config.json`）
+## Must-Change Config Items Quick Reference (`experiment/running_space/config.json`)
 
-- `DB_PATH`：DuckDB 数据库路径（例如 `Benchmark/duckdb/stats.db`）
-- `STATS_PATH`：StarCE 的统计信息 json（通常来自 `experiment/checkpoint/StarCE/`）
-- `SCHEMA_PATH`：schema json（按 workload 选择）
-- `SQL_PATH`：输入 SQL 文件路径（建议指向 `experiment/running_space/*.sql`）
+- `DB_PATH`: DuckDB database path (e.g., `Benchmark/duckdb/stats.db`)
+- `STATS_PATH`: StarCE statistics JSON (usually from `experiment/checkpoint/StarCE/`)
+- `SCHEMA_PATH`: schema JSON (choose by workload)
+- `SQL_PATH`: input SQL file path (recommend pointing to `experiment/running_space/*.sql`)
 
-### Recording 相关
+### Recording-Related
 
-- `RecordingSubquery=1`：
-  - `SUBQUERY_PATH`：子查询明细输出（SQL 列表）
-  - `SUBQUERY_RESULT_PATH`：子查询估计结果输出（可能会覆盖原文件）
-- `RecordingSingleQuery=1`：
-  - `SINGLE_QUERY_PATH`：提取到的“单表查询集合”输出（SQL 列表）
-  - `SINGLE_QUERY_RESULT_PATH`：单表估计结果路径（在某些模式下也可能被写出/覆盖）
+- `RecordingSubquery=1`:
+  - `SUBQUERY_PATH`: subquery detail output (SQL list)
+  - `SUBQUERY_RESULT_PATH`: subquery estimation result output (may overwrite original file)
+- `RecordingSingleQuery=1`:
+  - `SINGLE_QUERY_PATH`: extracted "single-table query set" output (SQL list)
+  - `SINGLE_QUERY_RESULT_PATH`: single-table estimation result path (may also be written/overwritten in some modes)
 
-重要：如果你不想改动/覆盖原有结果文件（例如 workload 自带的 `pg_est.txt` 或 checkpoint 里的输出），在开启对应的 Recording 时，务必把 `SUBQUERY_RESULT_PATH`（config 里的第 16 项附近）和 `SINGLE_QUERY_RESULT_PATH`（第 18 项附近）改到 `experiment/running_space/` 下的新文件名。
+Important: If you don't want to modify/overwrite existing result files (e.g., workload-built-in `pg_est.txt` or checkpoint outputs), when enabling the corresponding Recording, you must redirect `SUBQUERY_RESULT_PATH` (near item 16 in config) and `SINGLE_QUERY_RESULT_PATH` (near item 18) to new filenames under `experiment/running_space/`.
 
-## 常见坑（先排雷）
+## Common Pitfalls (Troubleshoot First)
 
-- 运行目录：建议 `cd experiment/running_space && ./starce`，避免“找不到 config.json”
-- 输出文件不存在：部分输出路径可能要求文件存在（必要时先创建空文件）
-- 表别名：某些 SQL 输入文件缺少 `FROM <table> AS <alias>` 会触发解析报错；优先使用带别名的 workload 版本（例如 `benchmark/stats-ceb/queries.sql`）
+- Working directory: recommend `cd experiment/running_space && ./starce` to avoid "cannot find config.json"
+- Output file not found: some output paths may require the file to exist (create empty files if needed)
+- Table aliases: some SQL input files missing `FROM <table> AS <alias>` will trigger parse errors; prefer workload versions with aliases (e.g., `benchmark/stats-ceb/queries.sql`)
 
-## 工作流 1：最差 SQL 定点测试（带子查询记录与误差）
+## Workflow 1: Worst SQL Pinpoint Testing (with Subquery Recording and Error)
 
-目标：从 `experiment/checkpoint/StarCE/topk_subqueries_stats.sql` 取第一条（q-error 最大）SQL，单独跑并记录子查询/误差。
+Goal: Take the first SQL (largest q-error) from `experiment/checkpoint/StarCE/topk_subqueries_stats.sql`, run it individually and record subqueries/errors.
 
-步骤：
+Steps:
 
-1. 把第一条 SQL 保存到 `experiment/running_space/test_worst.sql`
-2. 配置 `config.json`：
+1. Save the first SQL to `experiment/running_space/test_worst.sql`
+2. Configure `config.json`:
    - `SQL_PATH` → `.../experiment/running_space/test_worst.sql`
    - `RecordingSubquery=1`
    - `IsCollectingRelErr=1`
-   - `SUBQUERY_PATH`/`SUBQUERY_RESULT_PATH`/`REL_ERR_PATH` 指向 `experiment/running_space/` 下的新输出文件
-   - `SCHEMA_PATH`/`STATS_PATH`/`REAL_CARD_PATH` 按 STATS-CEB 对应路径设置
-3. 运行：
+   - `SUBQUERY_PATH`/`SUBQUERY_RESULT_PATH`/`REL_ERR_PATH` point to new output files under `experiment/running_space/`
+   - `SCHEMA_PATH`/`STATS_PATH`/`REAL_CARD_PATH` set to corresponding STATS-CEB paths
+3. Run:
 
 ```bash
 cd experiment/running_space
 ./starce > worst_run.log 2>&1
 ```
 
-结果通常看：
+Results to check:
 
-- `SUBQUERY_PATH`：记录到的子查询
-- `SUBQUERY_RESULT_PATH`：子查询估计结果
-- `REL_ERR_PATH`：误差输出
+- `SUBQUERY_PATH`: recorded subqueries
+- `SUBQUERY_RESULT_PATH`: subquery estimation results
+- `REL_ERR_PATH`: error output
 
-## 工作流 2：EXPLAIN 触发估计器（不实际执行）
+## Workflow 2: EXPLAIN Trigger Estimator (No Actual Execution)
 
-目标：批量对很多 SQL “只跑估计器”，不真正执行查询。
+Goal: Batch "run estimator only" on many SQL queries without actually executing them.
 
-步骤：
+Steps:
 
-1. 把目标 SQL 文件放到 `experiment/running_space/`（例如 `queries.sql` 或 `subquery.sql`）
-2. 批量加 `EXPLAIN`（保证 `EXPLAIN` 与 SQL 同行）：
-   - 推荐用脚本：`scripts/toggle_explain.py`
-   - 也可以参考项目 Skill：`.cursor/skills/toggle-explain/SKILL.md`
-3. 配置 `config.json`：
+1. Place target SQL file in `experiment/running_space/` (e.g., `queries.sql` or `subquery.sql`)
+2. Batch add `EXPLAIN` (ensuring `EXPLAIN` is on the same line as the SQL):
+   - Recommend using script: `scripts/toggle_explain.py`
+   - Can also reference project Skill: `.cursor/skills/toggle-explain/SKILL.md`
+3. Configure `config.json`:
    - `SQL_PATH` → `experiment/running_space/<name>_explain.sql`
-4. 运行并保存输出：
+4. Run and save output:
 
 ```bash
 cd experiment/running_space
 ./starce > explain_output.log 2>&1
 ```
 
-可选：如果需要从 `EXPLAIN` 输出里抽取估计基数，使用仓库里的 `scripts/extract_card_from_explain.py` 对输出文件做解析。
+Optional: If extracting estimated cardinalities from `EXPLAIN` output, use `scripts/extract_card_from_explain.py` in the repo to parse the output file.
 
-## 工作流 3：从 queries 与 subquery 提取单表查询集合并对比
+## Workflow 3: Extract Single-Table Query Sets from Queries and Subqueries and Compare
 
-目标：验证 “从 stats-ceb 的 queries 与 subquery 提取出的单表查询集合是否相同”。
+Goal: Verify whether "single-table query sets extracted from stats-ceb queries and subqueries are identical".
 
-推荐做法：两边都用 `EXPLAIN` 输入，确保走同一条估计器路径。
+Recommended approach: use `EXPLAIN` input on both sides to ensure the same estimator path.
 
-步骤：
+Steps:
 
-1. 准备 explain 版本输入：
-   - `queries_explain.sql`（由 queries.sql 批量加 EXPLAIN）
-   - `subquery_explain.sql`（由 subquery.sql 批量加 EXPLAIN）
-2. 配置并跑两次（输出到两个不同文件）：
-   - 第一次：
+1. Prepare EXPLAIN-version inputs:
+   - `queries_explain.sql` (batch-add EXPLAIN to queries.sql)
+   - `subquery_explain.sql` (batch-add EXPLAIN to subquery.sql)
+2. Configure and run twice (output to two different files):
+   - First run:
      - `RecordingSingleQuery=1`
      - `SQL_PATH=.../queries_explain.sql`
      - `SINGLE_QUERY_PATH=.../single_query_from_queries.sql`
-   - 第二次：
+   - Second run:
      - `SQL_PATH=.../subquery_explain.sql`
      - `SINGLE_QUERY_PATH=.../single_query_from_subquery.sql`
-3. 对比建议：
-   - 直接按行字符串比较可能会“不相同”，常见原因是 `WHERE` 子句里 `AND` 条件顺序不同
-   - 先把 `WHERE` 按 `AND` 拆开排序（归一化）再做集合对比，能判断“语义集合是否一致”
+3. Comparison suggestions:
+   - Direct line-by-string comparison may produce "not identical" — common reason is different `AND` condition order in `WHERE`
+   - First split `WHERE` by `AND`, sort (normalize), then do set comparison to determine "semantic set agreement"
 
-## 工作流 4：UseSingleTableCard（消费单表估计结果）
+## Workflow 4: UseSingleTableCard (Consume Single-Table Estimation Results)
 
-目标：让 StarCE 直接读取已有的单表估计结果文件（而不是在线估计）。
+Goal: Have StarCE directly read an existing single-table estimation result file (rather than estimating online).
 
-步骤：
+Steps:
 
-1. 配置：
+1. Configure:
    - `UseSingleTableCard=1`
-   - `SINGLE_QUERY_RESULT_PATH` 指向已有结果文件（例如 workload 自带的 `pg_est.txt`）
-2. 运行正常查询/EXPLAIN 测试
+   - `SINGLE_QUERY_RESULT_PATH` point to existing result file (e.g., workload-built-in `pg_est.txt`)
+2. Run normal query/EXPLAIN testing
 
-常见错误：
+Common error:
 
-- “No single table card for table ...”：说明要用的单表谓词没有出现在结果文件中，或结果文件路径不对/版本不匹配
-
+- "No single table card for table ...": indicates the single-table predicate was not found in the result file, or the result file path is wrong/version mismatched

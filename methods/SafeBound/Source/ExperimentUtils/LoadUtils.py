@@ -1,11 +1,11 @@
 import pandas as pd
 import os
-# 默认使用 SafeBound 根目录下的 Data 目录
-# 可以通过设置 LoadUtils.imdb_data_directory 和 LoadUtils.stats_data_directory 来覆盖
+# Default: use Data directory under SafeBound root
+# Can be overridden by setting LoadUtils.imdb_data_directory and LoadUtils.stats_data_directory
 _default_rootDirectory = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) +'/'
-# IMDB 数据目录（应指向包含 IMDB CSV 文件的目录，如 /path/to/Data/IMDB/）
+# IMDB data directory (should point to directory containing IMDB CSV files, e.g., /path/to/Data/IMDB/)
 imdb_data_directory = _default_rootDirectory + "Data/IMDB/"
-# Stats 数据目录（应指向包含 Stats CSV 文件的目录，如 /path/to/Data/Stats/）
+# Stats data directory (should point to directory containing Stats CSV files, e.g., /path/to/Data/Stats/)
 stats_data_directory = _default_rootDirectory + "Data/Stats/"
 
 

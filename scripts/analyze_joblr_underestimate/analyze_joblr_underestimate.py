@@ -1,6 +1,6 @@
 """
-分析 JOBLightRanges 偏低估的根因。
-从数据层面量化 range predicate 对估计误差的影响。
+Analyze the root cause of JOBLightRanges underestimation bias.
+Quantify the impact of range predicates on estimation error from the data level.
 """
 import os
 import sys
@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "experiment"))
 
-# ---------- 1. 加载 checkpoint 数据 ----------
+# ---------- 1. Load checkpoint data ----------
 def read_txt(path):
     vals = []
     with open(path) as f:
@@ -35,12 +35,12 @@ def load_data(benchmark):
     bm_dir = BENCHMARK_DIRS[benchmark]
     real = read_txt(PROJECT_ROOT / f"Benchmark/workloads/{bm_dir}/subquery/result/real.txt")
     pm1_est = read_txt(checkpoint_root / benchmark / f"card_{benchmark}_PM1.txt")
-    # 同时加载 PAR0.0 作为 baseline（无调整）
+    # Also load PAR0.0 as baseline (no adjustment)
     par00_est = read_txt(checkpoint_root / benchmark / f"card_{benchmark}_PAR0.0.txt")
     return real, pm1_est, par00_est
 
 print("=" * 70)
-print("1. 加载各数据集数据")
+print("1. Load data from each dataset")
 print("=" * 70)
 
 all_data = {}
@@ -55,16 +55,16 @@ for bm in ["STATS", "JOBM", "JOBLight", "JOBLightRanges"]:
           f"mean={np.mean(log_err):.3f}, "
           f"under_est_frac={under_frac:.1%}")
 
-# ---------- 2. 解析 subquery，分类 predicate 类型 ----------
+# ---------- 2. Parse subqueries and classify predicate types ----------
 def parse_predicates(sql):
-    """解析 SQL 中的谓词，返回 (equality_count, range_count, predicates_detail)"""
-    # 提取 WHERE 子句
+    """Parse predicates from SQL, return (equality_count, range_count, predicates_detail)"""
+    # Extract WHERE clause
     where_match = re.search(r'WHERE\s+(.+?)(?:;|$)', sql, re.IGNORECASE)
     if not where_match:
         return 0, 0, []
 
     where_clause = where_match.group(1)
-    # 按 AND 分割（简化处理，不处理嵌套 AND）
+    # Split by AND (simplified, not handling nested AND)
     parts = re.split(r'\s+AND\s+', where_clause, flags=re.IGNORECASE)
 
     eq_count = 0
@@ -73,7 +73,7 @@ def parse_predicates(sql):
 
     for part in parts:
         part = part.strip()
-        # 跳过 join 条件（包含 .id= 或 .movie_id= 等）
+        # Skip join conditions (containing .id= or .movie_id= etc.)
         if re.search(r'\.\s*(id|movie_id|person_id|keyword_id|company_id)\s*=', part, re.IGNORECASE):
             continue
 
@@ -90,7 +90,7 @@ def parse_predicates(sql):
 
 
 def parse_subquery_file(filepath):
-    """解析 subquery.sql 文件，统计每条 subquery 的谓词"""
+    """Parse subquery.sql file, count predicates for each subquery"""
     results = []
     with open(filepath) as f:
         for i, line in enumerate(f):
@@ -98,7 +98,7 @@ def parse_subquery_file(filepath):
             if not line:
                 continue
             eq_cnt, range_cnt, details = parse_predicates(line)
-            # 统计表数量
+            # Count number of tables
             tables = re.findall(r'FROM\s+(.+?)\s+WHERE', line, re.IGNORECASE)
             if not tables:
                 tables = re.findall(r'FROM\s+(.+?);', line, re.IGNORECASE)
@@ -117,7 +117,7 @@ def parse_subquery_file(filepath):
 
 
 print("\n" + "=" * 70)
-print("2. 分析各 workload 的谓词类型分布")
+print("2. Analyze predicate type distribution for each workload")
 print("=" * 70)
 
 for bm in ["JOBLight", "JOBLightRanges"]:
@@ -140,7 +140,7 @@ for bm in ["JOBLight", "JOBLightRanges"]:
     print(f"    Subqueries with only eq preds: {has_eq_only} ({has_eq_only/len(parsed):.1%})")
     print(f"    Subqueries with no preds: {no_pred} ({no_pred/len(parsed):.1%})")
 
-    # 表数量分布
+    # Table count distribution
     table_dist = Counter(p["table_count"] for p in parsed)
     print(f"    Table count distribution: {dict(sorted(table_dist.items()))}")
 
@@ -149,15 +149,15 @@ for bm in ["JOBLight", "JOBLightRanges"]:
     else:
         jol_parsed = parsed
 
-# ---------- 3. JOBLightRanges 内部分析：range vs 纯 equality ----------
+# ---------- 3. JOBLightRanges internal analysis: range vs pure equality ----------
 print("\n" + "=" * 70)
-print("3. JOBLightRanges 内部：range pred 子查询 vs 纯 equality 子查询")
+print("3. Within JOBLightRanges: range pred subqueries vs pure equality subqueries")
 print("=" * 70)
 
 jolr_real = all_data["JOBLightRanges"]["real"]
 jolr_pm1 = all_data["JOBLightRanges"]["pm1"]
 
-# 分组
+# Grouping
 range_errors = []
 eq_only_errors = []
 no_pred_errors = []
@@ -174,18 +174,18 @@ for i, p in enumerate(jolr_parsed):
     else:
         no_pred_errors.append(log_err)
 
-for label, errors in [("有 range pred", range_errors),
-                        ("纯 equality pred", eq_only_errors),
-                        ("无谓词", no_pred_errors)]:
+for label, errors in [("Has range pred", range_errors),
+                        ("Pure equality pred", eq_only_errors),
+                        ("No predicate", no_pred_errors)]:
     if errors:
         arr = np.array(errors)
         print(f"  {label}: n={len(arr)}, "
               f"median={np.median(arr):.3f}, mean={np.mean(arr):.3f}, "
               f"p25={np.percentile(arr, 25):.3f}, p75={np.percentile(arr, 75):.3f}")
 
-# ---------- 4. 分析：filter_coeff 数量对误差的影响 ----------
+# ---------- 4. Analyze: impact of filter_coeff count on error ----------
 print("\n" + "=" * 70)
-print("4. 谓词数量与估计误差的关系（JOBLightRanges）")
+print("4. Relationship between predicate count and estimation error (JOBLightRanges)")
 print("=" * 70)
 
 pred_count_errors = defaultdict(list)
@@ -200,9 +200,9 @@ for cnt in sorted(pred_count_errors.keys()):
     arr = np.array(pred_count_errors[cnt])
     print(f"  {cnt} preds: n={len(arr)}, median={np.median(arr):.3f}, mean={np.mean(arr):.3f}")
 
-# ---------- 5. 同一个 workload，range 和 equality 分别看 ----------
+# ---------- 5. Analyze range and equality separately within the same workload ----------
 print("\n" + "=" * 70)
-print("5. range count 分层分析（JOBLightRanges）")
+print("5. Stratified analysis by range count (JOBLightRanges)")
 print("=" * 70)
 
 rc_errors = defaultdict(list)
@@ -217,9 +217,9 @@ for rc in sorted(rc_errors.keys()):
     arr = np.array(rc_errors[rc])
     print(f"  {rc} range preds: n={len(arr)}, median={np.median(arr):.3f}, mean={np.mean(arr):.3f}")
 
-# ---------- 6. 对比 JOBLight vs JOBLightRanges 的 over/under 分布 ----------
+# ---------- 6. Compare over/under distribution of JOBLight vs JOBLightRanges ----------
 print("\n" + "=" * 70)
-print("6. 误差分布形态对比（JOBLight vs JOBLightRanges）")
+print("6. Error distribution shape comparison (JOBLight vs JOBLightRanges)")
 print("=" * 70)
 
 for bm in ["JOBLight", "JOBLightRanges"]:
@@ -228,7 +228,7 @@ for bm in ["JOBLight", "JOBLightRanges"]:
     errors = np.array([max(1.0, e) / max(1.0, t) for t, e in zip(real, pm1)])
     log_err = np.log10(errors)
 
-    # 按误差分段
+    # By error segment
     severe_under = np.sum(log_err < -1.0)  # est < 0.1x true
     moderate_under = np.sum((log_err >= -1.0) & (log_err < -0.3))  # est 0.1-0.5x true
     mild_under = np.sum((log_err >= -0.3) & (log_err < 0))  # est 0.5-1x true
@@ -238,17 +238,17 @@ for bm in ["JOBLight", "JOBLightRanges"]:
 
     n = len(errors)
     print(f"\n  {bm}:")
-    print(f"    严重低估 (<0.1x):  {severe_under:5d} ({severe_under/n:5.1%})")
-    print(f"    中度低估 (0.1-0.5x): {moderate_under:5d} ({moderate_under/n:5.1%})")
-    print(f"    轻度低估 (0.5-1x):   {mild_under:5d} ({mild_under/n:5.1%})")
-    print(f"    轻度高估 (1-2x):     {mild_over:5d} ({mild_over/n:5.1%})")
-    print(f"    中度高估 (2-10x):    {moderate_over:5d} ({moderate_over/n:5.1%})")
-    print(f"    严重高估 (>10x):     {severe_over:5d} ({severe_over/n:5.1%})")
-    print(f"    低估总比例:           {severe_under+moderate_under+mild_under:5d} ({(severe_under+moderate_under+mild_under)/n:.1%})")
+    print(f"    Severe underestimate (<0.1x):  {severe_under:5d} ({severe_under/n:5.1%})")
+    print(f"    Moderate underestimate (0.1-0.5x): {moderate_under:5d} ({moderate_under/n:5.1%})")
+    print(f"    Mild underestimate (0.5-1x):   {mild_under:5d} ({mild_under/n:5.1%})")
+    print(f"    Mild overestimate (1-2x):     {mild_over:5d} ({mild_over/n:5.1%})")
+    print(f"    Moderate overestimate (2-10x):    {moderate_over:5d} ({moderate_over/n:5.1%})")
+    print(f"    Severe overestimate (>10x):     {severe_over:5d} ({severe_over/n:5.1%})")
+    print(f"    Total underestimate ratio:           {severe_under+moderate_under+mild_under:5d} ({(severe_under+moderate_under+mild_under)/n:.1%})")
 
-# ---------- 7. 分析每个 range predicate 列的误差 ----------
+# ---------- 7. Analyze error by range predicate column ----------
 print("\n" + "=" * 70)
-print("7. 按 range predicate 列分析误差（JOBLightRanges）")
+print("7. Analyze error by range predicate column (JOBLightRanges)")
 print("=" * 70)
 
 col_errors = defaultdict(list)
@@ -271,12 +271,12 @@ for col in sorted(col_errors.keys()):
     arr = np.array(col_errors[col])
     print(f"  {col}: n={len(arr)}, median={np.median(arr):.3f}, mean={np.mean(arr):.3f}")
 
-# ---------- 8. 对比：混合谓词的 subquery 中，range+eq vs 纯 range vs 纯 eq ----------
+# ---------- 8. Compare: mixed predicates in subqueries, range+eq vs pure range vs pure eq ----------
 print("\n" + "=" * 70)
-print("8. 按谓词组合分析（JOBLightRanges 2-table join）")
+print("8. Analyze by predicate combination (JOBLightRanges 2-table join)")
 print("=" * 70)
 
-# 只看 2 表 join 的 subquery（最常见）
+# Only look at 2-table join subqueries (most common)
 two_table_mask = [i for i, p in enumerate(jolr_parsed) if p["table_count"] == 2]
 
 groups = {"only_eq": [], "only_range": [], "mixed": []}
@@ -296,9 +296,9 @@ for label, errors in groups.items():
         arr = np.array(errors)
         print(f"  {label}: n={len(arr)}, median={np.median(arr):.3f}, mean={np.mean(arr):.3f}")
 
-# ---------- 9. 最深层次分析：PM0 vs PM1 在 range 场景下的差异 ----------
+# ---------- 9. Deepest analysis: PM0 vs PM1 difference in range scenarios ----------
 print("\n" + "=" * 70)
-print("9. PM1 vs PAR0.0 (PM0无调整) 差异分析")
+print("9. PM1 vs PAR0.0 (PM0 without adjustment) difference analysis")
 print("=" * 70)
 
 for bm in ["JOBLight", "JOBLightRanges", "STATS", "JOBM"]:
@@ -313,16 +313,16 @@ for bm in ["JOBLight", "JOBLightRanges", "STATS", "JOBM"]:
     same = np.sum(diff < 1e-10)
     print(f"  {bm}: PM1==PAR0.0 in {same}/{len(diff)} ({same/len(diff):.1%}) cases")
 
-# 对 JOBLightRanges，深入看 PM1 != PAR0.0 的 case
-print("\n  JOBLightRanges: PM1 != PAR0.0 的案例分析:")
+# For JOBLightRanges, deep-dive into cases where PM1 != PAR0.0
+print("\n  JOBLightRanges: Analysis of cases where PM1 != PAR0.0:")
 jolr_pm1 = np.array(all_data["JOBLightRanges"]["pm1"])
 jolr_par00 = np.array(all_data["JOBLightRanges"]["par00"])
 jolr_real_arr = np.array(all_data["JOBLightRanges"]["real"])
 diff_mask = np.abs(jolr_pm1 - jolr_par00) > 1e-10
 diff_indices = np.where(diff_mask)[0]
-print(f"  不同估计值的子查询数: {len(diff_indices)}")
+print(f"  Subqueries with different estimates: {len(diff_indices)}")
 if len(diff_indices) > 0:
-    print(f"  前5个差异case:")
+    print(f"  First 5 differing cases:")
     for idx in diff_indices[:5]:
         p = jolr_parsed[idx]
         pm1_err = max(1.0, jolr_pm1[idx]) / max(1.0, jolr_real_arr[idx])
@@ -333,4 +333,4 @@ if len(diff_indices) > 0:
               f"par00={jolr_par00[idx]:.1f}")
         print(f"      SQL: {p['sql'][:150]}...")
 
-print("\n分析完成。")
+print("\nAnalysis complete.")

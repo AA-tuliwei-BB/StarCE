@@ -34,9 +34,9 @@ case "${MODE}" in
     DUCKDB_DEBUG_CMAKE_ARGS=()
     ;;
   *)
-    echo "用法: $0 [debug|release] [jobs]"
-    echo "例子: $0 debug"
-    echo "例子: $0 release 8"
+    echo "Usage: $0 [debug|release] [jobs]"
+    echo "Example: $0 debug"
+    echo "Example: $0 release 8"
     exit 2
     ;;
 esac
@@ -52,10 +52,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
-echo "构建模式: ${MODE} (CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}), 并行度: ${JOBS}"
+echo "Build mode: ${MODE} (CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}), parallelism: ${JOBS}"
 
-# 编译 DuckDB 库
-echo "开始编译 DuckDB 库..."
+# Build DuckDB library
+echo "Building DuckDB library..."
 mkdir -p "${DUCKDB_BUILD_DIR}"
 DUCKDB_CMAKE_ARGS=(
   -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
@@ -68,13 +68,13 @@ fi
 cmake -S duckdb -B "${DUCKDB_BUILD_DIR}" "${DUCKDB_CMAKE_ARGS[@]}" "${DUCKDB_DEBUG_CMAKE_ARGS[@]}"
 cmake --build "${DUCKDB_BUILD_DIR}" -j "${JOBS}"
 
-# 编译 StarCE
-echo "开始编译 StarCE..."
+# Build StarCE
+echo "Building StarCE..."
 mkdir -p "${STARCE_BUILD_DIR}"
 cmake -S . -B "${STARCE_BUILD_DIR}" -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
 cmake --build "${STARCE_BUILD_DIR}" -j "${JOBS}"
 
-# 复制到 running_space，供 ExperimentRunner 使用
+# Copy to running_space for ExperimentRunner
 cp "${STARCE_BUILD_DIR}/starce" experiment/running_space/starce
 
-echo "编译完成！"
+echo "Build complete!"

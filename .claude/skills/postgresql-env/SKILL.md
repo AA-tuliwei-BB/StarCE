@@ -1,195 +1,195 @@
 ---
 name: postgresql-env
-description: StarCE 项目的 PostgreSQL 数据库环境配置信息：数据目录、连接参数、已有数据库（stats/imdb/imdblight/imdbm）、表结构和数据文件位置。当用户提到数据库连接、PostgreSQL、psql、数据库表结构时使用。
+description: PostgreSQL database environment configuration for the StarCE project: data directory, connection parameters, existing databases (stats/imdb/imdblight/imdbm), table schemas, and data file locations. Use when mentioning database connection, PostgreSQL, psql, database table structure.
 ---
 
-# StarCE PostgreSQL 环境配置
+# StarCE PostgreSQL Environment Configuration
 
-## 快速参考
+## Quick Reference
 
-### 基本连接信息
+### Basic Connection Info
 
 ```bash
-# 数据目录
+# Data directory
 PGDATA=/mnt/sdb1/tlw/pgdata
 
-# psql 路径
+# psql path
 /usr/local/pgsql/13.1/bin/psql
 
-# PostgreSQL 版本
+# PostgreSQL version
 13.1
 
-# 连接示例
+# Connection example
 PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -d stats
 ```
 
-### 已有数据库
+### Existing Databases
 
-| 数据库 | Owner | 用途 | 表数量 | 对应 Benchmark |
-|--------|-------|------|--------|---------------|
-| `stats` | postgres | STATS-CEB 数据 | 8 | STATS-CEB |
-| `imdb` | postgres | 完整 IMDB 数据 | 21+ | IMDB-JOB |
-| `imdblight` | liwei | JOBLight 子集 | 6 | JOBLight |
-| `imdbm` | liwei | JOBM 子集 | 17 | JOBM |
+| Database | Owner | Purpose | Table Count | Corresponding Benchmark |
+|--------|------|------|--------|---------------|
+| `stats` | postgres | STATS-CEB data | 8 | STATS-CEB |
+| `imdb` | postgres | Full IMDB data | 21+ | IMDB-JOB |
+| `imdblight` | liwei | JOBLight subset | 6 | JOBLight |
+| `imdbm` | liwei | JOBM subset | 17 | JOBM |
 
-## 数据库详情
+## Database Details
 
-### stats 数据库
+### stats Database
 
-**用途**: Stack Overflow 数据集，用于 STATS-CEB benchmark
+**Purpose**: Stack Overflow dataset, used for STATS-CEB benchmark
 
-**表结构**:
+**Table Structure**:
 ```
-badges      (79,851 行)
-comments    (174,305 行)
-posthistory (303,187 行)
-postlinks   (11,102 行)
-posts       (91,976 行)
-tags        (1,032 行)
-users       (40,325 行)
-votes       (328,064 行)
+badges      (79,851 rows)
+comments    (174,305 rows)
+posthistory (303,187 rows)
+postlinks   (11,102 rows)
+posts       (91,976 rows)
+tags        (1,032 rows)
+users       (40,325 rows)
+votes       (328,064 rows)
 ```
 
-**数据文件位置**: `methods/SafeBound/Data/Stats/*.csv`
+**Data File Location**: `methods/SafeBound/Data/Stats/*.csv`
 
-**连接示例**:
+**Connection Example**:
 ```bash
 PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -d stats -c "\dt"
 ```
 
-### imdblight 数据库
+### imdblight Database
 
-**用途**: JOBLight benchmark（IMDB 最小子集）
+**Purpose**: JOBLight benchmark (smallest IMDB subset)
 
-**表结构**:
+**Table Structure**:
 ```
-cast_info       (36,244,344 行)
-movie_companies (2,609,129 行)
-movie_info      (14,835,720 行)
-movie_info_idx  (1,380,035 行)
-movie_keyword   (4,523,930 行)
-title           (2,528,312 行)
+cast_info       (36,244,344 rows)
+movie_companies (2,609,129 rows)
+movie_info      (14,835,720 rows)
+movie_info_idx  (1,380,035 rows)
+movie_keyword   (4,523,930 rows)
+title           (2,528,312 rows)
 ```
 
-**特点**: 删除了大部分参考表和字符串列
+**Characteristics**: Most reference tables and string columns removed
 
-**创建脚本**: `methods/SafeBound/Data/IMDB/CreateJOBLightDB.sql`
+**Creation Script**: `methods/SafeBound/Data/IMDB/CreateJOBLightDB.sql`
 
-### imdbm 数据库
+### imdbm Database
 
-**用途**: JOBM benchmark（IMDB 中等子集）
+**Purpose**: JOBM benchmark (medium IMDB subset)
 
-**表结构** (17 表):
+**Table Structure** (17 tables):
 ```
-aka_title       cast_info       char_name       
-comp_cast_type  company_name    company_type    
-complete_cast   info_type       keyword         
-kind_type       link_type       movie_companies 
-movie_info      movie_info_idx  movie_keyword   
+aka_title       cast_info       char_name
+comp_cast_type  company_name    company_type
+complete_cast   info_type       keyword
+kind_type       link_type       movie_companies
+movie_info      movie_info_idx  movie_keyword
 movie_link      title
 ```
 
-**删除的表**: name, person_info, role_type, aka_name
+**Removed Tables**: name, person_info, role_type, aka_name
 
-**创建脚本**: `methods/SafeBound/Data/IMDB/CreateJOBMDB.sql`
+**Creation Script**: `methods/SafeBound/Data/IMDB/CreateJOBMDB.sql`
 
-### imdb 数据库
+### imdb Database
 
-**用途**: 完整 IMDB 数据集
+**Purpose**: Full IMDB dataset
 
-**表数量**: 21+ 表（包含所有电影、演员、公司等信息）
+**Table Count**: 21+ tables (includes all movie, actor, company, etc. info)
 
-**数据文件位置**: `methods/SafeBound/Data/IMDB/*.csv`
+**Data File Location**: `methods/SafeBound/Data/IMDB/*.csv`
 
-### PG 配置参数
+### PG Configuration Parameters
 
 ```bash
-# 查看当前配置
+# View current config
 /usr/local/pgsql/13.1/bin/psql -U postgres -c "SHOW shared_buffers;"
 /usr/local/pgsql/13.1/bin/psql -U postgres -c "SHOW max_parallel_workers_per_gather;"
 
-# 设置配置（需要重启生效的用 ALTER SYSTEM + restart）
+# Set config (use ALTER SYSTEM + restart for params requiring restart)
 /usr/local/pgsql/13.1/bin/psql -U postgres -c "ALTER SYSTEM SET max_parallel_workers_per_gather = 6;"
 /usr/local/pgsql/13.1/bin/psql -U postgres -c "SELECT pg_reload_conf();"
 ```
 
-**关键参数**（SafeBound 推荐 + 本项目调优）:
+**Key Parameters** (SafeBound recommended + project tuning):
 
-| 参数 | 值 | 说明 |
+| Parameter | Value | Description |
 |------|-----|------|
 | `shared_buffers` | 4GB | |
 | `work_mem` | 2GB | |
 | `effective_cache_size` | 32GB | |
-| `max_parallel_workers_per_gather` | 6 | 并行查询 worker 数，影响执行计划选择 |
-| `random_page_cost` | 默认 | |
-| `seq_page_cost` | 默认 | |
+| `max_parallel_workers_per_gather` | 6 | Parallel query worker count, affects plan selection |
+| `random_page_cost` | default | |
+| `seq_page_cost` | default | |
 
-## 常用操作
+## Common Operations
 
-### 列出所有数据库
+### List All Databases
 
 ```bash
 PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -l
 ```
 
-### 查看表结构
+### View Table Structure
 
 ```bash
-# 查看 stats 数据库的表
+# View tables in stats database
 psql -d stats -c "\dt"
 
-# 查看表详细信息
+# View detailed table info
 psql -d stats -c "\d+ badges"
 
-# 统计行数
+# Count rows
 psql -d stats -c "SELECT COUNT(*) FROM badges;"
 ```
 
-### 执行查询
+### Execute Queries
 
 ```bash
-# 单条查询
+# Single query
 psql -d stats -c "SELECT COUNT(*) FROM badges WHERE Date >= '2014-01-01'::timestamp;"
 
-# 执行 SQL 文件
+# Execute SQL file
 psql -d stats -f query.sql
 
-# 输出为 CSV
+# Output as CSV
 psql -d stats -c "SELECT * FROM badges LIMIT 10;" --csv
 ```
 
-### 数据导入/导出
+### Data Import/Export
 
 ```bash
-# 导出数据
+# Export data
 psql -d stats -c "COPY badges TO '/path/to/badges.csv' CSV HEADER;"
 
-# 导入数据
+# Import data
 psql -d stats -c "COPY badges FROM '/path/to/badges.csv' CSV HEADER;"
 ```
 
-## 数据集文件位置
+## Dataset File Locations
 
-### STATS 数据集
+### STATS Dataset
 
 ```
 methods/SafeBound/Data/Stats/
-├── badges.csv        (2.4M, 79,852 行)
-├── comments.csv      (6.6M, 174,306 行)
-├── postHistory.csv   (12M, 303,188 行)
-├── postLinks.csv     (452K, 11,103 行)
-├── posts.csv         (4.0M, 91,977 行)
-├── tags.csv          (12K, 1,033 行)
-├── users.csv         (1.4M, 40,326 行)
-└── votes.csv         (12M, 328,065 行)
+├── badges.csv        (2.4M, 79,852 rows)
+├── comments.csv      (6.6M, 174,306 rows)
+├── postHistory.csv   (12M, 303,188 rows)
+├── postLinks.csv     (452K, 11,103 rows)
+├── posts.csv         (4.0M, 91,977 rows)
+├── tags.csv          (12K, 1,033 rows)
+├── users.csv         (1.4M, 40,326 rows)
+└── votes.csv         (12M, 328,065 rows)
 ```
 
-**加载脚本**:
-- `stats.sql` - 创建表定义
-- `stats_load.sql` - 加载数据
-- `stats_index.sql` - 创建索引
+**Loading Scripts**:
+- `stats.sql` - Create table definitions
+- `stats_load.sql` - Load data
+- `stats_index.sql` - Create indexes
 
-### IMDB 数据集
+### IMDB Dataset
 
 ```
 methods/SafeBound/Data/IMDB/
@@ -201,22 +201,22 @@ methods/SafeBound/Data/IMDB/
 ├── movie_keyword.csv      (90M)
 ├── company_name.csv       (17M)
 ├── keyword.csv            (3.7M)
-└── ... (其他参考表)
+└── ... (other reference tables)
 ```
 
-**数据库创建脚本**:
-- `imdb_create.sql` - 创建完整 IMDB 表
-- `CreateJOBLightDB.sql` - 从 imdb 创建 imdblight
-- `CreateJOBMDB.sql` - 从 imdb 创建 imdbm
+**Database Creation Scripts**:
+- `imdb_create.sql` - Create full IMDB tables
+- `CreateJOBLightDB.sql` - Create imdblight from imdb
+- `CreateJOBMDB.sql` - Create imdbm from imdb
 
-## 连接字符串格式
+## Connection String Formats
 
 ### Python psycopg2
 
 ```python
 import psycopg2
 
-# 基本连接
+# Basic connection
 conn = psycopg2.connect(
     dbname="stats",
     user="postgres",
@@ -224,81 +224,81 @@ conn = psycopg2.connect(
     port=5432
 )
 
-# 使用连接字符串
+# Using connection string
 conn_str = "dbname=stats user=postgres host=localhost port=5432"
 conn = psycopg2.connect(conn_str)
 ```
 
-### FactorJoin 格式
+### FactorJoin Format
 
 ```bash
-# STATS (不需要数据库连接)
+# STATS (no DB connection needed)
 --data_path ../../methods/SafeBound/Data/Stats/{}.csv
 
-# IMDB 采样模式（需要数据库）
+# IMDB sampling mode (requires database)
 --db_conn_kwargs "dbname=imdbm user=liwei host=localhost port=5432"
 ```
 
-### SafeBound 格式
+### SafeBound Format
 
-查看 `methods/SafeBound/` 中的具体配置
+See specific config in `methods/SafeBound/`
 
-## 环境变量
+## Environment Variables
 
 ```bash
-# 设置 PGDATA（如果需要）
+# Set PGDATA (if needed)
 export PGDATA=/mnt/sdb1/tlw/pgdata
 
-# 添加 psql 到 PATH
+# Add psql to PATH
 export PATH=/usr/local/pgsql/13.1/bin:$PATH
 
-# 设置默认用户
+# Set default user
 export PGUSER=liwei
 ```
 
-## 故障排查
+## Troubleshooting
 
-### 连接失败
+### Connection Failure
 
 ```bash
-# 检查 PostgreSQL 是否运行
+# Check if PostgreSQL is running
 ps aux | grep postgres
 
-# 检查进程
+# Check process
 pgrep -a postgres
 
-# 查看数据目录
+# View data directory
 ls -la /mnt/sdb1/tlw/pgdata
 ```
 
-### 权限问题
+### Permission Issues
 
 ```bash
-# 检查用户权限
+# Check user permissions
 psql -d postgres -c "\du"
 
-# 检查数据库所有者
+# Check database owner
 psql -l
 ```
 
-### 端口占用
+### Port Conflict
 
 ```bash
-# 检查端口 5432
+# Check port 5432
 netstat -tulpn | grep 5432
-# 或
+# or
 ss -tulpn | grep 5432
 ```
 
-## Benchmark 与数据库对应
+## Benchmark to Database Mapping
 
-| Benchmark | 数据库 | 子查询文件 | 行数 |
+| Benchmark | Database | Subquery File | Row Count |
 |-----------|--------|-----------|------|
 | STATS-CEB | `stats` | `benchmark/stats-ceb/subquery/subquery.sql` | 2471 |
 | JOBM | `imdbm` | `benchmark/jobm/subqueries/subquery.sql` | 6424 |
 | JOBLight | `imdblight` | `Benchmark/workloads/JOBLight/subquery/subquery.sql` | 451 |
 
-## 相关 Skills
+## Related Skills
 
-- [factorjoin-usage](../factorjoin-usage/SKILL.md) - FactorJoin 使用需要这些数据库
-- [starce-usage](../starce-usage/SKILL.md) - StarCE 使用需要这些数据库
+- [factorjoin-usage](../factorjoin-usage/SKILL.md) - FactorJoin usage requires these databases
+- [starce-usage](../starce-usage/SKILL.md) - StarCE usage requires these databases

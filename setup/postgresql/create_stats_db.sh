@@ -13,39 +13,39 @@ SCHEMA_SQL="${PROJECT_ROOT}/Benchmark/STATS/stats.sql"
 DATA_DIR="${PROJECT_ROOT}/Benchmark/STATS"
 PSQL="psql"
 
-echo "=== 创建 stats 数据库 (STATS-CEB) ==="
+echo "=== Create stats database (STATS-CEB) ==="
 
 if ! ${PSQL} -c "SELECT 1;" postgres > /dev/null 2>&1; then
-    echo "错误: 无法连接 PostgreSQL (host=${PGHOST} port=${PGPORT} user=${PGUSER})"
+    echo "Error: Cannot connect to PostgreSQL (host=${PGHOST} port=${PGPORT} user=${PGUSER})"
     exit 1
 fi
 
 if ${PSQL} -lqt | cut -d \| -f 1 | grep -qw stats; then
     table_count=$(${PSQL} -d stats -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';" 2>/dev/null | tr -d ' ')
-    echo "stats 数据库已存在 (${table_count} 张表)，跳过创建"
+    echo "stats database already exists (${table_count} tables), skipping"
     exit 0
 fi
 
-echo "创建 stats 数据库..."
+echo "Creating stats database..."
 createdb stats
 
-echo "创建表结构..."
+echo "Creating table structure..."
 ${PSQL} -d stats -f "${SCHEMA_SQL}"
 
-# STATS 8 张表，CSV 有 HEADER
+# STATS 8 tables, CSV has HEADER
 TABLES=(badges comments postHistory postLinks posts tags users votes)
 
 for tbl in "${TABLES[@]}"; do
     csv="${DATA_DIR}/${tbl}.csv"
     if [ -f "${csv}" ]; then
-        echo "导入 ${tbl}..."
+        echo "Importing ${tbl}..."
         ${PSQL} -d stats -c "\copy ${tbl} FROM '${csv}' WITH CSV HEADER DELIMITER ',';"
     else
-        echo "警告: ${csv} 不存在，跳过"
+        echo "Warning: ${csv} not found, skipping"
     fi
 done
 
-echo "创建索引..."
+echo "Creating indexes..."
 ${PSQL} -d stats <<'SQL'
 CREATE INDEX IF NOT EXISTS badges_userid_idx ON badges(userid);
 CREATE INDEX IF NOT EXISTS comments_userid_idx ON comments(userid);
@@ -64,5 +64,5 @@ echo "ANALYZE..."
 ${PSQL} -d stats -c "ANALYZE;"
 
 echo ""
-echo "=== stats 数据库创建完成 ==="
+echo "=== stats database created ==="
 ${PSQL} -d stats -c "\dt"

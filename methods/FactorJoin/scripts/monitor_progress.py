@@ -16,15 +16,15 @@ def get_last_log_lines(log_file, n=5):
     try:
         with open(log_file, "r") as f:
             lines = f.readlines()
-            # 过滤掉 header 信息
+            # Filter out header info
             content_lines = [l.strip() for l in lines if not l.startswith("---") and l.strip()]
             return content_lines[-n:]
     except:
-        return ["无法读取日志文件"]
+        return ["Unable to read log file"]
 
 def get_db_activity(db_conn):
     try:
-        # 提取 dbname
+        # Extract dbname
         db_name = "postgres"
         if "dbname=" in db_conn:
             db_name = db_conn.split("dbname=")[1].split()[0]
@@ -32,30 +32,30 @@ def get_db_activity(db_conn):
         cmd = f"psql -d {db_name} -t -c \"SELECT query, now() - query_start FROM pg_stat_activity WHERE state != 'idle' AND query NOT LIKE '%pg_stat_activity%';\""
         output = subprocess.check_output(cmd, shell=True).decode().strip()
         if not output:
-            return "数据库当前无活跃采样更新 (可能正在处理 Python 逻辑)"
+            return "No active sampling update in database (may be processing Python logic)"
         return output
     except Exception as e:
-        return f"无法获取数据库状态: {e}"
+        return f"Unable to get database status: {e}"
 
 def monitor(pid, log_file, db_conn):
-    print(f"=== FactorJoin JOBM 进度监控已启动 (PID: {pid}) ===")
+    print(f"=== FactorJoin JOBM progress monitor started (PID: {pid}) ===")
     while True:
         ps_info = get_ps_info(pid)
         if not ps_info:
-            print("\n[!] 警告: 进程已退出。请检查日志确认是完成还是出错。")
+            print("\n[!] Warning: Process has exited. Please check logs to confirm completion or error.")
             break
         
         last_logs = get_last_log_lines(log_file, 5)
         db_activity = get_db_activity(db_conn)
         
         print("\n" + "="*60)
-        print(f"时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"进程状态 (运行时间 CPU% MEM%): {ps_info}")
-        print(f"终端最后几行输出:")
+        print(f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Process status (elapsed CPU% MEM%): {ps_info}")
+        print(f"Last terminal output lines:")
         for line in last_logs:
             print(f"  > {line}")
         print("-" * 30)
-        print(f"数据库实时查询:")
+        print(f"Database real-time queries:")
         print(f"  {db_activity}")
         print("="*60)
         

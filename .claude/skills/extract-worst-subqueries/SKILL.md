@@ -1,60 +1,60 @@
 ---
 name: extract-worst-subqueries
-description: 从 STATS-CEB 的真实基数与估计基数文件中计算 Q-Error，找出误差最大的 Top-K 子查询并导出为可手动测试的 .sql 文件。用于排查 StarCE 在 STATS 上误差过大、需要定位“误差最大子查询/TopK子查询/Q-Error/提取子查询/手动测试”时。
+description: Compute Q-Error from STATS-CEB true cardinality and estimated cardinality files, find the Top-K subqueries with the largest errors, and export them as .sql files for manual testing. Use when troubleshooting large StarCE errors on STATS, or when needing to locate “worst subqueries/TopK subqueries/Q-Error/extract subqueries/manual testing”.
 ---
 
 # Extract Worst Subqueries (STATS-CEB)
 
-## 适用场景
+## Applicable Scenarios
 
-- 你在 STATS-CEB 上发现误差大，怀疑实现问题，需要快速定位 **Q-Error 最大** 的若干子查询，导出出来手工复现测试。
+- You found large errors on STATS-CEB, suspect an implementation issue, and need to quickly locate the subqueries with the **largest Q-Error**, export them for manual reproduction testing.
 
-## 输入与输出（默认）
+## Input and Output (Default)
 
-- **子查询 SQL**：`Benchmark/workloads/STATS-CEB/subquery/subquery.sql`（每行一条 `SELECT COUNT(*) ...;`）
-- **真实基数**：`Benchmark/workloads/STATS-CEB/subquery/result/real.txt`（每行一个数字）
-- **StarCE 估计基数**：`experiment/checkpoint/StarCE/card_stats.txt`（每行一个数字）
-- **导出文件**：`experiment/checkpoint/StarCE/topk_subqueries_stats.sql`
+- **Subquery SQL**: `Benchmark/workloads/STATS-CEB/subquery/subquery.sql` (one `SELECT COUNT(*) ...;` per line)
+- **True cardinality**: `Benchmark/workloads/STATS-CEB/subquery/result/real.txt` (one number per line)
+- **StarCE estimated cardinality**: `experiment/checkpoint/StarCE/card_stats.txt` (one number per line)
+- **Export file**: `experiment/checkpoint/StarCE/topk_subqueries_stats.sql`
 
-## 误差指标（Q-Error）
+## Error Metric (Q-Error)
 
-为避免 0 造成异常，计算前做截断：
+To avoid anomalies caused by 0, truncation is applied before calculation:
 
 - \(t = \max(1, true)\)
 - \(e = \max(1, est)\)
-- \(qerror = \max(e, t) / \min(e, t)\)（始终 ≥ 1）
+- \(qerror = \max(e, t) / \min(e, t)\) (always ≥ 1)
 
-## 操作步骤（必须按顺序）
+## Operation Steps (Must Be Followed in Order)
 
-1. 确认输入文件存在，且三者**行数一致**（否则无法逐行对齐）。
-2. 在仓库根目录运行脚本：
+1. Confirm input files exist and all three have **the same line count** (otherwise line-by-line alignment is impossible).
+2. Run the script from the repository root:
 
 ```bash
 python3 experiment/find_worst_subqueries.py --topk 20
 ```
 
-3. 打开输出文件 `experiment/checkpoint/StarCE/topk_subqueries_stats.sql`，每条子查询上方会有注释：
-   - `idx`：在原始 `subquery.sql` / `real.txt` / `card_stats.txt` 中的**1-based 行号**
-   - `true` / `est` / `qerror`：对应数值
-4. 抽查 Top-3：
-   - `subquery.sql` 第 `idx` 行应与导出的 SQL 文本一致
-   - `real.txt` / `card_stats.txt` 第 `idx` 行应与注释里的 `true/est` 一致
+3. Open the output file `experiment/checkpoint/StarCE/topk_subqueries_stats.sql`. Each subquery will have a comment header above it:
+   - `idx`: **1-based line number** in the original `subquery.sql` / `real.txt` / `card_stats.txt`
+   - `true` / `est` / `qerror`: corresponding values
+4. Spot-check Top-3:
+   - Line `idx` in `subquery.sql` should match the exported SQL text
+   - Line `idx` in `real.txt` / `card_stats.txt` should match the `true/est` values in the comment
 
-## 常用参数
+## Common Parameters
 
-- 指定导出条数：
+- Specify export count:
 
 ```bash
 python3 experiment/find_worst_subqueries.py --topk 50
 ```
 
-- 指定输出文件：
+- Specify output file:
 
 ```bash
 python3 experiment/find_worst_subqueries.py --topk 30 --out experiment/checkpoint/StarCE/top30_subqueries_stats.sql
 ```
 
-## 注意事项
+## Notes
 
-- 这个流程假设三个输入文件是**逐行一一对应**生成的；若你更换了生成子查询的顺序或过滤了空行，需要重新生成对应文件，确保对齐。
+- This workflow assumes the three input files were generated **line-by-line one-to-one corresponding**. If you changed the subquery generation order or filtered empty lines, you need to regenerate the corresponding files to ensure alignment.
 

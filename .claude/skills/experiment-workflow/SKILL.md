@@ -1,45 +1,45 @@
 ---
 name: experiment-workflow
-description: StarCE 实验流程总览：实验目录结构、ExperimentRunner.py 核心驱动逻辑、各 Test notebook（TestStarCE/TestDuckDB/TestSafebound）的操作流程、各 Evaluate notebook（EvaluateAccuracy/EvaluateCompress/EvaluateBuild/EvaluatePerformance）的分析方式，以及 checkpoint 目录的文件组织。当用户提到实验流程、如何运行实验、ExperimentRunner、基数收集、Q-Error 计算、精度对比、构建时间、性能测试、find_worst_subqueries 时使用。
+description: StarCE experiment workflow overview: experiment directory structure, ExperimentRunner.py core driver logic, operational workflows for each Test notebook (TestStarCE/TestDuckDB/TestSafebound), analysis methods for each Evaluate notebook (EvaluateAccuracy/EvaluateCompress/EvaluateBuild/EvaluatePerformance), and file organization of the checkpoint directory. Use when the user mentions experiment workflow, how to run experiments, ExperimentRunner, cardinality collection, Q-Error calculation, accuracy comparison, build time, performance testing, find_worst_subqueries.
 ---
 
-# StarCE 实验流程
+# StarCE Experiment Workflow
 
-## 总体架构
+## Overall Architecture
 
-实验分两个阶段：**基数收集**（Test notebooks）→ **结果分析**（Evaluate notebooks）。
+Experiments are divided into two phases: **Cardinality Collection** (Test notebooks) → **Result Analysis** (Evaluate notebooks).
 
 ```
-阶段一：各方法基数收集
+Phase 1: Cardinality collection for each method
   TestStarCE.ipynb       → checkpoint/StarCE/card_*.txt
   TestDuckDB.ipynb       → checkpoint/DuckDB/card_*.txt
   TestSafebound.ipynb    → checkpoint/SafeBound/SafeBound_3_*_evaluate_results.txt
 
-阶段二：结果分析与可视化
-  EvaluateAccuracy.ipynb   → Q-Error boxplot + histogram（精度对比）
-  EvaluateCompress.ipynb   → CompressPrecision 参数敏感性
-  EvaluateBuild.ipynb      → 构建时间 + 统计信息大小
-  EvaluatePerformance.ipynb → 计划时间 + 执行时间端到端对比
+Phase 2: Result analysis and visualization
+  EvaluateAccuracy.ipynb   → Q-Error boxplot + histogram (accuracy comparison)
+  EvaluateCompress.ipynb   → CompressPrecision parameter sensitivity
+  EvaluateBuild.ipynb      → Build time + statistics size
+  EvaluatePerformance.ipynb → Planning time + execution time end-to-end comparison
 
-辅助工具
-  ExperimentRunner.py      → 核心驱动模块（被所有 Test notebook 调用）
-  find_worst_subqueries.py → 定位误差最大的 Top-K 子查询
-  init_experiments.sh      → 初始化 running_space（建库、复制可执行文件）
+Auxiliary Tools
+  ExperimentRunner.py      → Core driver module (called by all Test notebooks)
+  find_worst_subqueries.py → Find Top-K subqueries with largest errors
+  init_experiments.sh      → Initialize running_space (create databases, copy executables)
 ```
 
 ---
 
-## 目录结构
+## Directory Structure
 
 ```
 experiment/
-├── running_space/          ← StarCE 工作目录，所有相对路径以此为基准
-│   ├── config.json         ← 每次运行前由 ExperimentRunner 写入
-│   ├── starce / duckdb     ← 可执行文件
-│   ├── statistics_*.json   ← StarCE 统计信息缓存
-│   ├── dummy_query.sql     ← 空文件，用于测量启动开销
-│   └── dummy_result.txt    ← 空文件，占位用
-├── checkpoint/             ← 各方法结果持久化
+├── running_space/          ← StarCE working directory, all relative paths are based here
+│   ├── config.json         ← Written by ExperimentRunner before each run
+│   ├── starce / duckdb     ← Executables
+│   ├── statistics_*.json   ← StarCE statistics cache
+│   ├── dummy_query.sql     ← Empty file, used to measure startup overhead
+│   └── dummy_result.txt    ← Empty file, placeholder
+├── checkpoint/             ← Persistent results for each method
 │   ├── StarCE/
 │   │   ├── card_stats.txt / card_jobm.txt / card_joblight.txt / card_joblr.txt
 │   │   ├── benchmark_times.csv
@@ -49,8 +49,8 @@ experiment/
 │   │   ├── SafeBound_3_{benchmark}.pkl
 │   │   ├── SafeBound_3_{benchmark}_evaluate_results.txt
 │   │   └── benchmark_times.csv
-│   └── figures/            ← 所有生成的 PDF 图表
-├── ExperimentRunner.py     ← 核心驱动模块
+│   └── figures/            ← All generated PDF charts
+├── ExperimentRunner.py     ← Core driver module
 ├── find_worst_subqueries.py
 ├── init_experiments.sh
 ├── TestStarCE.ipynb
@@ -66,158 +66,158 @@ experiment/
 
 ## ExperimentRunner.py
 
-所有 Test notebook 的核心依赖，提供三个抽象层次。
+The core dependency for all Test notebooks, providing three abstraction layers.
 
-### `StarCEConfig`（dataclass）
+### `StarCEConfig` (dataclass)
 
-映射 `running_space/config.json` 的全部字段，额外提供：
-- `to_json_file(path)` — 序列化写入 config.json
-- `copy()` / `update(**kwargs)` — 不可变式派生新配置
-- `from_json_file(path)` — 反序列化
+Maps all fields of `running_space/config.json`, additionally providing:
+- `to_json_file(path)` — serialize and write to config.json
+- `copy()` / `update(**kwargs)` — immutable-style derivation of new configs
+- `from_json_file(path)` — deserialize
 
-### `ExperimentRunner`（ABC）
+### `ExperimentRunner` (ABC)
 
-**目录常量**（`__init__` 中确定）：
+**Directory constants** (set in `__init__`):
 - `script_dir` = `experiment/`
 - `running_space` = `experiment/running_space/`
 - `checkpoint_dir` = `experiment/checkpoint/`
 - `benchmark_dir` = `Benchmark/`
 
-**核心方法**：
+**Core methods**:
 
-| 方法 | 说明 |
+| Method | Description |
 |------|------|
-| `save_config(config)` | 将 `StarCEConfig` 写入 `running_space/config.json` |
-| `run_starce()` | 在 `running_space/` 执行 `./starce`，返回 `(success, elapsed_sec)` |
-| `_prepare_input_sql_with_explain(src, dst)` | 对 src 中每条 SQL 加 `EXPLAIN` 前缀写入 dst |
-| `_prepare_input_sql_without_explain(src, dst)` | 直接复制（用于测实际执行时间） |
-| `inner_test_planning_time(config, ...)` | 计划时间 = EXPLAIN运行时间 − dummy_query.sql 运行时间 |
-| `inner_test_running_time(config, ...)` | 执行时间 = 普通SQL运行时间 − EXPLAIN运行时间 |
+| `save_config(config)` | Write `StarCEConfig` to `running_space/config.json` |
+| `run_starce()` | Execute `./starce` in `running_space/`, returns `(success, elapsed_sec)` |
+| `_prepare_input_sql_with_explain(src, dst)` | Prefix each SQL in src with `EXPLAIN`, write to dst |
+| `_prepare_input_sql_without_explain(src, dst)` | Direct copy (used to measure actual execution time) |
+| `inner_test_planning_time(config, ...)` | Planning time = EXPLAIN runtime − dummy_query.sql runtime |
+| `inner_test_running_time(config, ...)` | Execution time = normal SQL runtime − EXPLAIN runtime |
 
-**Workload 配置工厂方法**（返回预填充的 `StarCEConfig`）：
-- `get_stats_config()` — STATS-CEB，stats.db
-- `get_jobm_config()` — JOBM，imdb.db
-- `get_joblight_config()` — JOBLight，imdb.db（轻量 schema）
-- `get_joblight_ranges_config()` — JOBLightRanges，imdb.db
+**Workload config factory methods** (return pre-populated `StarCEConfig`):
+- `get_stats_config()` — STATS-CEB, stats.db
+- `get_jobm_config()` — JOBM, imdb.db
+- `get_joblight_config()` — JOBLight, imdb.db (lightweight schema)
+- `get_joblight_ranges_config()` — JOBLightRanges, imdb.db
 
-### 子类
+### Subclasses
 
-**`StarCETestRunner`**（`EnableStarCE=1`）：
-- `inner_test_build_time(config, db_name, num_runs)` — `RefreshStatistics=1`，测统计收集时间和文件大小
-- `get_est_cards(benchmark)` — `RecordingSubquery=1` + EXPLAIN 模式运行，结果写入 `checkpoint/StarCE/card_*.txt`
+**`StarCETestRunner`** (`EnableStarCE=1`):
+- `inner_test_build_time(config, db_name, num_runs)` — `RefreshStatistics=1`, measure statistics collection time and file size
+- `get_est_cards(benchmark)` — `RecordingSubquery=1` + EXPLAIN mode run, results written to `checkpoint/StarCE/card_*.txt`
 
-**`DuckDBTestRunner`**（`EnableStarCE=0`）：
-- 与 StarCETestRunner 同接口，但关闭 StarCE，测量 DuckDB 原生性能
-- `test_build_time()` 为空操作（DuckDB 无构建步骤）
+**`DuckDBTestRunner`** (`EnableStarCE=0`):
+- Same interface as StarCETestRunner, but StarCE disabled, measuring DuckDB native performance
+- `test_build_time()` is a no-op (DuckDB has no build step)
 
-**`InjectionTestRunner`**（`UseSubqueryCard=1`）：
-- `inner_test_planning_time_with_injection(config, ..., injected_card_path, card_est_time)` — 注入外部基数，计划时间额外加上估计器本身耗时
-- 用于在相同 DuckDB 框架下测试 SafeBound/FactorJoin 的端到端性能
+**`InjectionTestRunner`** (`UseSubqueryCard=1`):
+- `inner_test_planning_time_with_injection(config, ..., injected_card_path, card_est_time)` — inject external cardinalities, planning time additionally includes the estimator's own overhead
+- Used to test SafeBound/FactorJoin end-to-end performance under the same DuckDB framework
 
 ### `setup_starce_executable(project_root, running_space)`
 
-从 `build/starce` 复制可执行文件到 `running_space/starce` 并赋权 `0o755`。
+Copies executable from `build/starce` to `running_space/starce` and sets permissions `0o755`.
 
 ---
 
-## 各 Test Notebook 流程
+## Test Notebook Workflows
 
 ### TestStarCE.ipynb
 
 ```
-1. Build 阶段
+1. Build Phase
    for benchmark in [STATS, JOBM, JOBLight, JOBLightRanges]:
        config = get_{benchmark}_db_config()
        config.RefreshStatistics = 1
        inner_test_build_time(config, db_name)
-       → 记录构建时间 + statistics_*.json 文件大小
+       → Record build time + statistics_*.json file size
 
-2. Evaluate 阶段（get_est_cards）
+2. Evaluate Phase (get_est_cards)
    for benchmark in [STATS, JOBM, JOBLight, JOBLightRanges]:
-       - 将 subquery.sql 加 EXPLAIN 前缀
-       - RecordingSubquery=1，SUBQUERY_RESULT_PATH → 输出文件
-       - run_starce() → 读取每条子查询的 StarCE 估计基数
+       - Prefix subquery.sql lines with EXPLAIN
+       - RecordingSubquery=1, SUBQUERY_RESULT_PATH → output file
+       - run_starce() → read StarCE estimated cardinality for each subquery
        → checkpoint/StarCE/card_{benchmark}.txt
 
-3. 汇总 → checkpoint/StarCE/benchmark_times.csv
+3. Summary → checkpoint/StarCE/benchmark_times.csv
 ```
 
 ### TestDuckDB.ipynb
 
 ```
 for benchmark in [STATS, JOBM, JOBLight, JOBLightRanges]:
-    1. 将 subquery.sql 加 EXPLAIN 前缀 → running_space/explain.sql
+    1. Prefix subquery.sql lines with EXPLAIN → running_space/explain.sql
     2. subprocess.run([duckdb_exec, db_path], stdin=explain.sql)
-    3. extract_card_from_explain.process_data() 解析输出
-       （匹配 "\d+ Rows" 模式，以 "\n\n" 分割查询块）
-    4. 写 checkpoint/DuckDB/card_{benchmark}.txt
+    3. extract_card_from_explain.process_data() parse output
+       (match "\d+ Rows" pattern, split query blocks by "\n\n")
+    4. Write checkpoint/DuckDB/card_{benchmark}.txt
 ```
 
-DuckDB 不经过 StarCE，直接调用 `duckdb` 可执行文件，解析 EXPLAIN 文本提取估计行数。
+DuckDB bypasses StarCE entirely — it directly calls the `duckdb` executable and parses EXPLAIN text to extract estimated row counts.
 
 ### TestSafebound.ipynb
 
 ```
-1. Build 阶段
+1. Build Phase
    for benchmark in [STATS, JOBM, JOBLight, JOBLightRanges]:
        build_stats_object(method, benchmark, parameters)
        → checkpoint/SafeBound/SafeBound_3_{benchmark}.pkl
 
-2. Evaluate 阶段
+2. Evaluate Phase
    for benchmark:
        pkl = pickle.load(SafeBound_3_{benchmark}.pkl)
        for sql in subquery_file:
-           - Stats: sql_to_joingraph(sql)  ← 自定义解析器
-           - 其余: SQLQueriesToJoinQueryGraphs(sql)  ← SafeBound 库
+           - Stats: sql_to_joingraph(sql)  ← custom parser
+           - Others: SQLQueriesToJoinQueryGraphs(sql)  ← SafeBound library
            card = pkl.functionalFrequencyBound(query)
        → checkpoint/SafeBound/SafeBound_3_{benchmark}_evaluate_results.txt
 
-3. 汇总 → checkpoint/SafeBound/benchmark_times.csv
+3. Summary → checkpoint/SafeBound/benchmark_times.csv
 ```
 
-注意：Stats/JOBM 使用 `subquery.sql`；JOBLight/JOBLightRanges 使用 `subquery2.sql`。
+Note: Stats/JOBM uses `subquery.sql`; JOBLight/JOBLightRanges uses `subquery2.sql`.
 ---
 
-## 各 Evaluate Notebook 说明
+## Evaluate Notebook Descriptions
 
-### EvaluateAccuracy.ipynb — 精度对比
+### EvaluateAccuracy.ipynb — Accuracy Comparison
 
-**Q-Error 定义**：`max(1, est) / max(1, true)`，绘图时取 `log10`
+**Q-Error definition**: `max(1, est) / max(1, true)`, `log10` applied when plotting
 
-**输入文件**：
+**Input files**:
 
-| 方法 | 输入路径 |
+| Method | Input Path |
 |------|---------|
 | StarCE | `checkpoint/StarCE/card_{benchmark}.txt` |
 | DuckDB | `checkpoint/DuckDB/card_{benchmark}.txt` |
 | SafeBound | `checkpoint/SafeBound/SafeBound_3_{benchmark}_evaluate_results.txt` |
 | FactorJoin | `checkpoint/FactorJoin/card_{benchmark}.txt` |
-| 真实基数 | `Benchmark/workloads/{benchmark}/subquery/result/real.txt` |
+| True Cardinality | `Benchmark/workloads/{benchmark}/subquery/result/real.txt` |
 
-**输出图表**（PDF → `checkpoint/figures/`）：
-- `accuracy_boxplot_benchmarks_grouped.pdf` — 4 benchmark × 5 方法分组箱线图
-- `accuracy_histograms_{benchmark}.pdf` — 各 benchmark 叠加直方图（4 张）
-- `accuracy_individual_histograms_{benchmark}.pdf` — 各 benchmark 独立子图直方图（4 张）
+**Output charts** (PDF → `checkpoint/figures/`):
+- `accuracy_boxplot_benchmarks_grouped.pdf` — 4 benchmarks × 5 methods grouped boxplot
+- `accuracy_histograms_{benchmark}.pdf` — per-benchmark overlaid histograms (4 charts)
+- `accuracy_individual_histograms_{benchmark}.pdf` — per-benchmark individual subplot histograms (4 charts)
 
-### EvaluateCompress.ipynb — CompressPrecision 参数实验
+### EvaluateCompress.ipynb — CompressPrecision Parameter Experiment
 
-实验设计：4 benchmark × 4 个 cp 值（1.1 / 1.2 / 1.5 / 2.0）= 16 次 StarCE 运行。
+Experimental design: 4 benchmarks × 4 cp values (1.1 / 1.2 / 1.5 / 2.0) = 16 StarCE runs.
 
-每次运行**必须** `RefreshStatistics=1`，统计文件写入临时路径（不覆盖 checkpoint）。
+Each run **must** have `RefreshStatistics=1`, with statistics files written to a temporary path (not overwriting checkpoint).
 
-输出：
-- 估计基数：`checkpoint/StarCE/compress_precision/{benchmark}/card_{benchmark}_cp{val}.txt`
-- 图表：`checkpoint/figures/compress_precision_boxplot_benchmarks_grouped.pdf`
+Output:
+- Estimated cardinalities: `checkpoint/StarCE/compress_precision/{benchmark}/card_{benchmark}_cp{val}.txt`
+- Chart: `checkpoint/figures/compress_precision_boxplot_benchmarks_grouped.pdf`
 
-### EvaluateBuild.ipynb — 构建时间对比
+### EvaluateBuild.ipynb — Build Time Comparison
 
-**数据来源**（各方法 CSV 经 `load_method_data()` 统一重命名）：
-- StarCE：`checkpoint/StarCE/benchmark_times.csv`
-- SafeBound：`checkpoint/SafeBound/benchmark_times.csv`
+**Data sources** (each method's CSV uniformly renamed via `load_method_data()`):
+- StarCE: `checkpoint/StarCE/benchmark_times.csv`
+- SafeBound: `checkpoint/SafeBound/benchmark_times.csv`
 
-**输出图表**：构建时间柱状图（log 纵轴）+ 统计信息大小柱状图（线性纵轴，MB）
+**Output charts**: Build time bar chart (log y-axis) + statistics size bar chart (linear y-axis, MB)
 
-**实测数据参考**（秒）：
+**Measured data reference** (seconds):
 
 | Benchmark | SafeBound | StarCE |
 |-----------|-----------|--------|
@@ -225,30 +225,30 @@ DuckDB 不经过 StarCE，直接调用 `duckdb` 可执行文件，解析 EXPLAIN
 | JOBM | 3.40 | 1.46 |
 | STATS | 1.21 | 0.15 |
 
-### EvaluatePerformance.ipynb — 端到端性能对比
+### EvaluatePerformance.ipynb — End-to-End Performance Comparison
 
-对比方法：DuckDB（`DuckDBTestRunner`）/ StarCE（`StarCETestRunner`）/ SafeBound（`InjectionTestRunner`）
+Compared methods: DuckDB (`DuckDBTestRunner`) / StarCE (`StarCETestRunner`) / SafeBound (`InjectionTestRunner`)
 
-**时间计算逻辑**：
-- `planning_time` = EXPLAIN时间 − dummy启动时间（SafeBound 还需 + 估计器耗时）
-- `running_time` = 普通SQL时间 − EXPLAIN时间
+**Time calculation logic**:
+- `planning_time` = EXPLAIN time − dummy startup time (SafeBound also needs + estimator overhead)
+- `running_time` = normal SQL time − EXPLAIN time
 
-**输出图表**（1×3 子图）：Planning Time / Running Time / End-to-End Time
+**Output charts** (1×3 subplots): Planning Time / Running Time / End-to-End Time
 
-**实测数据参考**：
+**Measured data reference**:
 
-| 方法 | Benchmark | Planning | Running |
+| Method | Benchmark | Planning | Running |
 |------|-----------|----------|---------|
 | DuckDB | STATS | 0.16s | 228.6s |
 | StarCE | STATS | 0.18s | 113.2s |
 | SafeBound | STATS | 0.45s | 133.1s |
-| SafeBound | JOBM | 264.2s | 39.3s（JOBM 采样耗时极大）|
+| SafeBound | JOBM | 264.2s | 39.3s (JOBM sampling is extremely costly) |
 
 ---
 
 ## find_worst_subqueries.py
 
-给定三个行对齐文件，定位误差最大的 Top-K 子查询：
+Given three line-aligned files, locate the Top-K subqueries with the largest errors:
 
 ```bash
 python find_worst_subqueries.py \
@@ -259,7 +259,7 @@ python find_worst_subqueries.py \
   --out   experiment/checkpoint/StarCE/topk_subqueries_stats.sql
 ```
 
-Q-Error = `max(1, max(est, true)) / max(1, min(est, true))`，输出 SQL 文件含注释头（idx/true/est/qerror）。
+Q-Error = `max(1, max(est, true)) / max(1, min(est, true))`, output SQL file includes comment headers (idx/true/est/qerror).
 
 ---
 
@@ -269,9 +269,9 @@ Q-Error = `max(1, max(est, true)) / max(1, min(est, true))`，输出 SQL 文件�
 bash experiment/init_experiments.sh <imdb_data_path> <stats_data_path> [debug|release]
 ```
 
-初始化步骤：
-1. 从 `build/` 复制 `starce` 和 `duckdb` 到 `running_space/`，赋予可执行权限
-2. 创建 `Benchmark/duckdb/imdb.db`（导入 IMDB CSV，无表头）
-3. 创建 `Benchmark/duckdb/stats.db`（导入 STATS CSV，有表头）
-4. 创建空的 `dummy_query.sql` 和 `dummy_result.txt`
-5. 若 `.db` 文件已存在则跳过（幂等）
+Initialization steps:
+1. Copy `starce` and `duckdb` from `build/` to `running_space/`, set executable permissions
+2. Create `Benchmark/duckdb/imdb.db` (import IMDB CSV, no header)
+3. Create `Benchmark/duckdb/stats.db` (import STATS CSV, with header)
+4. Create empty `dummy_query.sql` and `dummy_result.txt`
+5. Skip if `.db` files already exist (idempotent)

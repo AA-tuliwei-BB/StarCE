@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-JOBM 预物化脚本：对 jobm_main_queries/ 中的主查询物化 binned cards 并记录耗时。
-需先完成训练和 prepare_sample。运行 parse_subquery_grouped.py 生成 jobm_main_queries/。
+JOBM pre-materialization script: materialize binned cards for main queries in jobm_main_queries/ and record elapsed time.
+Requires prior training and prepare_sample. Run parse_subquery_grouped.py to generate jobm_main_queries/.
 """
 import argparse
 import os
@@ -35,7 +35,7 @@ def main():
         args.save_dir,
     )
     elapsed = time.time() - t_start
-    print(f"\n[JOBM 预物化完成] 总耗时: {elapsed:.2f} 秒 ({elapsed/60:.2f} 分钟)")
+    print(f"\n[JOBM pre-materialization complete] Total elapsed: {elapsed:.2f} sec ({elapsed/60:.2f} min)")
 
 
 if __name__ == "__main__":

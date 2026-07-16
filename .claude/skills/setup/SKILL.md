@@ -1,84 +1,84 @@
 ---
 name: setup
-description: StarCE 项目统一环境搭建指南：conda 环境、数据集获取（STATS/IMDB）、PostgreSQL 配置、DuckDB 编译与数据库创建。当用户提到环境搭建、初始化项目、从零配置、setup、安装环境、创建数据库时使用。
+description: Unified environment setup guide for the StarCE project: conda environment, dataset acquisition (STATS/IMDB), PostgreSQL configuration, DuckDB compilation and database creation. Use when mentioning environment setup, project initialization, setting up from scratch, setup, installing environment, creating database.
 ---
 
-# StarCE 项目统一环境搭建
+# StarCE Project Unified Environment Setup
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 1. Conda 环境
+# 1. Conda environment
 conda env create -f setup/conda/environment.yml
 conda activate TestEnv
 
-# 2. 数据集
+# 2. Datasets
 bash setup/dataset/init_stats.sh
 bash setup/dataset/init_imdb.sh
 
-# 3. 编译 StarCE (DuckDB + StarCE)
+# 3. Compile StarCE (DuckDB + StarCE)
 ./build.sh
 
-# 4. 创建 DuckDB 数据库
+# 4. Create DuckDB databases
 bash setup/duckdb/create_stats_db.sh
 bash setup/duckdb/create_imdb_db.sh
 ```
 
-## 子指南
+## Sub-Guides
 
-| 指南 | 路径 | 说明 |
+| Guide | Path | Description |
 |------|------|------|
-| Conda 环境 | `setup/conda/README.md` | Python 3.10.4, TestEnv 环境配置 |
-| 数据集 | `setup/dataset/README.md` | STATS-CEB 和 IMDB 数据获取 |
-| PostgreSQL | `setup/postgresql/README.md` | PG 13.1 安装、配置、数据库创建 |
-| DuckDB | `setup/duckdb/README.md` | 编译、.db 文件创建、CSV 导入 |
+| Conda Environment | `setup/conda/README.md` | Python 3.10.4, TestEnv environment configuration |
+| Datasets | `setup/dataset/README.md` | STATS-CEB and IMDB data acquisition |
+| PostgreSQL | `setup/postgresql/README.md` | PG 13.1 installation, configuration, database creation |
+| DuckDB | `setup/duckdb/README.md` | Compilation, .db file creation, CSV import |
 
-## 数据集概览
+## Dataset Overview
 
-| 数据集 | 表数 | 大小 | 获取方式 |
+| Dataset | Table Count | Size | Acquisition Method |
 |--------|------|------|----------|
-| STATS-CEB | 8 | ~39 MB | 仓库内已有，`init_stats.sh` 验证 |
-| IMDB | 21 | ~4.8 GB | `init_imdb.sh` 下载 |
+| STATS-CEB | 8 | ~39 MB | Already in repo, `init_stats.sh` verifies |
+| IMDB | 21 | ~4.8 GB | `init_imdb.sh` downloads |
 
-数据统一存放在 `Benchmark/STATS/` 和 `Benchmark/IMDB/`。
+Data is uniformly stored under `Benchmark/STATS/` and `Benchmark/IMDB/`.
 
-## PostgreSQL 数据库
+## PostgreSQL Databases
 
-| 数据库 | 表数 | 说明 |
+| Database | Table Count | Description |
 |--------|------|------|
 | stats | 8 | STATS-CEB |
-| imdb | 21 | 完整 IMDB |
-| imdblight | 6 | JOBLight 子集 |
-| imdblightranges | 6 | JOBLightRanges 子集 |
-| imdbm | 17 | JOBM 子集 |
+| imdb | 21 | Full IMDB |
+| imdblight | 6 | JOBLight subset |
+| imdblightranges | 6 | JOBLightRanges subset |
+| imdbm | 17 | JOBM subset |
 
-## 编译
+## Compilation
 
-始终使用 `./build.sh`（release）或 `./build.sh debug`。release 模式更小更快（~560KB），debug 模式可调试（~11MB）。
+Always use `./build.sh` (release) or `./build.sh debug`. Release mode is smaller and faster (~560KB), debug mode allows debugging (~11MB).
 
-## Running Space 初始化
+## Running Space Initialization
 
 ```bash
 RUNNING_SPACE=experiment/running_space
 mkdir -p $RUNNING_SPACE
 
-# 复制编译产物
+# Copy build artifacts
 cp build/starce $RUNNING_SPACE/
 cp duckdb/build/release/duckdb $RUNNING_SPACE/
 
-# 创建 starce 需要的占位文件（即使仅做统计收集也必须存在）
+# Create placeholder files required by starce (must exist even for stats collection only)
 touch $RUNNING_SPACE/dummy_query.sql $RUNNING_SPACE/dummy_result.txt
 ```
 
-> ⚠️ starce 启动时会读取 `SQL_PATH` 指向的文件（默认 `dummy_query.sql`）并写入 `REAL_CARD_PATH`（默认 `dummy_result.txt`），这两个文件必须存在，否则 starce 会崩溃退出（`Failed to open file`）。
+> starce reads the file pointed to by `SQL_PATH` (default `dummy_query.sql`) and writes to `REAL_CARD_PATH` (default `dummy_result.txt`) at startup. Both files must exist, otherwise starce will crash with `Failed to open file`.
 
-## LpBound 环境
+## LpBound Environment
 
-> 详见 [`setup/lpbound/SKILL.md`](lpbound/SKILL.md) — 独立复现指南，含 conda 环境快照。
+> See [`setup/lpbound/SKILL.md`](lpbound/SKILL.md) — standalone reproduction guide, including conda environment snapshot.
 
-## 相关 Skills
+## Related Skills
 
-- [postgresql-env](../postgresql-env/SKILL.md) - PG 连接配置
-- [benchmark-datasets](../benchmark-datasets/SKILL.md) - 数据集详情
-- [starce-usage](../starce-usage/SKILL.md) - StarCE 运行方法
-- [experiment-workflow](../experiment-workflow/SKILL.md) - 实验流程
+- [postgresql-env](../postgresql-env/SKILL.md) - PG connection configuration
+- [benchmark-datasets](../benchmark-datasets/SKILL.md) - Dataset details
+- [starce-usage](../starce-usage/SKILL.md) - How to run StarCE
+- [experiment-workflow](../experiment-workflow/SKILL.md) - Experiment workflow

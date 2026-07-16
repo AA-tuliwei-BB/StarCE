@@ -9,44 +9,44 @@ DATA_DIR="${PROJECT_ROOT}/Benchmark/STATS"
 DB_FILE="${PROJECT_ROOT}/Benchmark/duckdb/stats.db"
 
 if [ ! -f "${DUCKDB_BIN}" ]; then
-    echo "错误: DuckDB binary 未找到: ${DUCKDB_BIN}"
-    echo "请先编译: cd ${PROJECT_ROOT} && ./build.sh"
-    echo "或指定路径: $0 <path/to/duckdb>"
+    echo "Error: DuckDB binary not found: ${DUCKDB_BIN}"
+    echo "Please build first: cd ${PROJECT_ROOT} && ./build.sh"
+    echo "Or specify path: $0 <path/to/duckdb>"
     exit 1
 fi
 
 if [ -f "${DB_FILE}" ]; then
-    echo "stats.db 已存在 (${DB_FILE})，删除以重建:"
+    echo "stats.db already exists (${DB_FILE}), delete to rebuild:"
     echo "  rm ${DB_FILE}"
     exit 0
 fi
 
-echo "=== 创建 STATS DuckDB 数据库 ==="
+echo "=== Create STATS DuckDB database ==="
 echo "Schema: ${SCHEMA_SQL}"
-echo "数据: ${DATA_DIR}"
-echo "输出: ${DB_FILE}"
+echo "Data: ${DATA_DIR}"
+echo "Output: ${DB_FILE}"
 
 mkdir -p "$(dirname "$DB_FILE")"
 
-# 创建表结构
+# Create table structure
 "${DUCKDB_BIN}" "${DB_FILE}" < "${SCHEMA_SQL}"
-echo "表结构创建完成"
+echo "Table structure created"
 
-# STATS 的表名列表（与 benchmark/stats-ceb/starce.db 对齐）
+# STATS table name list (aligned with benchmark/stats-ceb/starce.db)
 TABLES=(badges comments postHistory postLinks posts tags users votes)
 
-# 导入 CSV (STATS CSV 有 HEADER)
+# Import CSV (STATS CSV has HEADER)
 for tbl in "${TABLES[@]}"; do
     csv="${DATA_DIR}/${tbl}.csv"
     if [ -f "${csv}" ]; then
-        echo "导入 ${tbl}..."
+        echo "Importing ${tbl}..."
         "${DUCKDB_BIN}" "${DB_FILE}" -c "COPY ${tbl} FROM '${csv}' (HEADER, DELIMITER ',');"
     else
-        echo "警告: ${csv} 不存在，跳过"
+        echo "Warning: ${csv} not found, skipping"
     fi
 done
 
 echo ""
-echo "=== 完成 ==="
-echo "文件: ${DB_FILE}"
-echo "大小: $(du -h "${DB_FILE}" | cut -f1)"
+echo "=== Done ==="
+echo "File: ${DB_FILE}"
+echo "Size: $(du -h "${DB_FILE}" | cut -f1)"

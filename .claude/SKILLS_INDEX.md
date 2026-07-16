@@ -1,30 +1,30 @@
-# StarCE Skills 索引
+# StarCE Skills Index
 
-## 快速导航
+## Quick Navigation
 
-### 工作流程
+### Workflows
 
-- **experiment-workflow** - 实验流程、ExperimentRunner、基数收集和分析
-- **python-env** - Python 环境配置、虚拟环境、依赖管理
-- **postgresql-env** - PostgreSQL 连接、数据库配置
+- **experiment-workflow** - Experiment workflow, ExperimentRunner, cardinality collection and analysis
+- **python-env** - Python environment configuration, virtual environments, dependency management
+- **postgresql-env** - PostgreSQL connection, database configuration
 
-### 系统文档
+### System Documentation
 
-- **starce-overview** - StarCE 系统架构、特性、项目结构
-- **starce-usage** - StarCE 使用指南、参数、二进制操作
-- **factorjoin-usage** - FactorJoin 工作模式（BN/采样）、流程
-- **factorjoin-jobm-sampling** - FactorJoin JOBM 采样详细实现
+- **starce-overview** - StarCE system architecture, features, project structure
+- **starce-usage** - StarCE usage guide, parameters, binary operations
+- **factorjoin-usage** - FactorJoin working modes (BN/sampling), workflows
+- **factorjoin-jobm-sampling** - FactorJoin JOBM sampling detailed implementation
 
-### 数据和工具
+### Data and Tools
 
-- **benchmark-datasets** - 数据集详情（STATS-CEB, JOBM, JOBLight）
-- **workload-file-formats** - 文件格式说明
-- **extract-worst-subqueries** - 误差分析工具
-- **remap-single-table-results** - 结果转换工具
-- **toggle-explain** - EXPLAIN 切换工具
+- **benchmark-datasets** - Dataset details (STATS-CEB, JOBM, JOBLight)
+- **workload-file-formats** - File format descriptions
+- **extract-worst-subqueries** - Error analysis tools
+- **remap-single-table-results** - Result conversion tools
+- **toggle-explain** - EXPLAIN toggle tool
 
-## 使用方式
+## Usage
 
-所有 skill 文档位于 `.claude/skills/<skill-name>/SKILL.md`
+All skill documents are located at `.claude/skills/<skill-name>/SKILL.md`
 
-在讨论相关主题时，Claude Code 会自动加载并参考对应的 skill 文档。
+When discussing related topics, Claude Code will automatically load and reference the corresponding skill documents.

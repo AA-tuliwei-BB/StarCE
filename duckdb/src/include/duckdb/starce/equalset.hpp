@@ -13,33 +13,33 @@ typedef std::string Table;
 
 class TableColumn {
 public:
-    std::string TableName;  // 表名
-    std::string ColumnName; // 列名
+    std::string TableName;  // Table name
+    std::string ColumnName; // Column name
 
-    // 默认构造函数
+    // Default constructor
     TableColumn() = default;
 
-    // 带参构造函数
+    // Parameterized constructor
     TableColumn(const std::string& tableName, const std::string& columnName)
         : TableName(tableName), ColumnName(columnName) {}
 
-    // 序列化方法：将对象转换为 JSON 字符串
+    // Serialization: convert object to JSON string
     std::string serialize() const {
         json j = {
             {"TableName", TableName},
             {"ColumnName", ColumnName}
         };
-        return j.dump(); // 将 JSON 对象转换为字符串
+        return j.dump(); // Convert JSON object to string
     }
 
-    // 反序列化方法：从 JSON 字符串转换为对象
+    // Deserialization: convert JSON string to object
     void deserialize(const std::string& jsonStr) {
-        json j = json::parse(jsonStr); // 将字符串解析为 JSON 对象
+        json j = json::parse(jsonStr); // Parse string into JSON object
         TableName = j.at("TableName").get<std::string>();
         ColumnName = j.at("ColumnName").get<std::string>();
     }
 
-    // 重载比较运算符
+    // Overloaded comparison operator
     bool operator<(const TableColumn& other) const {
         if (TableName != other.TableName) {
             return TableName < other.TableName;
@@ -54,9 +54,9 @@ public:
     std::set<TableColumn> Entries;
     EqualSet() = default;
 public:
-    // 序列化方法：将对象转换为 JSON 字符串
+    // Serialization: convert object to JSON string
     std::string serialize() const {
-        return serialize_to_json().dump(); // 将 JSON 对象转换为字符串
+        return serialize_to_json().dump(); // Convert JSON object to string
     }
 
     json serialize_to_json() const {
@@ -70,13 +70,13 @@ public:
         return j;
     }
 
-    // 反序列化方法：从 JSON 字符串转换为对象
+    // Deserialization: convert JSON string to object
     void deserialize(const std::string& jsonStr) {
-        json j = json::parse(jsonStr); // 将字符串解析为 JSON 对象
+        json j = json::parse(jsonStr); // Parse string into JSON object
         deserialize(j);
     }
 
-    // 反序列化方法：从 JSON 字符串转换为对象
+    // Deserialization: convert JSON string to object
     void deserialize(const json& j) {
         Entries.clear();
         for (const auto& entry : j["Entries"]) {
@@ -88,7 +88,7 @@ public:
         }
     }
 
-    // 重载比较运算符
+    // Overloaded comparison operator
     bool operator<(const EqualSet& other) const {
         return Entries < other.Entries;
     }
@@ -139,9 +139,9 @@ public:
 
     void Split(std::vector<EqualSet>& subset, int maxSize) const {
         subset.clear();
-        // 以maxSize的大小拆分按顺序拆分
-        // 暂时尽量不分割size为1的集合
-        // TODO-STARCE 搞定size为1的集合后优化
+        // Split in order by maxSize
+        // For now, try to avoid splitting size-1 sets
+        // TODO-STARCE: optimize after handling size-1 sets
         if (maxSize < 3) {
             throw std::runtime_error("maxSize must be at least 3");
         }
@@ -149,7 +149,7 @@ public:
         for (auto it = Entries.begin(); it != Entries.end(); ) {
             EqualSet eset;
             if (remain - maxSize == 1) {
-                // 暂时尽量不分割size为1的集合
+                // For now, try to avoid splitting size-1 sets
                 for (int i = 0; i < maxSize - 1 && it != Entries.end(); ++i, ++it) {
                     eset.Entries.insert(*it);
                 }

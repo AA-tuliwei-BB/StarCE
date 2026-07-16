@@ -2,39 +2,39 @@ import re
 import sys
 
 def process_data(data):
-    # 以两个回车符分割数据
+    # Split data by double newlines
     sections = data.split('\n\n')
-    
-    # 正则表达式匹配 [数字] Rows 的模式
+
+    # Regex to match [number] Rows pattern
     pattern = re.compile(r'([\d]+) Rows')
-    
+
     results = []
-    
+
     for section in sections:
-        # 在每部分中查找第一个匹配的模式
+        # Find the first matching pattern in each section
         match = pattern.search(section)
         if match:
             results.append(match.group(1))
-    
+
     return results
 
 def main():
-    # 检查是否提供了文件名作为参数
+    # Check if a filename was provided as argument
     if len(sys.argv) != 2:
         print("Usage: python script.py <filename>")
         sys.exit(1)
-    
+
     filename = sys.argv[1]
-    
+
     try:
-        # 从文件中读取数据
+        # Read data from file
         with open(filename, 'r', encoding='utf-8') as file:
             data = file.read()
-        
-        # 处理数据
+
+        # Process data
         extracted_rows = process_data(data)
-        
-        # 输出结果
+
+        # Output results
         for row in extracted_rows:
             print(row)
     

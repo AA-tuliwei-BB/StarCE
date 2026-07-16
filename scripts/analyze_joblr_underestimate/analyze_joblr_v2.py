@@ -1,8 +1,8 @@
 """
-额外验证：控制变量分析 JOBLightRanges 低估根因
-- 验证"谓词数量是主因"
-- 验证"getNDV 返回的是总行数而非 NDV"
-- 分析 PM1 filter_coeff 的累积效应
+Additional validation: controlled variable analysis of JOBLightRanges underestimation root cause
+- Verify "predicate count is the primary cause"
+- Verify "getNDV returns total row count rather than NDV"
+- Analyze the cumulative effect of PM1 filter_coeff
 """
 import os, sys, re, json
 import numpy as np
@@ -34,9 +34,9 @@ def load_data(benchmark):
     pm1 = read_txt(PROJECT_ROOT / f"experiment/checkpoint/StarCE/pred_method/{benchmark}/card_{benchmark}_PM1.txt")
     return real, pm1
 
-# ---------- 验证 1: 控制表数量的情况下，谓词数量对误差的影响 ----------
+# ---------- Verification 1: Impact of predicate count on error while controlling table count ----------
 print("=" * 70)
-print("验证 1: 同表数量下，谓词数 vs 误差")
+print("Verification 1: Predicate count vs error at same table count")
 print("=" * 70)
 
 def parse_subqueries(filepath):
@@ -75,9 +75,9 @@ def parse_subqueries(filepath):
 jolr_parsed = parse_subqueries(PROJECT_ROOT / "Benchmark/workloads/JOBLightRanges/subquery/subquery.sql")
 jol_real, jol_pm1 = load_data("JOBLightRanges")
 
-# 按表数量分组，看谓词数量与误差的关系
+# Group by table count, examine relationship between predicate count and error
 for nt in [2, 3, 4]:
-    print(f"\n  {nt}-表 join:")
+    print(f"\n  {nt}-table join:")
     for npred in [0, 1, 2, 3, 4, 5]:
         indices = [i for i, p in enumerate(jolr_parsed)
                    if p["table_count"] == nt and p["pred_count"] == npred]
@@ -93,9 +93,9 @@ for nt in [2, 3, 4]:
             print(f"    {npred} preds: n={len(arr)}, median={np.median(arr):.3f}, "
                   f"mean={np.mean(arr):.3f}, under_frac={np.mean(arr<0):.1%}")
 
-# ---------- 验证 2: 对比 STATS 数据中谓词数量的影响 ----------
+# ---------- Verification 2: Impact of predicate count on error in STATS dataset ----------
 print("\n" + "=" * 70)
-print("验证 2: STATS 数据集中谓词数量对误差的影响")
+print("Verification 2: Impact of predicate count on error in STATS dataset")
 print("=" * 70)
 
 stats_parsed = parse_subqueries(PROJECT_ROOT / "Benchmark/workloads/STATS-CEB/subquery/subquery.sql")
@@ -115,9 +115,9 @@ for npred in [0, 1, 2, 3, 4, 5]:
         print(f"  {npred} preds: n={len(arr)}, median={np.median(arr):.3f}, "
               f"mean={np.mean(arr):.3f}, under_frac={np.mean(arr<0):.1%}")
 
-# ---------- 验证 3: JOBLight中按谓词数量分析（控制变量） ----------
+# ---------- Verification 3: Predicate count impact on error in JOBLight (controlled variable) ----------
 print("\n" + "=" * 70)
-print("验证 3: JOBLight 中谓词数量对误差的影响")
+print("Verification 3: Impact of predicate count on error in JOBLight")
 print("=" * 70)
 
 jol_parsed = parse_subqueries(PROJECT_ROOT / "Benchmark/workloads/JOBLight/subquery/subquery.sql")
@@ -137,16 +137,16 @@ for npred in [0, 1, 2, 3, 4]:
         print(f"  {npred} preds: n={len(arr)}, median={np.median(arr):.3f}, "
               f"mean={np.mean(arr):.3f}, under_frac={np.mean(arr<0):.1%}")
 
-# ---------- 验证 4: 关键——统计有多少子查询会因乘积效应而严重低估 ----------
+# ---------- Verification 4: Key -- count how many subqueries severely underestimated due to product effect ----------
 print("\n" + "=" * 70)
-print("验证 4: PM1 乘积效应的理论分析")
+print("Verification 4: Theoretical analysis of PM1 product effect")
 print("=" * 70)
 
-# 对于 JOBLightRanges，估计在 2 表 join 中，
-# 如果 2 个表都有filter，filter_coeff 的典型值
-# 从 PG 的 single_query 估计中获取实际 selectivity
+# For JOBLightRanges, estimates in 2-table joins:
+# If both tables have filters, typical filter_coeff values
+# Get actual selectivity from PG's single_query estimates
 
-# 读取 single_query 文件获取过滤后基数
+# Read single_query files to get filtered cardinalities
 sq_path = PROJECT_ROOT / "Benchmark/workloads/JOBLightRanges/single_query/single_query.sql"
 pg_path = PROJECT_ROOT / "Benchmark/workloads/JOBLightRanges/single_query/pg_est.txt"
 
@@ -164,13 +164,13 @@ with open(pg_path) as f:
         if line:
             pg_ests.append(float(line))
 
-# 获取各表的基准行数
-# 从 statistics JSON 中获取
+# Get baseline row counts per table
+# From statistics JSON
 stats_path = PROJECT_ROOT / "experiment/checkpoint/StarCE/statistics_imdb.json"
 with open(stats_path) as f:
     stats_json = json.load(f)
 
-# 找单表统计（EqualSet 只有一张表）
+# Find single-table statistics (EqualSet with only one table)
 table_base_cards = {}
 for item in stats_json.get("Statistics", []):
     ds_stat = item.get("DSStatistic", {})
@@ -182,19 +182,19 @@ for item in stats_json.get("Statistics", []):
         if table_name and card > 0:
             table_base_cards[table_name] = float(card)
 
-print(f"  从 statistics 中找到 {len(table_base_cards)} 张表的基准基数:")
+print(f"  Found {len(table_base_cards)} tables with base cardinalities from statistics:")
 for t, c in sorted(table_base_cards.items()):
     print(f"    {t}: {c:,.0f}")
 
-# 分析 single_query 的 selectivity 分布
-print(f"\n  single_query 样本分析 (前20个):")
+# Analyze selectivity distribution of single_query
+print(f"\n  single_query sample analysis (first 20):")
 selectivities = []
 for i, (sql, est) in enumerate(zip(sq_lines[:100], pg_ests[:100])):
-    # 提取表名
+    # extract table name
     table_match = re.search(r'FROM\s+(\w+)\s+', sql, re.IGNORECASE)
     if table_match:
         table = table_match.group(1).lower()
-        # 映射到 schema 表名
+        # Map to schema table name
         for t in table_base_cards:
             if t.lower() == table or table.startswith(t.lower()):
                 base_card = table_base_cards[t]
@@ -206,61 +206,61 @@ for i, (sql, est) in enumerate(zip(sq_lines[:100], pg_ests[:100])):
 
 if selectivities:
     sel_arr = np.array(selectivities)
-    print(f"\n  Selectivity 分布 (n={len(sel_arr)}):")
+    print(f"\n  Selectivity distribution (n={len(sel_arr)}):")
     print(f"    median={np.median(sel_arr):.4f}, mean={np.mean(sel_arr):.4f}")
     print(f"    p25={np.percentile(sel_arr, 25):.4f}, p75={np.percentile(sel_arr, 75):.4f}")
     print(f"    min={np.min(sel_arr):.6f}, max={np.max(sel_arr):.4f}")
 
-    # 模拟 PM1 乘积效应
-    print(f"\n  模拟 PM1 乘积效应（随机抽取 3 个 filter_coeff）:")
+    # Simulate PM1 product effect
+    print(f"\n  Simulated PM1 product effect (randomly sample 3 filter_coeff):")
     np.random.seed(42)
     products = []
     for _ in range(10000):
         sels = np.random.choice(sel_arr, size=3)
         products.append(np.prod(sels))
     prod_arr = np.array(products)
-    print(f"    3 个 filter_coeff 的乘积分布:")
+    print(f"    Product distribution of 3 filter_coeff:")
     print(f"    median={np.median(prod_arr):.6f}, mean={np.mean(prod_arr):.6f}")
     print(f"    p10={np.percentile(prod_arr, 10):.6f}, p25={np.percentile(prod_arr, 25):.6f}")
 
-    # 与 geometric mean 对比
+    # Compare with geometric mean
     geo_means = []
     for _ in range(10000):
         sels = np.random.choice(sel_arr, size=3)
         geo_means.append(np.prod(sels) ** (1/3))
     gm_arr = np.array(geo_means)
-    print(f"\n    Geometric mean (原方案) 分布:")
+    print(f"\n    Geometric mean (original approach) distribution:")
     print(f"    median={np.median(gm_arr):.4f}, mean={np.mean(gm_arr):.4f}")
 
-    print(f"\n    直接乘积 / Geometric mean = {np.median(prod_arr)/np.median(gm_arr):.4f}")
-    print(f"    → PM1 直接乘积使 coeff 额外缩小了约 {np.median(gm_arr)/np.median(prod_arr):.1f}x")
+    print(f"\n    Direct product / Geometric mean = {np.median(prod_arr)/np.median(gm_arr):.4f}")
+    print(f"    -> PM1 direct product makes coeff ~{np.median(gm_arr)/np.median(prod_arr):.1f}x smaller")
 
-# ---------- 验证 5: GetNDV 返回的是总行数而非 NDV ----------
+# ---------- Verification 5: GetNDV returns total row count rather than NDV ----------
 print("\n" + "=" * 70)
-print("验证 5: GetNDV 返回的是总行数 (card) 而非 NDV")
+print("Verification 5: GetNDV returns total row count (card) rather than NDV")
 print("=" * 70)
 
 print("""
-  GetNDV 代码 (starce.hpp:634-642):
+  GetNDV code (starce.hpp:634-642):
     int64_t GetNDV(const std::string& table) {
         EqualSet eset;
         eset.Entries.insert({table, ""});
         return static_cast<int64_t>(statistics.at(eset)->card);
     }
 
-  'card' 是 DSStatistic 的 cardinality 字段,
-  对于单表 (table, "") EqualSet，card = 表的总行数
+  'card' is the cardinality field of DSStatistic,
+  For single-table (table, "") EqualSet, card = total row count of the table
 
   filter_coeff = GetTableCard(rel_id) / GetNDV(tableName)
                = filtered_card / total_rows
                = selectivity
 
-  因此 filter_coeff 实际上就是谓词的选择率 (selectivity)
+  Therefore filter_coeff is actually the predicate selectivity
 
-  对于有 N 个过滤表的子查询:
-  - PM1 直接乘积: coeff = sel1 × sel2 × ... × selN
-  - 当每个 sel ≈ 0.1-0.3 时, 3 个表 → coeff ≈ 0.001-0.027
-  - 这是远小于实际情况的系数, 导致严重低估
+  For a subquery with N filtering tables:
+  - PM1 direct product: coeff = sel1 * sel2 * ... * selN
+  - When each sel ~0.1-0.3, 3 tables -> coeff ~0.001-0.027
+  - This is far smaller than the actual coefficient, causing severe underestimation
 """)
 
-print("\n分析完成。")
+print("\nAnalysis complete.")

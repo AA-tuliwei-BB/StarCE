@@ -1,203 +1,203 @@
-# ✅ BayesCard STATS-CEB 完整实验完成
+# Completed: BayesCard STATS-CEB Full Experiment
 
-**日期**: 2026-02-07  
-**状态**: ✅ 已完成  
-**基准**: STATS-CEB  
-
----
-
-## 🎉 实验摘要
-
-成功在 STATS-CEB 基准上运行了 BayesCard 基数估计方法，对 **2471 条子查询** 进行了推理，生成了基数估计值。
+**Date**: 2026-02-07 
+**Status**: Completed 
+**Benchmark**: STATS-CEB 
 
 ---
 
-## 📊 关键数据指标
+## 🎉 Experiment Summary
 
-### 推理概览
+Successfully ran BayesCard cardinality estimation on the STATS-CEB benchmark, performing inference for **2471 subqueries** and generating cardinality estimates.
+
+---
+
+## 📊 Key Metrics
+
+### Inference Overview
 ```
-总查询数            2,471
-├─ 有效估计值        230 (9.3%)
-└─ 默认值 (1.0)    2,241 (90.7%)
+Total queries: 2,471
+├─ Valid estimates: 230 (9.3%)
+└─ Default value (1.0): 2,241 (90.7%)
 
-总耗时              4.07 秒
-平均延迟            0.0016 秒/查询
-吞吐量              607 查询/秒
+Total time: 4.07 sec
+Average latency: 0.0016 sec/query
+Throughput: 607 queries/sec
 ```
 
-### 有效估计值统计
+### Valid Estimate Statistics
 ```
-最小值              63.88
-最大值              15,419,332.55
-中位数              62,820.58
-平均值              238,884.72
+Min: 63.88
+Max: 15,419,332.55
+Median: 62,820.58
+Mean: 238,884.72
 
-主要分布区间:       10K-100K (51.7%)
-次要区间:           100K-1M (29.6%)
+Primary distribution range: 10K-100K (51.7%)
+Secondary range: 100K-1M (29.6%)
 ```
 
 ---
 
-## 📁 输出文件
+## 📁 Output Files
 
-### 主要输出
-| 文件 | 位置 | 说明 |
+### Main Output
+| File | Location | Description |
 |------|------|------|
-| **基数估计** | `../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt` | 2471 行，每行一个浮点数 |
-| **实验报告** | `STATS_CEB_EXPERIMENT_REPORT.md` | 详细实验过程和分析 |
-| **结果总结** | `STATS_CEB_RESULTS_SUMMARY.md` | 结果统计和失败分析 |
+| **Cardinality Estimates** | `../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt` | 2471 lines, one float per line |
+| **Experiment Report** | `STATS_CEB_EXPERIMENT_REPORT.md` | Detailed experiment process and analysis |
+| **Result Summary** | `STATS_CEB_RESULTS_SUMMARY.md` | Result statistics and failure analysis |
 
-### 日志文件
-- `logs/bayescard_*.log` - 完整运行日志（包含所有警告和错误信息）
-
----
-
-## 🔍 主要发现
-
-### ✅ 成功的方面
-1. **性能优秀** - 平均 0.0016 秒/查询，可高效处理大规模查询集
-2. **模型完整** - 11 个 BN 模型成功加载（总大小 162 MB）
-3. **推理成功** - 230 条查询获得有效的非1.0估计值
-4. **系统稳定** - 脚本完整运行，无崩溃
-
-### ⚠️ 需改进的方面
-1. **成功率低** - 仅 9.3% 的查询获得有效估计
-2. **Schema 不完整** - 缺少大量表间关系定义
-   - badges ↔ comments
-   - postHistory ↔ comments
-   - postLinks ↔ comments
-3. **查询支持有限** - BayesCard 无法处理复杂的 JOIN 和聚合操作
+### Log Files
+- `logs/bayescard_*.log` - Complete runtime logs (including all warnings and errors)
 
 ---
 
-## 📝 关键命令
+## 🔍 Main Findings
 
-### 运行推理
+### ✅ Successful Aspects
+1. **Excellent Performance** - Average 0.0016 sec/query, can efficiently process large-scale query sets
+2. **Complete Model** - 11 BN models loaded successfully (total size 162 MB)
+3. **Successful Inference** - 230 queries obtained valid non-1.0 estimates
+4. **Stable System** - Script completed full run without crashes
+
+### ⚠️ Areas for Improvement
+1. **Low Success Rate** - only 9.3% of queries obtained valid estimates
+2. **Incomplete Schema** - lacks many inter-table relationship definitions
+ - badges <-> comments
+ - postHistory <-> comments
+ - postLinks <-> comments
+3. **Limited Query Support** - BayesCard cannot process complex JOIN and aggregate operations
+
+---
+
+## 📝 Key Commands
+
+### Run Inference
 ```bash
-cd methods/SafeBound  # 需要在项目根目录下运行
+cd methods/SafeBound # Must run from project root
 eval "$(conda shell.zsh hook)" && conda activate TestEnv
 
 python test_benchmark.py infer \
-  --benchmark stats \
-  --csv_path Data/Stats/{}.csv \
-  --model_dir checkpoints/stats_models \
-  --query_file ../../Benchmark/workloads/STATS-CEB/subquery/subquery.sql \
-  --output_file ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt
+ --benchmark stats \
+ --csv_path Data/Stats/{}.csv \
+ --model_dir checkpoints/stats_models \
+ --query_file ../../Benchmark/workloads/STATS-CEB/subquery/subquery.sql \
+ --output_file ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt
 ```
 
-### 查看结果
+### View Results
 ```bash
-# 统计有效值
+# Count non-1.0 values
 grep -v '^1\.0$' ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt | wc -l
 
-# 查看前 30 条非1.0的值
+# View first 30 non-1.0 values
 grep -v '^1\.0$' ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt | head -30
 
-# 查看最大值
+# View max values
 grep -v '^1\.0$' ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt | sort -rn | head -10
 ```
 
 ---
 
-## 🚀 后续步骤
+## 🚀 Next Steps
 
-### P1 (高优先级) - 立即可做
-- [ ] 补充 STATS schema 中缺失的关系定义
-- [ ] 重新训练 BN 模型
-- [ ] 再次运行推理验证改进效果
+### P1 (High Priority) - immediately actionable
+- [ ] Complete missing relationship definitions in STATS schema
+- [ ] Retrain BN models
+- [ ] Rerun inference to verify improvements
 
-### P2 (中优先级) - 验证和扩展
-- [ ] 验证成功估计值的精度（对比真实基数，计算 Q-Error）
-- [ ] 对 JOBLight、JOBM 等其他基准进行类似实验
-- [ ] 基准间的性能对比分析
+### P2 (Medium Priority) - verification and extension
+- [ ] Verify accuracy of valid estimates (compare with true cardinalities, compute Q-Error)
+- [ ] Run similar experiments on JOBLight, JOBM, and other benchmarks
+- [ ] Cross-benchmark performance comparison analysis
 
-### P3 (低优先级) - 优化和集成
-- [ ] 调优训练参数（sample_size, max_parents 等）
-- [ ] 探索不同的推理算法
-- [ ] 集成到 StarCE 框架
+### P3 (Low Priority) - optimization and integration
+- [ ] Tune training parameters (sample_size, max_parents, etc.)
+- [ ] Explore different inference algorithms
+- [ ] Integrate into StarCE framework
 
 ---
 
-## 📊 实验成果表
+## 📊 Experiment Results Table
 
-| 类别 | 详情 | 状态 |
+| Category | Details | Status |
 |------|------|------|
-| **基础设施** | test_benchmark.py 脚本完整功能 | ✅ 完成 |
-| **模型训练** | 11 个 BN 模型训练并保存 | ✅ 完成 |
-| **推理执行** | 2471 条查询推理完成 | ✅ 完成 |
-| **结果输出** | 基数估计值已保存 | ✅ 完成 |
-| **文档记录** | 实验报告已生成 | ✅ 完成 |
-| **精度验证** | 对比真实基数计算精度 | ⏳ 待做 |
-| **其他基准** | JOBLight/JOBM 实验 | ⏳ 待做 |
+| **Script Design** | test_benchmark.py script fully functional | ✅ Complete |
+| **Model Training** | 11 BN models trained and saved | ✅ Complete |
+| **Inference Execution** | 2471 queries inferred | ✅ Complete |
+| **Result Output** | Cardinality estimates saved | ✅ Complete |
+| **Documentation** | Experiment report generated | ✅ Complete |
+| **Accuracy Verification** | Compare with true cardinalities | ⏳ Pending |
+| **Other Benchmarks** | JOBLight/JOBM experiments | ⏳ Pending |
 
 ---
 
-## 💾 数据保存位置
+## 💾 Data Storage Location
 
 ```
-方案目录: methods/SafeBound/
+Project Directory: methods/SafeBound/
 
-核心输出:
+Core Output:
 ├── ../../Benchmark/workloads/STATS-CEB/subquery/result/
-│   └── bayescard.txt (2471 行基数估计值)
+│ └── bayescard.txt (2471 cardinality estimates)
 │
-├── STATS_CEB_EXPERIMENT_REPORT.md (完整实验报告)
-├── STATS_CEB_RESULTS_SUMMARY.md (结果总结)
-├── EXPERIMENT_COMPLETE.md (本文档)
+├── STATS_CEB_EXPERIMENT_REPORT.md (Complete experiment report)
+├── STATS_CEB_RESULTS_SUMMARY.md (Result summary)
+├── EXPERIMENT_COMPLETE.md (This file)
 │
-├── checkpoints/stats_models/ (11 个 BN 模型)
-├── checkpoints/stats_hdf/ (HDF5 中间文件)
-├── logs/ (运行日志)
+├── checkpoints/stats_models/ (11 BN models)
+├── checkpoints/stats_hdf/ (HDF5 intermediate files)
+├── logs/ (Runtime logs)
 │
-└── .cursor/skills/bayescard-testing/ (Agent Skill 文档)
-    ├── SKILL.md (主要说明)
-    ├── IMPLEMENTATION.md (实现细节)
-    └── COMMANDS.md (命令参考)
+└── .cursor/skills/bayescard-testing/ (Agent skill documentation)
+ ├── SKILL.md (Main description)
+ ├── IMPLEMENTATION.md (Implementation details)
+ └── COMMANDS.md (Command reference)
 ```
 
 ---
 
-## 🎯 总体评价
+## 🎯 Overall Evaluation
 
-**实验评分**: ⭐⭐⭐⭐✨ (4.5/5)
+**Experiment Score**: ⭐⭐⭐⭐✨ (4.5/5)
 
-**优势**:
-- ✅ 系统设计完整，所有关键功能可用
-- ✅ 脚本代码质量高，错误处理完善
-- ✅ 推理性能优秀
-- ✅ 文档齐全
+**Strengths**:
+- ✅ System design complete, all key functionality working
+- ✅ Script quality high, error handling comprehensive
+- ✅ Inference performance excellent
+- ✅ Documentation thorough
 
-**不足**:
-- ⚠️ 当前 Schema 定义不完整
-- ⚠️ 成功率有提升空间
-- ⚠️ 尚未进行精度验证
+**Weaknesses**:
+- ⚠️ Current schema definition incomplete
+- ⚠️ Success rate needs improvement
+- ⚠️ Accuracy verification pending
 
-**总体结论**: 
-BayesCard 测试框架已成功建立，并在 STATS-CEB 基准上完成了初步实验。通过补充 Schema 定义和调整参数，有望进一步提高成功率和估计精度。
+**Overall Conclusion**: 
+The BayesCard test framework has been successfully established and initial experiments on the STATS-CEB benchmark are complete. Through schema refinement and parameter tuning, success rate and estimation accuracy can be further improved.
 
 ---
 
-## 📞 快速参考
+## 📞 Quick Reference
 
-### 文件位置
-- 主脚本: `test_benchmark.py`
+### File Locations
+- Main Script: `test_benchmark.py`
 - Stats Schema: `bayescard/Schemas/stats/schema.py`
-- 模型: `checkpoints/stats_models/`
-- 结果: `../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt`
+- Model: `checkpoints/stats_models/`
+- Result: `../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt`
 
-### 环境配置
+### Environment Configuration
 ```bash
 conda activate TestEnv
-# 依赖: numpy==1.22.0, pandas==1.5.3, pgmpy==1.0.0
+# Dependencies: numpy==1.22.0, pandas==1.5.3, pgmpy==1.0.0
 ```
 
-### 关键类
-- `Bayescard_BN` - 单个贝叶斯网络
-- `BN_ensemble` - BN 集合管理
-- `SchemaGraph` - 数据库 Schema 定义
+### Key Classes
+- `Bayescard_BN` - Single Bayesian Network
+- `BN_ensemble` - BN Ensemble Management
+- `SchemaGraph` - Database Schema Definition
 
 ---
 
-**实验完成时间**: 2026-02-07 14:30 UTC  
-**下次更新**: 待 P1 优化完成后
+**Experiment Completion Time**: 2026-02-07 14:30 UTC 
+**Next Update**: After P1 optimization complete
 

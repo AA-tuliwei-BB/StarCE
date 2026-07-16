@@ -186,9 +186,9 @@ if __name__ == '__main__':
                          args.query_sample_location, save_file)
 
     elif args.dataset == 'jobjoin':
-        # JobJoin：完整 21 表、无谓词的纯 join workload，主查询级评估。
-        # 复用已修复的 get_cardinality_bound_one（经 test_on_jobm，恒等映射），
-        # 无谓词场景下 load_sample 回退到 ground_truth_factors_no_filter，不连 PG。
+        # JobJoin: full 21 tables, pure join workload without predicates, main-query-level evaluation.
+        # Use the already-fixed get_cardinality_bound_one (tested on JOBM, identity mapping),
+        # In predicate-free scenario, load_sample falls back to ground_truth_factors_no_filter, no PG connection.
         if args.evaluate:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             proj_root = os.path.normpath(os.path.join(script_dir, "../.."))

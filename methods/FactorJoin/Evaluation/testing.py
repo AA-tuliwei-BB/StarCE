@@ -247,10 +247,10 @@ def test_on_jobm(model_path, query_file, jobm_mapping_file, SPERCENTAGE=None, qu
 
 def test_on_jobjoin(model_path, query_file, mapping_file, SPERCENTAGE=None, query_sample_location=None, save_res=None):
 	"""
-	Evaluate on JobJoin (完整 21 表、无谓词的纯 join workload)，主查询级评估。
-	复用已修复的 get_cardinality_bound_one（恒等映射，逐条主查询）。
-	无谓词场景下 load_sample 回退到 ground_truth_factors_no_filter，不连 PG。
-	对 FactorJoin 架构无法处理的查询（如环形自连接 Q31）写 "MISSING"，不引入 fallback 假数据。
+	Evaluate on JobJoin (full 21 tables, pure join workload without predicates), main-query-level evaluation.
+	Use the already-fixed get_cardinality_bound_one (identity mapping, one main query at a time).
+	In predicate-free scenario, load_sample falls back to ground_truth_factors_no_filter, no PG connection.
+	For queries FactorJoin architecture cannot handle (e.g., circular self-join Q31), write "MISSING", no fallback fake data.
 	"""
 	with open(model_path, "rb") as f:
 		bound_ensemble = pickle.load(f)
@@ -281,7 +281,7 @@ def test_on_jobjoin(model_path, query_file, mapping_file, SPERCENTAGE=None, quer
 
 	print(f"Total JobJoin estimation latency: {time.time() - t_start}s")
 	if failed:
-		print(f"{len(failed)} query(ies) FactorJoin 无法估计，标记 MISSING:")
+		print(f"{len(failed)} query(ies) FactorJoin cannot estimate, marked MISSING:")
 		for qid, etype, emsg in failed:
 			print(f"  Q{qid}: {etype}: {emsg}")
 

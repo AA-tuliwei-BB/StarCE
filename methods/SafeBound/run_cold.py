@@ -1,4 +1,4 @@
-"""SafeBound Runtime — 冷启动（直接调原版 RuntimeUtils）"""
+"""SafeBound Runtime — cold start (directly call original RuntimeUtils)"""
 import sys, os
 
 rootDir = os.path.dirname(os.path.abspath(__file__)) + '/'

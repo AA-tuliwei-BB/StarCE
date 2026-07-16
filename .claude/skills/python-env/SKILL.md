@@ -1,75 +1,75 @@
 ---
 name: python-env
-description: StarCE 项目的 Python 环境配置：当前版本、依赖包、各个方法（FactorJoin/SafeBound/StarCE）的环境要求和虚拟环境设置。当用户提到 Python 版本、依赖安装、虚拟环境、requirements.txt 时使用。
+description: Python environment configuration for the StarCE project: current version, dependencies, environment requirements and virtual environment setup for each method (FactorJoin/SafeBound/StarCE). Use when mentioning Python version, dependency installation, virtual environment, requirements.txt.
 ---
 
-# StarCE Python 环境配置
+# StarCE Python Environment Configuration
 
-## 快速参考
+## Quick Reference
 
-### 系统 Python
+### System Python
 
 ```bash
-# 当前系统 Python 版本
+# Current system Python version
 python --version
 # Output: Python 3.12.7
 
 which python
-# Output: /usr/bin/python (或其他路径)
+# Output: /usr/bin/python (or other path)
 ```
 
-### 各方法的 Python 要求
+### Python Requirements by Method
 
-| 方法 | 推荐版本 | 实际测试版本 | 依赖文件 |
+| Method | Recommended Version | Actually Tested Version | Dependency File |
 |------|----------|-------------|----------|
-| **FactorJoin** | Python 3.7 | 3.12.7 (待验证) | `methods/FactorJoin/requirements.txt` |
+| **FactorJoin** | Python 3.7 | 3.12.7 (to be verified) | `methods/FactorJoin/requirements.txt` |
 | **SafeBound** | Python 3.x | 3.12.7 | `methods/SafeBound/requirements.txt` |
-| **StarCE** | Python 3.x | 3.12.7 | 项目根目录 (DuckDB) |
+| **StarCE** | Python 3.x | 3.12.7 | Project root (DuckDB) |
 
-## FactorJoin 环境
+## FactorJoin Environment
 
-### 位置
+### Location
 `methods/FactorJoin/`
 
-### Python 版本要求
-- **README 要求**: Python 3.7
-- **当前系统**: Python 3.12.7
-- **状态**: 需要验证兼容性或创建虚拟环境
+### Python Version Requirements
+- **README requires**: Python 3.7
+- **Current system**: Python 3.12.7
+- **Status**: Needs compatibility verification or virtual environment creation
 
-### 核心依赖
+### Core Dependencies
 
 ```
 numpy
 pandas
-pickle (标准库)
-psycopg2        # PostgreSQL 连接（采样模式需要）
-scipy           # 科学计算
-pgmpy           # 贝叶斯网络
-torch           # 深度学习（可选）
+pickle (stdlib)
+psycopg2        # PostgreSQL connection (required for sampling mode)
+scipy           # Scientific computing
+pgmpy           # Bayesian networks
+torch           # Deep learning (optional)
 ```
 
-### 创建虚拟环境
+### Creating a Virtual Environment
 
 ```bash
-# 以下命令在项目根目录下运行
+# Run the following from the project root directory
 cd methods/FactorJoin
 
-# 方案 1: 使用 conda (推荐)
+# Option 1: Using conda (recommended)
 conda create -n factorjoin python=3.7
 conda activate factorjoin
 pip install -r requirements.txt
 
-# 方案 2: 使用 venv
+# Option 2: Using venv
 python3.7 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# 方案 3: 尝试使用当前 Python 3.12
+# Option 3: Try using current Python 3.12
 pip install -r requirements.txt
-# 如果遇到兼容性问题，回退到方案 1 或 2
+# If compatibility issues arise, fall back to option 1 or 2
 ```
 
-### 验证安装
+### Verify Installation
 
 ```bash
 cd methods/FactorJoin
@@ -78,40 +78,40 @@ python -c "import psycopg2; print('PostgreSQL driver OK')"
 python -c "from BayesCard.Models.Bayescard_BN import Bayescard_BN; print('BayesCard OK')"
 ```
 
-### 常见依赖问题
+### Common Dependency Issues
 
-**问题 1: numpy 未安装**
+**Issue 1: numpy not installed**
 ```bash
 pip install numpy pandas
 ```
 
-**问题 2: psycopg2 编译失败**
+**Issue 2: psycopg2 compilation failure**
 ```bash
-# 使用二进制版本
+# Use binary version
 pip install psycopg2-binary
 
-# 或安装系统依赖后重试
+# Or install system dependencies and retry
 sudo apt-get install libpq-dev python3-dev
 pip install psycopg2
 ```
 
-**问题 3: Python 3.7 与 3.12 兼容性**
-- 某些依赖可能不支持 Python 3.12
-- 推荐使用 conda 创建 Python 3.7 环境
+**Issue 3: Python 3.7 vs 3.12 compatibility**
+- Some dependencies may not support Python 3.12
+- Recommended to use conda to create a Python 3.7 environment
 
-## SafeBound 环境
+## SafeBound Environment
 
-### 位置
+### Location
 `methods/SafeBound/`
 
-### 依赖安装
+### Dependency Installation
 
 ```bash
 cd methods/SafeBound
 pip install -r requirements.txt
 ```
 
-### 核心依赖
+### Core Dependencies
 
 ```
 numpy
@@ -120,89 +120,89 @@ scipy
 sklearn
 pgmpy
 psycopg2-binary
-torch           # 如果使用深度学习组件
+torch           # If using deep learning components
 ```
 
-### 数据预处理依赖
+### Data Preprocessing Dependencies
 
-SafeBound 使用 HDF5 格式缓存数据:
+SafeBound uses HDF5 format for data caching:
 
 ```bash
 pip install tables h5py
 ```
 
-### 验证安装
+### Verify Installation
 
 ```bash
 cd methods/SafeBound
 python -c "from bayescard.Models.Bayescard_BN import Bayescard_BN; print('SafeBound OK')"
 ```
 
-## StarCE 环境
+## StarCE Environment
 
-### 位置
-项目根目录 + `duckdb/` 子目录
+### Location
+Project root + `duckdb/` subdirectory
 
-### DuckDB 版本
-StarCE 使用自定义编译的 DuckDB
+### DuckDB Version
+StarCE uses a custom-compiled DuckDB
 
-### Python 绑定
-如果需要 Python 接口:
+### Python Bindings
+If Python interface is needed:
 
 ```bash
 pip install duckdb
 ```
 
-### CMake 构建
-如果需要重新编译 StarCE:
+### CMake Build
+If recompiling StarCE is needed:
 
 ```bash
-# 安装构建工具
+# Install build tools
 sudo apt-get install cmake g++ make
 
-# 在项目根目录下构建 StarCE
+# Build StarCE from project root
 mkdir build
 cd build
 cmake ..
 make -j$(nproc)
 ```
 
-## 虚拟环境管理
+## Virtual Environment Management
 
-### Conda 环境（推荐）
+### Conda Environment (Recommended)
 
 ```bash
-# 创建 FactorJoin 专用环境
+# Create FactorJoin-dedicated environment
 conda create -n factorjoin python=3.7
 conda activate factorjoin
 cd methods/FactorJoin
 pip install -r requirements.txt
 
-# 创建 SafeBound 专用环境
+# Create SafeBound-dedicated environment
 conda create -n safebound python=3.8
 conda activate safebound
 cd methods/SafeBound
 pip install -r requirements.txt
 
-# 列出所有环境
+# List all environments
 conda env list
 
-# 切换环境
+# Switch environments
 conda activate factorjoin
 conda deactivate
 ```
 
-### venv 环境
+### venv Environment
 
 ```bash
-# 为 FactorJoin 创建环境
+# Create environment for FactorJoin
 cd methods/FactorJoin
 python3.7 -m venv venv_factorjoin
 source venv_factorjoin/bin/activate
 pip install -r requirements.txt
 deactivate
 
-# 为 SafeBound 创建环境
+# Create environment for SafeBound
 cd methods/SafeBound
 python3 -m venv venv_safebound
 source venv_safebound/bin/activate
@@ -210,104 +210,104 @@ pip install -r requirements.txt
 deactivate
 ```
 
-### 环境激活快捷方式
+### Environment Activation Shortcuts
 
-在 `~/.bashrc` 或 `~/.zshrc` 中添加:
+Add to `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-# StarCE 项目环境（假设项目根目录为 $STARCE_ROOT）
+# StarCE project environments (assuming project root is $STARCE_ROOT)
 alias starce-factorjoin='cd $STARCE_ROOT/methods/FactorJoin && conda activate factorjoin'
 alias starce-safebound='cd $STARCE_ROOT/methods/SafeBound && conda activate safebound'
 ```
 
-## 依赖文件位置
+## Dependency File Locations
 
 ### FactorJoin
 
 ```
 methods/FactorJoin/
-├── requirements.txt           # Python 依赖
-├── BayesCard/                 # 贝叶斯网络实现
-├── Join_scheme/               # 核心算法
-└── Sampling/                  # 采样方法
+├── requirements.txt           # Python dependencies
+├── BayesCard/                 # Bayesian network implementation
+├── Join_scheme/               # Core algorithm
+└── Sampling/                  # Sampling methods
 ```
 
 ### SafeBound
 
 ```
 methods/SafeBound/
-├── requirements.txt           # Python 依赖
-├── bayescard/                 # 贝叶斯卡方法
-├── checkpoints/               # 模型和缓存
-│   └── stats_hdf/            # HDF5 缓存文件
-└── Workloads/                 # 查询工作集
+├── requirements.txt           # Python dependencies
+├── bayescard/                 # BayesCard methods
+├── checkpoints/               # Models and caches
+│   └── stats_hdf/            # HDF5 cache files
+└── Workloads/                 # Query workloads
 ```
 
-## 常用命令
+## Common Commands
 
-### 检查当前环境
+### Check Current Environment
 
 ```bash
-# 查看 Python 版本
+# Check Python version
 python --version
 
-# 查看已安装包
+# Check installed packages
 pip list
 
-# 查看特定包版本
+# Check specific package versions
 pip show numpy pandas psycopg2
 
-# 导出当前环境
+# Export current environment
 pip freeze > current_requirements.txt
 ```
 
-### 清理和重装
+### Cleanup and Reinstall
 
 ```bash
-# 卸载所有包（慎用）
+# Uninstall all packages (use with caution)
 pip freeze | xargs pip uninstall -y
 
-# 重新安装
+# Reinstall
 pip install -r requirements.txt
 
-# 升级 pip
+# Upgrade pip
 pip install --upgrade pip
 ```
 
-### 依赖冲突解决
+### Dependency Conflict Resolution
 
 ```bash
-# 检查依赖冲突
+# Check dependency conflicts
 pip check
 
-# 查看依赖树
+# View dependency tree
 pip install pipdeptree
 pipdeptree
 
-# 强制重装特定包
+# Force reinstall specific package
 pip install --force-reinstall numpy
 ```
 
-## Jupyter Notebook 支持
+## Jupyter Notebook Support
 
-如果需要在 Notebook 中运行:
+If running in Notebook is needed:
 
 ```bash
-# 安装 Jupyter
+# Install Jupyter
 pip install jupyter notebook
 
-# 创建内核
+# Create kernel
 python -m ipykernel install --user --name=factorjoin --display-name="Python (FactorJoin)"
 
-# 启动 Notebook
+# Launch Notebook
 jupyter notebook
 ```
 
-## IDE 配置
+## IDE Configuration
 
 ### VS Code / Cursor
 
-在 `.vscode/settings.json` 或 Cursor 设置中:
+In `.vscode/settings.json` or Cursor settings:
 
 ```json
 {
@@ -320,92 +320,92 @@ jupyter notebook
 ### PyCharm
 
 1. File → Settings → Project → Python Interpreter
-2. 添加 Conda 环境或 venv 环境
-3. 选择对应的 Python 解释器
+2. Add Conda environment or venv environment
+3. Select the corresponding Python interpreter
 
-## 性能优化
+## Performance Optimization
 
-### NumPy/SciPy 加速
+### NumPy/SciPy Acceleration
 
 ```bash
-# 使用 OpenBLAS 或 MKL 加速
+# Use OpenBLAS or MKL acceleration
 pip install numpy scipy --no-binary numpy,scipy
 
-# 或使用 conda 的优化版本
+# Or use conda's optimized versions
 conda install numpy scipy -c conda-forge
 ```
 
-### 多线程配置
+### Multi-threading Configuration
 
 ```bash
-# 设置 NumPy 线程数
+# Set NumPy thread count
 export OMP_NUM_THREADS=4
 export MKL_NUM_THREADS=4
 
-# 运行 Python 脚本
+# Run Python script
 python your_script.py
 ```
 
-## 故障排查
+## Troubleshooting
 
-### 导入错误
+### Import Errors
 
 ```bash
-# 检查模块路径
+# Check module path
 python -c "import sys; print('\n'.join(sys.path))"
 
-# 检查包安装位置
+# Check package installation location
 python -c "import numpy; print(numpy.__file__)"
 ```
 
-### PYTHONPATH 问题
+### PYTHONPATH Issues
 
 ```bash
-# 临时添加路径（假设在项目根目录下）
+# Temporarily add path (assuming from project root)
 export PYTHONPATH=$(pwd)/methods/FactorJoin:$PYTHONPATH
 
-# 永久添加（在 ~/.bashrc，需替换为实际项目路径）
+# Permanently add (in ~/.bashrc, replace with actual project path)
 echo 'export PYTHONPATH=/path/to/starCE/methods/FactorJoin:$PYTHONPATH' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 包版本冲突
+### Package Version Conflicts
 
 ```bash
-# 查看冲突
+# View conflicts
 pip check
 
-# 查看依赖关系
+# View dependency relationships
 pip show <package-name>
 
-# 固定版本安装
+# Install pinned version
 pip install numpy==1.21.0
 ```
 
-## 实验脚本环境
+## Experiment Script Environment
 
-### experiment/ 目录
+### experiment/ Directory
 
-位置: `experiment/`（项目根目录下）
+Location: `experiment/` (under project root)
 
-包含各种评估脚本，可能需要:
+Contains various evaluation scripts, may require:
 ```bash
 pip install jupyter matplotlib seaborn
 ```
 
-### 运行实验
+### Running Experiments
 
 ```bash
 cd experiment
 
-# 激活合适的环境
+# Activate appropriate environment
 conda activate factorjoin
 
-# 运行 Jupyter Notebook
+# Run Jupyter Notebook
 jupyter notebook EvaluateAccuracy.ipynb
 ```
 
-## 相关 Skills
+## Related Skills
 
-- [factorjoin-usage](../factorjoin-usage/SKILL.md) - FactorJoin 的 Python 环境要求
-- [postgresql-env](../postgresql-env/SKILL.md) - psycopg2 连接数据库配置
+- [factorjoin-usage](../factorjoin-usage/SKILL.md) - FactorJoin's Python environment requirements
+- [postgresql-env](../postgresql-env/SKILL.md) - psycopg2 database connection configuration

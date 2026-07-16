@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-StarCE 实验测试脚本
-用于运行和测试 StarCE 的各种性能指标
+StarCE experiment test script
+Used for running and testing various performance metrics of StarCE
 """
 
 import os
@@ -19,7 +19,7 @@ from datetime import datetime
 
 @dataclass
 class StarCEConfig:
-    """StarCE 配置结构体，便于管理和序列化为 JSON"""
+    """StarCE configuration struct, for easy management and JSON serialization"""
     EnableStarCE: int = 1
     UseAssignedAdjustRate: int = 1
     UseSubqueryCard: int = 0
@@ -52,73 +52,73 @@ class StarCEConfig:
     PREDICATE_ADJUST_RATE: float = 1
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
+        """Convert to dictionary"""
         return asdict(self)
 
     def to_json_file(self, filepath: str) -> None:
-        """保存为 JSON 文件"""
+        """Save as JSON file"""
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(self.to_dict(), f, indent=4, ensure_ascii=False)
 
     @classmethod
     def from_json_file(cls, filepath: str) -> 'StarCEConfig':
-        """从 JSON 文件加载"""
+        """Load from JSON file"""
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return cls(**data)
 
     def copy(self) -> 'StarCEConfig':
-        """创建配置的副本"""
+        """Create a copy of the configuration"""
         return StarCEConfig(**self.to_dict())
 
     def update(self, **kwargs) -> 'StarCEConfig':
-        """更新配置项，返回新的配置对象（不修改原对象）"""
+        """Update config items, return new config object (does not modify original)"""
         new_config = self.copy()
         for key, value in kwargs.items():
             if hasattr(new_config, key):
                 setattr(new_config, key, value)
             else:
-                raise ValueError(f"未知的配置项: {key}")
+                raise ValueError(f"Unknown config item: {key}")
         return new_config
 
 
 class ExperimentRunner(ABC):
-    """实验运行器基类"""
+    """Experiment runner base class"""
 
     def __init__(self, project_root: Optional[str] = None):
-        """初始化实验运行器"""
-        # 获取脚本所在目录
+        """Initialize the experiment runner"""
+        # Get script directory
         self.script_dir = Path(__file__).parent.absolute()
         
-        # 项目根目录（默认在 script_dir 的上一级）
+        # Project root directory (defaults to parent of script_dir)
         if project_root:
             self.project_root = Path(project_root).absolute()
         else:
             self.project_root = self.script_dir.parent
         
-        # running_space 目录
+        # running_space directory
         self.running_space = self.script_dir / "running_space"
         self.running_space.mkdir(exist_ok=True)
         
-        # checkpoint 目录（StarCE统计信息存储位置）
+        # checkpoint directory (StarCE statistics storage location)
         self.checkpoint_dir = self.script_dir / "checkpoint"
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
-        # Benchmark 目录的绝对路径
+        # Absolute path to Benchmark directory
         self.benchmark_dir = self.project_root / "Benchmark"
         
-        # 日志和结果文件
+        # Log and result files
         self.log_file = self.running_space / "log.txt"
         self.result_file = self.running_space / "result.txt"
         
-        # starce 可执行文件路径
+        # starce executable path
         self.starce_exec = self.running_space / "starce"
         
-        # 配置对象
+        # Configuration object
         self.config: Optional[StarCEConfig] = None
 
     def log(self, message: str, to_console: bool = True):
-        """记录日志"""
+        """Log a message"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_message = f"[{timestamp}] {message}\n"
         
@@ -129,30 +129,30 @@ class ExperimentRunner(ABC):
             print(log_message.strip())
 
     def result(self, message: str):
-        """记录结果"""
+        """Record a result"""
         with open(self.result_file, 'a', encoding='utf-8') as f:
             f.write(f"{message}\n")
         print(message)
 
     def save_config(self, config: StarCEConfig):
         """
-        保存配置到 running_space/config.json（供starce可执行文件使用）
+        Save config to running_space/config.json (for starce executable use)
         
-        参数:
-            config: 要保存的配置对象
+        Args:
+            config: Configuration object to save
         """
         config_file = self.running_space / "config.json"
         config.to_json_file(str(config_file))
-        self.log(f"配置文件已保存到: {config_file}")
+        self.log(f"Config file saved to: {config_file}")
         self.config = config
 
     def _filter_benchmark_specs(self, benchmark_specs, benchmarks=None):
         """
-        按给定 benchmark 列表过滤 benchmark_specs。
+        Filter benchmark_specs by the given benchmark list.
 
-        参数:
+        Args:
             benchmark_specs: [(benchmark, config_getter, queries_file), ...]
-            benchmarks: 需要保留的 benchmark 列表；None 表示不过滤
+            benchmarks: List of benchmarks to keep; None means no filtering
         """
         if benchmarks is None:
             return benchmark_specs
@@ -161,7 +161,7 @@ class ExperimentRunner(ABC):
         available = {benchmark for benchmark, _, _ in benchmark_specs}
         invalid = [benchmark for benchmark in requested if benchmark not in available]
         if invalid:
-            raise ValueError(f"不支持的benchmark: {invalid}")
+            raise ValueError(f"Unsupported benchmark: {invalid}")
 
         requested_set = set(requested)
         return [
@@ -172,10 +172,10 @@ class ExperimentRunner(ABC):
 
     def get_stats_db_config(self) -> StarCEConfig:
         """
-        获取STATS数据库的配置
+        Get STATS database configuration
         
-        返回:
-            基于默认配置修改后的STATS配置对象
+        Returns:
+            STATS configuration object
         """
         config = StarCEConfig()
         config.DB_PATH = str(self.benchmark_dir / "duckdb" / "stats.db")
@@ -185,10 +185,10 @@ class ExperimentRunner(ABC):
 
     def get_imdb_db_config(self) -> StarCEConfig:
         """
-        获取IMDB数据库的配置
+        Get IMDB database configuration
 
-        返回:
-            基于默认配置修改后的IMDB配置对象
+        Returns:
+            IMDB configuration object
         """
         config = StarCEConfig()
         config.DB_PATH = str(self.benchmark_dir / "duckdb" / "imdb.db")
@@ -198,10 +198,10 @@ class ExperimentRunner(ABC):
 
     def get_imdb_light_db_config(self) -> StarCEConfig:
         """
-        获取IMDB_LIGHT数据库的配置
+        Get IMDB_LIGHT database configuration
 
-        返回:
-            基于默认配置修改后的IMDB_LIGHT配置对象
+        Returns:
+            IMDB_LIGHT configuration object
         """
         config = StarCEConfig()
         config.DB_PATH = str(self.benchmark_dir / "duckdb" / "imdb.db")
@@ -211,10 +211,10 @@ class ExperimentRunner(ABC):
 
     def get_imdb_light_ranges_db_config(self) -> StarCEConfig:
         """
-        获取IMDB_LIGHT_RANGES数据库的配置
+        Get IMDB_LIGHT_RANGES database configuration
 
-        返回:
-            基于默认配置修改后的IMDB_LIGHT_RANGES配置对象
+        Returns:
+            IMDB_LIGHT_RANGES configuration object
         """
         config = StarCEConfig()
         config.DB_PATH = str(self.benchmark_dir / "duckdb" / "imdb.db")
@@ -224,8 +224,8 @@ class ExperimentRunner(ABC):
 
     def get_stats_config(self) -> StarCEConfig:
         """
-        获取stats-ceb benchmark的配置
-        返回: 基于STATS数据库配置修改后的stats-ceb benchmark配置对象
+        Get stats-ceb benchmark configuration
+        Returns: based on STATS configuration modified for stats-ceb benchmark configuration object
         """
         config = self.get_stats_db_config()
         config.SQL_PATH = str(self.benchmark_dir / "workloads" / "STATS-CEB" / "queries.sql")
@@ -237,8 +237,8 @@ class ExperimentRunner(ABC):
 
     def get_jobm_config(self) -> StarCEConfig:
         """
-        获取jobm benchmark的配置
-        返回: 基于IMDB数据库配置修改后的jobm benchmark配置对象
+        Get jobm benchmark configuration
+        Returns: based on IMDB configuration modified for jobm benchmark configuration object
         """
         config = self.get_imdb_db_config()
         config.SQL_PATH = str(self.benchmark_dir / "workloads" / "JOBM" / "queries.sql")
@@ -250,9 +250,9 @@ class ExperimentRunner(ABC):
 
     def get_jobjoin_config(self) -> StarCEConfig:
         """
-        获取jobjoin benchmark的配置
+        Get jobjoin benchmark configuration
 
-        返回: 基于IMDB数据库配置修改后的jobjoin benchmark配置对象
+        Returns: based on IMDB configuration modified for jobjoin benchmark configuration object
         """
         config = self.get_imdb_db_config()
         config.SCHEMA_PATH = str(self.benchmark_dir / "workloads" / "JobJoin" / "schema_jobjoin.json")
@@ -265,9 +265,9 @@ class ExperimentRunner(ABC):
 
     def get_statsjoin_config(self) -> StarCEConfig:
         """
-        获取statsjoin benchmark的配置
+        Get statsjoin benchmark configuration
 
-        返回: 基于STATS数据库配置修改后的statsjoin benchmark配置对象
+        Returns: based on STATS configuration modified for statsjoin benchmark configuration object
         """
         config = self.get_stats_db_config()
         config.SCHEMA_PATH = str(self.benchmark_dir / "workloads" / "StatsJoin" / "schema_statsjoin.json")
@@ -280,8 +280,8 @@ class ExperimentRunner(ABC):
 
     def get_joblight_config(self) -> StarCEConfig:
         """
-        获取joblight benchmark的配置
-        返回: 基于IMDB数据库配置修改后的joblight benchmark配置对象
+        Get joblight benchmark configuration
+        Returns: based on IMDB configuration modified for joblight benchmark configuration object
         """
         config = self.get_imdb_light_db_config()
         config.SQL_PATH = str(self.benchmark_dir / "workloads" / "JOBLight" / "queries.sql")
@@ -301,23 +301,23 @@ class ExperimentRunner(ABC):
         return config
 
     def record_paths(self):
-        """记录重要路径信息"""
+        """Log important path information"""
         self.result("=" * 80)
-        self.result(f"实验开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        self.result(f"项目根目录: {self.project_root}")
-        self.result(f"Benchmark 目录: {self.benchmark_dir}")
-        self.result(f"运行空间目录: {self.running_space}")
-        self.result(f"starce 可执行文件: {self.starce_exec}")
+        self.result(f"Experiment start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.result(f"Project root directory: {self.project_root}")
+        self.result(f"Benchmark directory: {self.benchmark_dir}")
+        self.result(f"Running space directory: {self.running_space}")
+        self.result(f"starce executable: {self.starce_exec}")
         self.result("=" * 80)
 
     def run_starce(self, suppress_output: bool = False) -> Tuple[bool, float]:
         """
-        运行 starce 并返回 (成功标志, 运行时间)
+        Run starce and return (success flag, run time)
         
-        参数:
-            suppress_output: 是否抑制标准输出和标准错误的日志记录到控制台（默认False）
+        Args:
+            suppress_output: Whether to suppress logging of stdout/stderr to console (default False)
         """
-        # 切换到 running_space 目录运行
+        # Switch to running_space directory and run
         start_time = time.time()
         try:
             result = subprocess.run(
@@ -325,37 +325,37 @@ class ExperimentRunner(ABC):
                 cwd=str(self.running_space),
                 capture_output=True,
                 text=True,
-                timeout=3600  # 1小时超时
+                timeout=3600  # 1 hour timeout
             )
             elapsed_time = time.time() - start_time
             
             if result.returncode == 0:
-                self.log(f"starce 运行成功，耗时: {elapsed_time:.2f} 秒")
-                # 记录输出（如果抑制输出，则不显示到console，但仍写入日志文件）
+                self.log(f"starce ran successfully, elapsed: {elapsed_time:.2f}  seconds")
+                # Log output (if suppressed, do not show on console but still write to log file)
                 if result.stdout:
-                    self.log(f"标准输出:\n{result.stdout}", to_console=not suppress_output)
+                    self.log(f"Standard output:\n{result.stdout}", to_console=not suppress_output)
                 if result.stderr:
-                    self.log(f"标准错误:\n{result.stderr}", to_console=not suppress_output)
+                    self.log(f"Standard error:\n{result.stderr}", to_console=not suppress_output)
                 return True, elapsed_time
             else:
-                self.log(f"starce 运行失败，返回码: {result.returncode}", to_console=True)
+                self.log(f"starce run failed, return code: {result.returncode}", to_console=True)
                 if result.stderr:
-                    self.log(f"错误信息:\n{result.stderr}", to_console=True)
+                    self.log(f"Error message:\n{result.stderr}", to_console=True)
                 return False, elapsed_time
         except subprocess.TimeoutExpired:
             elapsed_time = time.time() - start_time
-            self.log(f"starce 运行超时（>{elapsed_time:.2f} 秒）", to_console=True)
+            self.log(f"starce run timed out (>{elapsed_time:.2f}  seconds)", to_console=True)
             return False, elapsed_time
         except Exception as e:
             elapsed_time = time.time() - start_time
-            self.log(f"运行 starce 时发生异常: {e}", to_console=True)
+            self.log(f"Exception occurred while running starce: {e}", to_console=True)
             return False, elapsed_time
 
     def run_starce_raw(self) -> Tuple[int, str, str, float]:
         """
-        运行 starce 并返回原始输出
+        Run starce and return raw output
 
-        返回:
+        Returns:
             (returncode, stdout, stderr, elapsed_time)
         """
         start_time = time.time()
@@ -371,21 +371,21 @@ class ExperimentRunner(ABC):
 
     def _prepare_input_sql_with_explain(self, queries_file: Path, output_file: Path) -> None:
         """
-        复制queries文件到output_file，并在每个SELECT语句前添加EXPLAIN
+        Copy queries file to output_file, and add EXPLAIN before each SELECT statement
         
-        参数:
-            queries_file: 源queries.sql文件路径
-            output_file: 输出文件路径（running_space/input.sql）
+        Args:
+            queries_file: Source queries.sql file path
+            output_file: Output file path (running_space/input.sql)
         """
         if not queries_file.exists():
-            raise FileNotFoundError(f"找不到queries文件: {queries_file}")
+            raise FileNotFoundError(f"Cannot find queries file: {queries_file}")
         
         with open(queries_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # 在每个SELECT（大小写不敏感）前添加EXPLAIN
-        # 使用正则表达式匹配SELECT语句（忽略大小写）
-        # 匹配行首的SELECT（可能有前导空格）
+        # Add EXPLAIN before each SELECT (case insensitive)
+        # Use regex to match SELECT statements (case insensitive)
+        # Match SELECT at line start (may have leading spaces)
         pattern = r'^(\s*)(select\s+)'
         replacement = r'\1EXPLAIN \2'
         new_content = re.sub(pattern, replacement, content, flags=re.IGNORECASE | re.MULTILINE)
@@ -393,194 +393,194 @@ class ExperimentRunner(ABC):
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(new_content)
         
-        self.log(f"已复制queries文件到 {output_file} 并添加EXPLAIN")
+        self.log(f"Copied queries file to {output_file}  and added EXPLAIN")
 
     def _prepare_input_sql_without_explain(self, queries_file: Path, output_file: Path) -> None:
         """
-        复制queries文件到output_file，不添加EXPLAIN（普通查询）
+        Copy queries file to output_file, without adding EXPLAIN (plain queries)
         
-        参数:
-            queries_file: 源queries.sql文件路径
-            output_file: 输出文件路径（running_space/input.sql）
+        Args:
+            queries_file: Source queries.sql file path
+            output_file: Output file path (running_space/input.sql)
         """
         if not queries_file.exists():
-            raise FileNotFoundError(f"找不到queries文件: {queries_file}")
+            raise FileNotFoundError(f"Cannot find queries file: {queries_file}")
         
         shutil.copy2(queries_file, output_file)
-        self.log(f"已复制queries文件到 {output_file}（普通查询，无EXPLAIN）")
+        self.log(f"Copied queries file to {output_file} (plain queries, no EXPLAIN")
 
     def inner_test_planning_time(self, config: StarCEConfig, db_name: str, queries_file: Path, num_runs: int = 3) -> Optional[float]:
         """
-        为特定数据库测试计划时间
+        Test planning time for a specific database
         
-        参数:
-            config: 测试配置
-            db_name: 数据库名称（用于显示，如 "STATS" 或 "JOBM"）
-            queries_file: queries.sql文件路径
-            num_runs: 运行次数
+        Args:
+            config: Test configuration
+            db_name: Database name (for display, e.g. "STATS" or "JOBM")
+            queries_file: queries.sql file path
+            num_runs: Number of runs
         
-        返回:
-            Optional[float]: 最终计划时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final planning time (seconds), None on failure
         """
-        self.result(f"\n--- 测试计划时间 ({db_name}) ---")
-        self.log(f"开始测试计划时间 ({db_name})，运行 {num_runs} 次")
+        self.result(f"\n--- Test planning time ({db_name}) ---")
+        self.log(f"Starting planning time test ({db_name}), run(s) {num_runs}")
         
         input_sql = self.running_space / "input.sql"
         
-        # 1. 复制queries为input.sql并添加EXPLAIN
+        # 1. Copy queries to input.sql and add EXPLAIN
         try:
             self._prepare_input_sql_with_explain(queries_file, input_sql)
         except Exception as e:
-            self.result(f"准备input.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare input.sql ({db_name}): {e}")
             return None
         
-        # 使用input.sql进行测试
+        # Test using input.sql
         config.SQL_PATH = "input.sql"
         self.save_config(config)
         
         times_input = []
         for i in range(num_runs):
-            self.log(f"使用input.sql: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"Using input.sql: run  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_input.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 2. 使用dummy_query.sql进行测试
+        # 2. Test using dummy_query.sql
         config.SQL_PATH = "dummy_query.sql"
         self.save_config(config)
         
         times_dummy = []
         for i in range(num_runs):
-            self.log(f"使用dummy_query.sql: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"using dummy_query.sql:  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_dummy.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
 
-        # 输出结果
+        # Output results
         avg_time_input = None
         if times_input:
             avg_time_input = sum(times_input) / len(times_input)
-            self.result(f"计划时间测试结果 ({db_name}) - 使用input.sql:")
-            self.result(f"  成功运行次数: {len(times_input)}/{num_runs}")
-            self.result(f"  平均计划时间: {avg_time_input:.2f} 秒")
-            self.result(f"  最快: {min(times_input):.2f} 秒")
-            self.result(f"  最慢: {max(times_input):.2f} 秒")
+            self.result(f"Planning time test results ({db_name}) - using input.sql:")
+            self.result(f"  Successful runs: {len(times_input)}/{num_runs}")
+            self.result(f"  Average planning time: {avg_time_input:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_input):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_input):.2f}  seconds")
         else:
-            self.result(f"计划时间测试失败 ({db_name}) - 使用input.sql: 所有运行都失败")
+            self.result(f"Planning time test failed ({db_name}) - using input.sql: all run(s) failed")
 
         avg_time_dummy = None
         if times_dummy:
             avg_time_dummy = sum(times_dummy) / len(times_dummy)
-            self.result(f"计划时间测试结果 ({db_name}) - 使用dummy_query.sql:")
-            self.result(f"  成功运行次数: {len(times_dummy)}/{num_runs}")
-            self.result(f"  平均计划时间: {avg_time_dummy:.2f} 秒")
-            self.result(f"  最快: {min(times_dummy):.2f} 秒")
-            self.result(f"  最慢: {max(times_dummy):.2f} 秒")
+            self.result(f"Planning time test results ({db_name}) - using dummy_query.sql:")
+            self.result(f"  Successful runs: {len(times_dummy)}/{num_runs}")
+            self.result(f"  Average planning time: {avg_time_dummy:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_dummy):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_dummy):.2f}  seconds")
         else:
-            self.result(f"计划时间测试失败 ({db_name}) - 使用dummy_query.sql: 所有运行都失败")
+            self.result(f"Planning time test failed ({db_name}) - using dummy_query.sql: all run(s) failed")
 
-        # 计算最终的planning time: explain time - dummy time
+        # Calculate final planning time: explain time - dummy time
         if avg_time_input is not None and avg_time_dummy is not None:
             final_planning_time = avg_time_input - avg_time_dummy
-            self.result(f"最终计划时间 ({db_name}): {final_planning_time:.2f} 秒 (explain time - dummy time)")
+            self.result(f"Final planning time ({db_name}): {final_planning_time:.2f} seconds (explain time - dummy time)")
             return final_planning_time
         else:
-            self.result(f"无法计算最终计划时间 ({db_name}): explain time 或 dummy time 数据不足")
+            self.result(f"Cannot calculate final planning time ({db_name}): insufficient explain time or dummy time data")
             return None
 
     def inner_test_running_time(self, config: StarCEConfig, db_name: str, queries_file: Path, num_runs: int = 3) -> Optional[float]:
         """
-        为特定数据库测试运行时间
+        Test running time for a specific database
         
-        参数:
-            config: 测试配置
-            db_name: 数据库名称（用于显示，如 "STATS" 或 "JOBM"）
-            queries_file: queries.sql文件路径
-            num_runs: 运行次数
+        Args:
+            config: Test configuration
+            db_name: Database name (for display, e.g. "STATS" or "JOBM")
+            queries_file: queries.sql file path
+            num_runs: Number of runs
         
-        返回:
-            Optional[float]: 最终运行时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final running time (seconds), None on failure
         """
-        self.result(f"\n--- 测试运行时间 ({db_name}) ---")
-        self.log(f"开始测试运行时间 ({db_name})，运行 {num_runs} 次")
+        self.result(f"\n--- Test running time ({db_name}) ---")
+        self.log(f"Test running time ({db_name}), run(s) {num_runs}")
         
         input_sql = self.running_space / "input.sql"
         explain_sql = self.running_space / "explain.sql"
         
-        # 1. 准备普通的input.sql（不带EXPLAIN）
+        # 1. Prepare plain input.sql (without EXPLAIN)
         try:
             self._prepare_input_sql_without_explain(queries_file, input_sql)
         except Exception as e:
-            self.result(f"准备input.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare input.sql ({db_name}): {e}")
             return None
         
-        # 使用input.sql（普通查询）进行测试
+        # Test using input.sql (plain queries)
         config.SQL_PATH = "input.sql"
         self.save_config(config)
         
         times_input = []
         for i in range(num_runs):
-            self.log(f"使用input.sql（普通查询）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"using input.sql (plain queries):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_input.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 2. 准备explain.sql（带EXPLAIN）
+        # 2. Prepare explain.sql (with EXPLAIN)
         try:
             self._prepare_input_sql_with_explain(queries_file, explain_sql)
         except Exception as e:
-            self.result(f"准备explain.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare explain.sql ({db_name}): {e}")
             return None
         
-        # 使用explain.sql进行测试
+        # Test using explain.sql
         config.SQL_PATH = "explain.sql"
         self.save_config(config)
         
         times_explain = []
         for i in range(num_runs):
-            self.log(f"使用explain.sql（EXPLAIN查询）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"using explain.sql (EXPLAIN queries):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_explain.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 输出结果
+        # Output results
         avg_time_input = None
         if times_input:
             avg_time_input = sum(times_input) / len(times_input)
-            self.result(f"运行时间测试结果 ({db_name}) - 使用input.sql（普通查询）:")
-            self.result(f"  成功运行次数: {len(times_input)}/{num_runs}")
-            self.result(f"  平均运行时间: {avg_time_input:.2f} 秒")
-            self.result(f"  最快: {min(times_input):.2f} 秒")
-            self.result(f"  最慢: {max(times_input):.2f} 秒")
+            self.result(f"time test results ({db_name}) - using input.sql (plain queries):")
+            self.result(f"  Successful runs: {len(times_input)}/{num_runs}")
+            self.result(f"  Average running time: {avg_time_input:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_input):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_input):.2f}  seconds")
         else:
-            self.result(f"运行时间测试失败 ({db_name}) - 使用input.sql: 所有运行都失败")
+            self.result(f"running time test failed ({db_name}) - using input.sql: all run(s) failed")
         
         avg_time_explain = None
         if times_explain:
             avg_time_explain = sum(times_explain) / len(times_explain)
-            self.result(f"运行时间测试结果 ({db_name}) - 使用explain.sql（EXPLAIN查询）:")
-            self.result(f"  成功运行次数: {len(times_explain)}/{num_runs}")
-            self.result(f"  平均运行时间: {avg_time_explain:.2f} 秒")
-            self.result(f"  最快: {min(times_explain):.2f} 秒")
-            self.result(f"  最慢: {max(times_explain):.2f} 秒")
+            self.result(f"time test results ({db_name}) - using explain.sql (EXPLAIN queries):")
+            self.result(f"  Successful runs: {len(times_explain)}/{num_runs}")
+            self.result(f"  Average running time: {avg_time_explain:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_explain):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_explain):.2f}  seconds")
         else:
-            self.result(f"运行时间测试失败 ({db_name}) - 使用explain.sql: 所有运行都失败")
+            self.result(f"running time test failed ({db_name}) - Using explain.sql: all run(s) failed")
         
-        # 计算最终的running time: input.sql时间 - explain.sql时间
+        # Calculate final running time: input.sql time - explain.sql time
         if avg_time_input is not None and avg_time_explain is not None:
             final_running_time = avg_time_input - avg_time_explain
-            self.result(f"最终运行时间 ({db_name}): {final_running_time:.2f} 秒 (input.sql时间 - explain.sql时间)")
+            self.result(f"Final running time ({db_name}): {final_running_time:.2f} seconds (input.sql time - explain.sql time)")
             return final_running_time
         else:
-            self.result(f"无法计算最终运行时间 ({db_name}): input.sql时间 或 explain.sql时间 数据不足")
+            self.result(f"Cannot calculate final running time ({db_name}): insufficient input.sql time or explain.sql time data")
             return None
 
     def inner_test_per_query_running_time(
@@ -591,20 +591,20 @@ class ExperimentRunner(ABC):
         injected_card_path: Optional[str] = None,
     ) -> list:
         """
-        逐条测试主查询的执行时间
+        Test execution time of main queries one by one
 
-        参数:
-            config: 测试配置
-            queries_file: queries.sql 文件路径（每行一条主查询）
-            num_runs: 每条查询运行次数，取平均
-            injected_card_path: 注入型方法传入完整子查询基数文件路径；
-                                 None 表示不注入（DuckDB / StarCE 原生模式）
+        Args:
+            config: Test configuration
+            queries_file: queries.sql file path (one main query per line)
+            num_runs: Number of runs per query, averaged
+            injected_card_path: Injection-based methods pass full subquery cardinality file path;
+                                 None means no injection (DuckDB / StarCE native mode)
 
-        返回:
-            list[Optional[float]]，长度 = 查询数，每项为该查询的平均执行时间（秒），失败为 None
+        Returns:
+            list[Optional[float]]，length = number of queries, each item is avg execution time (seconds), None on failure
         """
         if not queries_file.exists():
-            raise FileNotFoundError(f"找不到 queries 文件: {queries_file}")
+            raise FileNotFoundError(f"Cannot find queries file: {queries_file}")
 
         with open(queries_file, 'r', encoding='utf-8') as f:
             queries = [line.rstrip('\n') for line in f if line.strip() and not line.strip().startswith('--')]
@@ -636,71 +636,71 @@ class ExperimentRunner(ABC):
             results.append(avg)
 
             if (i + 1) % 10 == 0 or (i + 1) == len(queries):
-                self.log(f"per-query 进度: {i + 1}/{len(queries)}")
+                self.log(f"per-query progress: {i + 1}/{len(queries)}")
 
         return results
 
     @abstractmethod
     def test_build_time(self, num_runs: int = 3) -> None:
         """
-        测试构建时间（抽象方法，子类需实现）
-        结果会直接写入result文件，不返回
+        Test build time (abstract method, subclass must implement)
+        Results written directly to result file, no return value
         
-        参数:
-            num_runs: 运行次数
+        Args:
+            num_runs: Number of runs
         """
         pass
 
     @abstractmethod
     def test_planning_time(self, num_runs: int = 3) -> None:
         """
-        测试计划时间（抽象方法，子类需实现）
-        结果会直接写入result文件，不返回
+        Test planning time (abstract method, subclass must implement)
+        Results written directly to result file, no return value
         
-        参数:
-            num_runs: 运行次数
+        Args:
+            num_runs: Number of runs
         """
         pass
 
     @abstractmethod
     def test_running_time(self, num_runs: int = 3) -> None:
         """
-        测试运行时间（抽象方法，子类需实现）
-        结果会直接写入result文件，不返回
+        Test running time (abstract method, subclass must implement)
+        Results written directly to result file, no return value
         
-        参数:
-            num_runs: 运行次数
+        Args:
+            num_runs: Number of runs
         """
         pass
 
     def run(self):
-        """运行所有测试"""
+        """all tests"""
         self.log("=" * 80)
-        self.log("实验测试开始")
+        self.log("Experiment tests start")
         self.log("=" * 80)
         
-        # 1. 记录路径信息
+        # 1. Log path info
         self.record_paths()
         
-        # 2. 运行各个子实验（由子类实现具体的测试方法）
+        # 2. Run each sub-experiment (implemented by subclass)
         self.test_build_time(num_runs=3)
         self.test_planning_time(num_runs=3)
         self.test_running_time(num_runs=3)
         
         self.log("=" * 80)
-        self.log("实验测试完成")
+        self.log("Experiment tests completed")
         self.log("=" * 80)
 
 
 def setup_starce_executable(project_root: Path, running_space: Path):
     """
-    复制 starce 可执行文件到 running_space
+    Copy starce executable to running_space
     
-    参数:
-        project_root: 项目根目录
-        running_space: 运行空间目录
+    Args:
+            project_root: Project root directory
+                    running_space: Running space directory
     
-    失败时直接报错并退出程序
+    Report error and exit program on failure
     """
     import sys
     
@@ -708,96 +708,96 @@ def setup_starce_executable(project_root: Path, running_space: Path):
     starce_exec = running_space / "starce"
     
     if not starce_source.exists():
-        print(f"错误: 找不到 starce 可执行文件: {starce_source}", file=sys.stderr)
+        print(f"Error: starce executable not found: {starce_source}", file=sys.stderr)
         sys.exit(1)
     
     try:
         shutil.copy2(starce_source, starce_exec)
         os.chmod(starce_exec, 0o755)
-        print(f"成功复制 starce 可执行文件到: {starce_exec}")
+        print(f"Successfully copied starce executable to: {starce_exec}")
     except Exception as e:
-        print(f"错误: 复制 starce 可执行文件失败: {e}", file=sys.stderr)
+        print(f"Error: failed to copy starce executable: {e}", file=sys.stderr)
         sys.exit(1)
 
 
 class StarCETestRunner(ExperimentRunner):
-    """StarCE 测试运行器"""
+    """StarCE test runner"""
 
     def __init__(self, project_root: Optional[str] = None):
-        """初始化 StarCE 测试运行器"""
+        """Initialize StarCE test runner"""
         super().__init__(project_root)
-        # 确保 StarCE 子目录存在
+        # Ensure StarCE subdirectory exists
         starce_subdir = self.checkpoint_dir / "StarCE"
         starce_subdir.mkdir(parents=True, exist_ok=True)
 
     def inner_test_build_time(self, config: StarCEConfig, db_name: str, num_runs: int = 3) -> Tuple[float, int]:
         """
-        内部测试构建时间方法（公共逻辑）
-        结果会直接写入result文件，并返回平均构建时间和统计文件大小
+        Internal build time test method (shared logic)
+        Results written directly to result file, returns average build time and statistics file size
         
-        参数:
-            config: 测试配置
-            db_name: 数据库名称（用于日志显示，如 "STATS" 或 "IMDB"）
-            num_runs: 运行次数
+        Args:
+            config: Test configuration
+            db_name: Database name (for log display, e.g. "STATS" or "IMDB")
+            num_runs: Number of runs
         
-        返回:
-            tuple: (平均构建时间, 统计文件大小)
+        Returns:
+            tuple: (Average build time, statistics file size)
         """
-        self.result(f"\n--- 测试构建时间 - StarCE - ({db_name}) ---")
-        self.log(f"开始测试构建时间 - StarCE - ({db_name})，运行 {num_runs} 次")
+        self.result(f"\n--- Test build time - StarCE - ({db_name}) ---")
+        self.log(f"Starting build time test - StarCE - ({db_name}), run(s) {num_runs}")
         
-        # 保存配置到 running_space/config.json
+        # Save config to running_space/config.json
         self.save_config(config)
         
         times = []
         for i in range(num_runs):
-            self.log(f"第 {i+1}/{num_runs} 次运行...")
+            self.log(f" {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce()
             if success:
                 times.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
         if not times:
-            msg = f"构建时间测试失败 ({db_name}): 所有运行都失败"
+            msg = f"Build time test failed ({db_name}): all run(s) failed"
             self.result(msg)
             raise RuntimeError(msg)
         
         avg_time = sum(times) / len(times)
-        self.result(f"构建时间测试结果 ({db_name}):")
-        self.result(f"  成功运行次数: {len(times)}/{num_runs}")
-        self.result(f"  平均构建时间: {avg_time:.2f} 秒")
-        self.result(f"  最快: {min(times):.2f} 秒")
-        self.result(f"  最慢: {max(times):.2f} 秒")
+        self.result(f"Build time test results ({db_name}):")
+        self.result(f"  Successful runs: {len(times)}/{num_runs}")
+        self.result(f"  Average build time: {avg_time:.2f}  seconds")
+        self.result(f"  Fastest: {min(times):.2f}  seconds")
+        self.result(f"  Slowest: {max(times):.2f}  seconds")
         
-        # 获取统计信息纯数据大小 (data_only, 对齐 LpBound 口径)
+        # Get statistics raw data size (data_only, aligned with LpBound baseline)
         stats_size_path = self.running_space / config.STATS_SIZE_PATH
         if not stats_size_path.exists():
-            raise FileNotFoundError(f"统计大小文件未生成: {stats_size_path}")
+            raise FileNotFoundError(f"Statistics size file not generated: {stats_size_path}")
         with open(stats_size_path, 'r') as f:
             size_report = json.load(f)
         size = size_report["data_only"]
-        self.result(f"  统计信息大小 (data_only): {size} 字节 ({size/1024/1024:.2f} MB)")
+        self.result(f"  Statistics size (data_only): {size} bytes ({size/1024/1024:.2f} MB)")
         
         return avg_time, size
 
     def test_build_time(self, num_runs: int = 3) -> Dict[str, Tuple[float, int]]:
         """
-        测试构建时间（运行多次取平均）
-        对STATS和IMDB数据库都进行测试
-        结果会直接写入result文件，并返回构建时间和文件大小
+        Test build time (multiple runs averaged
+        Test both STATS and IMDB databases
+        Results written directly to result file, returns build time and file size
         
-        返回:
-            dict: {'STATS': (时间, 大小), 'IMDB': (时间, 大小)}
+        Returns:
+            dict: {'STATS': (time, size), 'IMDB': (time, size)}
         """
-        self.result("\n=== 测试构建时间 - StarCE ===")
+        self.result("\n=== Test build time - StarCE ===")
         
-        # 测试STATS数据库
+        # Test STATS database
         stats_config = self.get_stats_db_config()
         stats_config.RefreshStatistics = 1
         stats_time, stats_size = self.inner_test_build_time(stats_config, "STATS", num_runs)
         
-        # 测试IMDB数据库
+        # Test IMDB database
         imdb_config = self.get_imdb_db_config()
         imdb_config.RefreshStatistics = 1
         imdb_time, imdb_size = self.inner_test_build_time(imdb_config, "IMDB", num_runs)
@@ -806,17 +806,17 @@ class StarCETestRunner(ExperimentRunner):
 
     def test_planning_time(self, num_runs: int = 3, benchmarks=None) -> Dict[str, Optional[float]]:
         """
-        测试计划时间（运行多次取平均）
+        Test planning time (multiple runs averaged
         
-        默认对 STATS、JOBM、JOBLight 和 JOBLightRanges 数据库都进行测试，
-        也可以通过 benchmarks 参数只测试指定 benchmark。
-        1. 复制queries为running_space/input.sql，添加EXPLAIN，计算时间
-        2. 相同config，使用dummy_query.sql运行，计算时间
+        Test STATS, JOBM, JOBLight, and JOBLightRanges databases by default,
+        or test only specified benchmarks via the benchmarks parameter.
+        1. Copy queries to running_space/input.sql, add EXPLAIN, measure time
+        2. Same config, run with dummy_query.sql, measure time
         
-        返回:
+        Returns:
             Dict[str, Optional[float]]: benchmark -> planning_time
         """
-        self.result("\n=== 测试计划时间 - StarCE ===")
+        self.result("\n=== Test planning time - StarCE ===")
 
         benchmark_specs = [
             ("STATS", self.get_stats_config, self.benchmark_dir / "workloads" / "STATS-CEB" / "queries.sql"),
@@ -837,18 +837,18 @@ class StarCETestRunner(ExperimentRunner):
 
     def test_running_time(self, num_runs: int = 3, benchmarks=None) -> Dict[str, Optional[float]]:
         """
-        测试运行时间（运行多次取平均）
+        Test running time (multiple runs averaged
         
-        默认对 STATS、JOBM、JOBLight 和 JOBLightRanges 数据库都进行测试，
-        也可以通过 benchmarks 参数只测试指定 benchmark。
-        1. 使用普通查询（input.sql）计算时间
-        2. 使用EXPLAIN查询（explain.sql）计算时间
-        3. 最终运行时间 = input.sql时间 - explain.sql时间
+        Test STATS, JOBM, JOBLight, and JOBLightRanges databases by default,
+        or test only specified benchmarks via the benchmarks parameter.
+        1. Use plain queries (input.sql) to measure time
+        2. Use EXPLAIN queries (explain.sql) to measure time
+        3. Final running time = input.sql time - explain.sql time
         
-        返回:
+        Returns:
             Dict[str, Optional[float]]: benchmark -> running_time
         """
-        self.result("\n=== 测试运行时间 - StarCE ===")
+        self.result("\n=== Test running time - StarCE ===")
 
         benchmark_specs = [
             ("STATS", self.get_stats_config, self.benchmark_dir / "workloads" / "STATS-CEB" / "queries.sql"),
@@ -869,20 +869,20 @@ class StarCETestRunner(ExperimentRunner):
 
     def get_est_cards(self, benchmark: str = None) -> Dict[str, Any]:
         """
-        获取估计出的基数
+        Get estimated cardinalities
         
-        参数:
-            benchmark: benchmark名称 ('Stats', 'JOBM')，如果为None则处理所有数据库
+        Args:
+            benchmark: benchmark name ('Stats', 'JOBM'), processes all databases if None
         
-        返回:
-            dict: 包含评估结果的字典，包括：
-                - total_time: 总评估时间（秒）
-                - output_file: 结果输出文件路径
+        Returns:
+            dict: Dictionary containing evaluation results, including:
+                - total_time: Total evaluation time (seconds)
+                - output_file: Result output file path
         """
         if benchmark is None:
             raise ValueError(f"invalid benchmark: None")
         else:
-            # 处理单个benchmark
+            # Process single benchmark
             if benchmark == 'Stats':
                 config = self.get_stats_config()
                 queries_file = Path(config.SQL_PATH)
@@ -916,7 +916,7 @@ class StarCETestRunner(ExperimentRunner):
                 total_time = time.time() - start_time
 
                 if returncode != 0:
-                    raise RuntimeError(f"StarCE 查询评估失败 ({benchmark}): {stderr}")
+                    raise RuntimeError(f"StarCE query evaluation failed ({benchmark}): {stderr}")
 
                 import sys as _sys
                 _scripts_dir = str(self.project_root / "scripts")
@@ -951,7 +951,7 @@ class StarCETestRunner(ExperimentRunner):
                 total_time = time.time() - start_time
 
                 if returncode != 0:
-                    raise RuntimeError(f"StarCE 查询评估失败 ({benchmark}): {stderr}")
+                    raise RuntimeError(f"StarCE query evaluation failed ({benchmark}): {stderr}")
 
                 import sys as _sys
                 _scripts_dir = str(self.project_root / "scripts")
@@ -970,9 +970,9 @@ class StarCETestRunner(ExperimentRunner):
                     'output_file': str(result_path)
                 }
             else:
-                raise ValueError(f"不支持的benchmark: {benchmark}")
+                raise ValueError(f"Unsupported benchmark: {benchmark}")
             
-            # 生成explain.sql文件
+            # Generate explain.sql file
             explain_sql = self.running_space / "explain.sql"
             self._prepare_input_sql_with_explain(queries_file, explain_sql)
             
@@ -991,7 +991,7 @@ class StarCETestRunner(ExperimentRunner):
             total_time = time.time() - start_time
 
             if not success:
-                raise RuntimeError(f"StarCE 查询评估失败 ({benchmark})")
+                raise RuntimeError(f"StarCE query evaluation failed ({benchmark})")
 
             return {
                 'benchmark': benchmark,
@@ -1001,51 +1001,51 @@ class StarCETestRunner(ExperimentRunner):
             }
 
     def run(self):
-        """运行所有 StarCE 测试"""
+        """all StarCE tests"""
         self.log("=" * 80)
-        self.log("StarCE 实验测试开始")
+        self.log("StarCE experiment tests start")
         self.log("=" * 80)
         
-        # 1. 记录路径信息
+        # 1. Log path info
         self.record_paths()
         
-        # 2. 运行各个子实验
-        # 注: main() 入口仅用于快速验证，常规实验通过 ipynb 逐个调用以下方法
+        # 2. each sub-experiment
+        # Note: main() entry is only for quick validation; regular experiments use ipynb to call methods individually
         # self.test_build_time(num_runs=3)
         # self.test_planning_time(num_runs=3)
         # self.test_running_time(num_runs=3)
         
         self.log("=" * 80)
-        self.log("实验测试完成")
+        self.log("Experiment tests completed")
         self.log("=" * 80)
 
 
 class DuckDBTestRunner(ExperimentRunner):
-    """DuckDB 测试运行器（EnableStarCE=0）"""
+    """DuckDB test runner (EnableStarCE=0)"""
 
     def test_build_time(self, num_runs: int = 3) -> None:
         """
-        测试构建时间（运行多次取平均）
-        对STATS和IMDB数据库都进行测试
-        结果会直接写入result文件，不返回
+        Test build time (multiple runs averaged
+        Test both STATS and IMDB databases
+        Results written directly to result file, no return value
         """
-        self.result("\n=== 测试构建时间 - DuckDB ===")
-        self.result("DuckDB无法直接测试统计信息 build_time，跳过")
-        self.log("DuckDB无法直接测试统计信息 build_time，跳过")
+        self.result("\n=== Test build time - DuckDB ===")
+        self.result("DuckDB cannot directly test statistics build_time, skipping")
+        self.log("DuckDB cannot directly test statistics build_time, skipping")
 
     def test_planning_time(self, num_runs: int = 3, benchmarks=None) -> Dict[str, Optional[float]]:
         """
-        测试计划时间（运行多次取平均）
+        Test planning time (multiple runs averaged
         
-        默认对 STATS、JOBM、JOBLight 和 JOBLightRanges 数据库都进行测试，
-        也可以通过 benchmarks 参数只测试指定 benchmark。
-        1. 复制queries为running_space/input.sql，添加EXPLAIN，计算时间
-        2. 相同config，使用dummy_query.sql运行，计算时间
+        Test STATS, JOBM, JOBLight, and JOBLightRanges databases by default,
+        or test only specified benchmarks via the benchmarks parameter.
+        1. Copy queries to running_space/input.sql, add EXPLAIN, measure time
+        2. Same config, run with dummy_query.sql, measure time
         
-        返回:
+        Returns:
             Dict[str, Optional[float]]: benchmark -> planning_time
         """
-        self.result("\n=== 测试计划时间 - DuckDB ===")
+        self.result("\n=== Test planning time - DuckDB ===")
 
         benchmark_specs = [
             ("STATS", self.get_stats_config, self.benchmark_dir / "workloads" / "STATS-CEB" / "queries.sql"),
@@ -1067,18 +1067,18 @@ class DuckDBTestRunner(ExperimentRunner):
 
     def test_running_time(self, num_runs: int = 3, benchmarks=None) -> Dict[str, Optional[float]]:
         """
-        测试运行时间（运行多次取平均）
+        Test running time (multiple runs averaged
         
-        默认对 STATS、JOBM、JOBLight 和 JOBLightRanges 数据库都进行测试，
-        也可以通过 benchmarks 参数只测试指定 benchmark。
-        1. 使用普通查询（input.sql）计算时间
-        2. 使用EXPLAIN查询（explain.sql）计算时间
-        3. 最终运行时间 = input.sql时间 - explain.sql时间
+        Test STATS, JOBM, JOBLight, and JOBLightRanges databases by default,
+        or test only specified benchmarks via the benchmarks parameter.
+        1. Use plain queries (input.sql) to measure time
+        2. Use EXPLAIN queries (explain.sql) to measure time
+        3. Final running time = input.sql time - explain.sql time
         
-        返回:
+        Returns:
             Dict[str, Optional[float]]: benchmark -> running_time
         """
-        self.result("\n=== 测试运行时间 - DuckDB ===")
+        self.result("\n=== Test running time - DuckDB ===")
 
         benchmark_specs = [
             ("STATS", self.get_stats_config, self.benchmark_dir / "workloads" / "STATS-CEB" / "queries.sql"),
@@ -1099,33 +1099,33 @@ class DuckDBTestRunner(ExperimentRunner):
         return results
 
     def run(self):
-        """运行所有 DuckDB 测试"""
+        """all DuckDB tests"""
         self.log("=" * 80)
-        self.log("DuckDB 实验测试开始")
+        self.log("DuckDB experiment tests start")
         self.log("=" * 80)
         
-        # 1. 记录路径信息
+        # 1. Log path info
         self.record_paths()
         
-        # 2. 运行各个子实验（每个子实验会自行定义和保存配置）
+        # 2. Run each sub-experiment (each defines its own config)
         self.test_build_time(num_runs=3)
         self.test_planning_time(num_runs=3)
         self.test_running_time(num_runs=3)
         
         self.log("=" * 80)
-        self.log("实验测试完成")
+        self.log("Experiment tests completed")
         self.log("=" * 80)
 
 
 class InjectionTestRunner(ExperimentRunner):
-    """注入型方法测试运行器（使用外部注入的基数）"""
+    """Injection method test runner (using externally injected cardinalities)"""
 
     def __init__(self, project_root: Optional[str] = None):
         """
-        初始化注入型测试运行器
+        Initialize injection-type test runner
         
-        参数:
-            project_root: 项目根目录
+        Args:
+            project_root: Project root directory
         """
         super().__init__(project_root)
 
@@ -1135,100 +1135,100 @@ class InjectionTestRunner(ExperimentRunner):
                                                 card_est_time: float = 0.0,
                                                 num_runs: int = 3) -> Optional[float]:
         """
-        为特定数据库测试计划时间（使用注入基数）
+        Test planning time for a specific database(using injected cardinality)
         
-        参数:
-            config: 测试配置
-            db_name: 数据库名称（用于显示，如 "STATS" 或 "JOBM"）
-            queries_file: queries.sql文件路径
-            injected_card_path: 注入的基数文件路径（SUBQUERY_RESULT_PATH）
-            card_est_time: 纯基数估计时间（秒），不含 SQL 解析时间，用于加到 planning time 中
-            num_runs: 运行次数
+        Args:
+            config: Test configuration
+            db_name: Database name (for display, e.g. "STATS" or "JOBM")
+            queries_file: queries.sql file path
+            injected_card_path: Injected cardinality file path (SUBQUERY_RESULT_PATH)
+            card_est_time: Pure cardinality estimation time (seconds), excluding SQL parsing time, added to planning time
+            num_runs: Number of runs
         
-        返回:
-            Optional[float]: 最终计划时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final planning time (seconds), None on failure
 
-        注意:
-            card_est_time 只包含估计器执行估计的时间，不包含 SQL 解析时间。
-            SQL 解析是一次性工作，不应计入各查询的 planning time。
-            计算公式: planning_time = explain_time - dummy_time + card_est_time
+        Note:
+            card_est_time only includes the estimator execution time, not SQL parsing time.
+            SQL parsing is a one-time task and should not count towards per-query planning time.
+            Formula: planning_time = explain_time - dummy_time + card_est_time
         """
-        self.result(f"\n--- 测试计划时间（注入基数） ({db_name}) ---")
-        self.log(f"开始测试计划时间（注入基数） ({db_name})，运行 {num_runs} 次")
+        self.result(f"\n--- Test planning time(injected cardinality) ({db_name}) ---")
+        self.log(f"Starting planning time test(injected cardinality) ({db_name}), run(s) {num_runs}")
         
         injected_card_path_obj = Path(injected_card_path).absolute()
         if not injected_card_path_obj.exists():
-            self.result(f"错误 ({db_name}): 注入基数文件不存在: {injected_card_path_obj}")
+            self.result(f"Error ({db_name}): Injected cardinality file not found: {injected_card_path_obj}")
             return None
         
         input_sql = self.running_space / "input.sql"
         
-        # 1. 复制queries为input.sql并添加EXPLAIN
+        # 1. Copy queries to input.sql and add EXPLAIN
         try:
             self._prepare_input_sql_with_explain(queries_file, input_sql)
         except Exception as e:
-            self.result(f"准备input.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare input.sql ({db_name}): {e}")
             return None
         
-        # 配置注入基数：设置UseSubqueryCard=1，并设置SUBQUERY_RESULT_PATH
+        # Configure injected cardinality: set UseSubqueryCard=1 and set SUBQUERY_RESULT_PATH
         config.UseSubqueryCard = 1
         config.SUBQUERY_RESULT_PATH = str(injected_card_path_obj)
-        # 使用input.sql进行测试
+        # Test using input.sql
         config.SQL_PATH = "input.sql"
         self.save_config(config)
         
         times_input = []
         for i in range(num_runs):
-            self.log(f"使用input.sql（注入基数）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"Using input.sql (injected cardinality):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_input.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 2. 使用dummy_query.sql进行测试
+        # 2. Test using dummy_query.sql
         config.SQL_PATH = "dummy_query.sql"
         self.save_config(config)
         
         times_dummy = []
         for i in range(num_runs):
-            self.log(f"使用dummy_query.sql（注入基数）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"using dummy_query.sql (injected cardinality):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_dummy.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 输出结果
+        # Output results
         avg_time_input = None
         if times_input:
             avg_time_input = sum(times_input) / len(times_input)
-            self.result(f"计划时间测试结果 ({db_name}) - 使用input.sql（注入基数）:")
-            self.result(f"  成功运行次数: {len(times_input)}/{num_runs}")
-            self.result(f"  平均计划时间: {avg_time_input:.2f} 秒")
-            self.result(f"  最快: {min(times_input):.2f} 秒")
-            self.result(f"  最慢: {max(times_input):.2f} 秒")
+            self.result(f"Planning time test results ({db_name}) - Using input.sql (injected cardinality):")
+            self.result(f"  Successful runs: {len(times_input)}/{num_runs}")
+            self.result(f"  Average planning time: {avg_time_input:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_input):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_input):.2f}  seconds")
         else:
-            self.result(f"计划时间测试失败 ({db_name}) - 使用input.sql: 所有运行都失败")
+            self.result(f"Planning time test failed ({db_name}) - using input.sql: all run(s) failed")
         
         avg_time_dummy = None
         if times_dummy:
             avg_time_dummy = sum(times_dummy) / len(times_dummy)
-            self.result(f"计划时间测试结果 ({db_name}) - 使用dummy_query.sql（注入基数）:")
-            self.result(f"  成功运行次数: {len(times_dummy)}/{num_runs}")
-            self.result(f"  平均计划时间: {avg_time_dummy:.2f} 秒")
-            self.result(f"  最快: {min(times_dummy):.2f} 秒")
-            self.result(f"  最慢: {max(times_dummy):.2f} 秒")
+            self.result(f"Planning time test results ({db_name}) - using dummy_query.sql (injected cardinality):")
+            self.result(f"  Successful runs: {len(times_dummy)}/{num_runs}")
+            self.result(f"  Average planning time: {avg_time_dummy:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_dummy):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_dummy):.2f}  seconds")
         else:
-            self.result(f"计划时间测试失败 ({db_name}) - 使用dummy_query.sql: 所有运行都失败")
+            self.result(f"Planning time test failed ({db_name}) - using dummy_query.sql: all run(s) failed")
         
-        # 计算最终的planning time: explain time - dummy time + 基数估计时间
+        # Calculate final planning time: explain time - dummy time + cardinality estimation time
         if avg_time_input is not None and avg_time_dummy is not None:
             final_planning_time = avg_time_input - avg_time_dummy + card_est_time
-            self.result(f"最终计划时间 ({db_name}): {final_planning_time:.2f} 秒 (explain time - dummy time + 基数估计时间 {card_est_time:.2f} 秒)")
+            self.result(f"Final planning time ({db_name}): {final_planning_time:.2f} seconds (explain time - dummy time + cardinality estimation time {card_est_time:.2f}  seconds)")
             return final_planning_time
         else:
-            self.result(f"无法计算最终计划时间 ({db_name}): explain time 或 dummy time 数据不足")
+            self.result(f"Cannot calculate final planning time ({db_name}): insufficient explain time or dummy time data")
             return None
 
     def inner_test_running_time_with_injection(self, config: StarCEConfig, db_name: str,
@@ -1236,112 +1236,112 @@ class InjectionTestRunner(ExperimentRunner):
                                                injected_card_path: str,
                                                num_runs: int = 3) -> Optional[float]:
         """
-        为特定数据库测试运行时间（使用注入基数）
+        Test running time for a specific database(using injected cardinality)
         
-        参数:
-            config: 测试配置
-            db_name: 数据库名称（用于显示，如 "STATS" 或 "JOBM"）
-            queries_file: queries.sql文件路径
-            injected_card_path: 注入的基数文件路径（SUBQUERY_RESULT_PATH）
-            num_runs: 运行次数
+        Args:
+            config: Test configuration
+            db_name: Database name (for display, e.g. "STATS" or "JOBM")
+            queries_file: queries.sql file path
+            injected_card_path: Injected cardinality file path (SUBQUERY_RESULT_PATH)
+            num_runs: Number of runs
         
-        返回:
-            Optional[float]: 最终运行时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final running time (seconds), None on failure
         """
-        self.result(f"\n--- 测试运行时间（注入基数） ({db_name}) ---")
-        self.log(f"开始测试运行时间（注入基数） ({db_name})，运行 {num_runs} 次")
+        self.result(f"\n--- Test running time(injected cardinality) ({db_name}) ---")
+        self.log(f"Test running time (injected cardinality) ({db_name}), run(s) {num_runs}")
         
         injected_card_path_obj = Path(injected_card_path).absolute()
         if not injected_card_path_obj.exists():
-            self.result(f"错误 ({db_name}): 注入基数文件不存在: {injected_card_path_obj}")
+            self.result(f"Error ({db_name}): Injected cardinality file not found: {injected_card_path_obj}")
             return None
         
         input_sql = self.running_space / "input.sql"
         explain_sql = self.running_space / "explain.sql"
         
-        # 1. 准备普通的input.sql（不带EXPLAIN）
+        # 1. Prepare plain input.sql (without EXPLAIN)
         try:
             self._prepare_input_sql_without_explain(queries_file, input_sql)
         except Exception as e:
-            self.result(f"准备input.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare input.sql ({db_name}): {e}")
             return None
         
-        # 配置注入基数：设置UseSubqueryCard=1，并设置SUBQUERY_RESULT_PATH
+        # Configure injected cardinality: set UseSubqueryCard=1 and set SUBQUERY_RESULT_PATH
         config.UseSubqueryCard = 1
         config.SUBQUERY_RESULT_PATH = str(injected_card_path_obj)
-        # 使用input.sql（普通查询）进行测试
+        # Test using input.sql (plain queries)
         config.SQL_PATH = "input.sql"
         self.save_config(config)
         
         times_input = []
         for i in range(num_runs):
-            self.log(f"使用input.sql（普通查询，注入基数）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"Using input.sql (plain queries, injected cardinality):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_input.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 2. 准备explain.sql（带EXPLAIN）
+        # 2. Prepare explain.sql (with EXPLAIN)
         try:
             self._prepare_input_sql_with_explain(queries_file, explain_sql)
         except Exception as e:
-            self.result(f"准备explain.sql失败 ({db_name}): {e}")
+            self.result(f"Failed to prepare explain.sql ({db_name}): {e}")
             return None
         
-        # 使用explain.sql进行测试
+        # Test using explain.sql
         config.SQL_PATH = "explain.sql"
         self.save_config(config)
         
         times_explain = []
         for i in range(num_runs):
-            self.log(f"使用explain.sql（EXPLAIN查询，注入基数）: 第 {i+1}/{num_runs} 次运行...")
+            self.log(f"using explain.sql (EXPLAIN queries, injected cardinality):  {i+1}/{num_runs} run(s)...")
             success, elapsed = self.run_starce(suppress_output=True)
             if success:
                 times_explain.append(elapsed)
             else:
-                self.log(f"第 {i+1} 次运行失败，跳过", to_console=True)
+                self.log(f" {i+1} run(s) failed, skipped", to_console=True)
         
-        # 输出结果
+        # Output results
         avg_time_input = None
         if times_input:
             avg_time_input = sum(times_input) / len(times_input)
-            self.result(f"运行时间测试结果 ({db_name}) - 使用input.sql（普通查询，注入基数）:")
-            self.result(f"  成功运行次数: {len(times_input)}/{num_runs}")
-            self.result(f"  平均运行时间: {avg_time_input:.2f} 秒")
-            self.result(f"  最快: {min(times_input):.2f} 秒")
-            self.result(f"  最慢: {max(times_input):.2f} 秒")
+            self.result(f"time test results ({db_name}) - Using input.sql (plain queries, injected cardinality):")
+            self.result(f"  Successful runs: {len(times_input)}/{num_runs}")
+            self.result(f"  Average running time: {avg_time_input:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_input):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_input):.2f}  seconds")
         else:
-            self.result(f"运行时间测试失败 ({db_name}) - 使用input.sql: 所有运行都失败")
+            self.result(f"running time test failed ({db_name}) - using input.sql: all run(s) failed")
         
         avg_time_explain = None
         if times_explain:
             avg_time_explain = sum(times_explain) / len(times_explain)
-            self.result(f"运行时间测试结果 ({db_name}) - 使用explain.sql（EXPLAIN查询，注入基数）:")
-            self.result(f"  成功运行次数: {len(times_explain)}/{num_runs}")
-            self.result(f"  平均运行时间: {avg_time_explain:.2f} 秒")
-            self.result(f"  最快: {min(times_explain):.2f} 秒")
-            self.result(f"  最慢: {max(times_explain):.2f} 秒")
+            self.result(f"time test results ({db_name}) - using explain.sql (EXPLAIN queries, injected cardinality):")
+            self.result(f"  Successful runs: {len(times_explain)}/{num_runs}")
+            self.result(f"  Average running time: {avg_time_explain:.2f}  seconds")
+            self.result(f"  Fastest: {min(times_explain):.2f}  seconds")
+            self.result(f"  Slowest: {max(times_explain):.2f}  seconds")
         else:
-            self.result(f"运行时间测试失败 ({db_name}) - 使用explain.sql: 所有运行都失败")
+            self.result(f"running time test failed ({db_name}) - Using explain.sql: all run(s) failed")
         
-        # 计算最终的running time: input.sql时间 - explain.sql时间
+        # Calculate final running time: input.sql time - explain.sql time
         if avg_time_input is not None and avg_time_explain is not None:
             final_running_time = avg_time_input - avg_time_explain
-            self.result(f"最终运行时间 ({db_name}): {final_running_time:.2f} 秒 (input.sql时间 - explain.sql时间)")
+            self.result(f"Final running time ({db_name}): {final_running_time:.2f} seconds (input.sql time - explain.sql time)")
             return final_running_time
         else:
-            self.result(f"无法计算最终运行时间 ({db_name}): input.sql时间 或 explain.sql时间 数据不足")
+            self.result(f"Cannot calculate final running time ({db_name}): insufficient input.sql time or explain.sql time data")
             return None
 
     def test_build_time(self, num_runs: int = 3) -> None:
         """
-        测试构建时间（注入型方法不需要构建统计信息）
-        结果会直接写入result文件，不返回
+        Test build time (injection methods don't need statistics)
+        Results written directly to result file, no return value
         """
-        self.result("\n=== 测试构建时间 - 注入型方法 ===")
-        self.result("注入型方法不需要构建统计信息，跳过")
-        self.log("注入型方法不需要构建统计信息，跳过")
+        self.result("\n=== Test build time - Injection method ===")
+        self.result("Injection-based methods do not need to build statistics, skipping")
+        self.log("Injection-based methods do not need to build statistics, skipping")
 
     def _get_injection_benchmark_context(self, benchmark: str):
         if benchmark == 'STATS':
@@ -1380,34 +1380,34 @@ class InjectionTestRunner(ExperimentRunner):
                 self.benchmark_dir / "workloads" / "JOBLightRanges" / "filtered_queries.sql",
                 "JOBLightRanges",
             )
-        raise ValueError(f"不支持的benchmark: {benchmark}")
+        raise ValueError(f"Unsupported benchmark: {benchmark}")
 
     def test_planning_time(self, benchmark: str, injected_card_path: str, 
                           card_est_time: float = 0.0, num_runs: int = 3) -> Optional[float]:
         """
-        测试计划时间（使用注入基数）
+        Test planning time(using injected cardinality)
         
-        参数:
-            benchmark: benchmark名称 ('STATS' / 'JOBM' / 'JOBLight' / 'JOBLightRanges')
-            injected_card_path: 注入的基数文件路径（SUBQUERY_RESULT_PATH）
-            card_est_time: 纯基数估计时间（秒），不含 SQL 解析时间，用于加到 planning time 中
-            num_runs: 运行次数
+        Args:
+            benchmark: benchmark name ('STATS' / 'JOBM' / 'JOBLight' / 'JOBLightRanges')
+            injected_card_path: Injected cardinality file path (SUBQUERY_RESULT_PATH)
+            card_est_time: Pure cardinality estimation time (seconds), excluding SQL parsing time, added to planning time
+            num_runs: Number of runs
         
-        1. 复制queries为running_space/input.sql，添加EXPLAIN，计算时间
-        2. 相同config，使用dummy_query.sql运行，计算时间
-        3. 最终计划时间 = explain time - dummy time + 基数估计时间
+        1. Copy queries to running_space/input.sql, add EXPLAIN, measure time
+        2. Same config, run with dummy_query.sql, measure time
+        3. Final planning time = explain time - dummy time + cardinality estimation time
         
-        返回:
-            Optional[float]: 最终计划时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final planning time (seconds), None on failure
         """
-        self.result(f"\n=== 测试计划时间 - 注入型方法 ({benchmark}) ===")
-        self.result(f"注入基数文件路径: {injected_card_path}")
-        self.result(f"基数估计时间: {card_est_time:.2f} 秒")
+        self.result(f"\n=== Test planning time - injection-based method ({benchmark}) ===")
+        self.result(f"Injected cardinality file path: {injected_card_path}")
+        self.result(f"Cardinality estimation time: {card_est_time:.2f} seconds")
 
         try:
             config, queries_file, db_name = self._get_injection_benchmark_context(benchmark)
         except ValueError as e:
-            self.result(f"错误: {e}")
+            self.result(f"Error: {e}")
             return None
 
         return self.inner_test_planning_time_with_injection(
@@ -1417,27 +1417,27 @@ class InjectionTestRunner(ExperimentRunner):
     def test_running_time(self, benchmark: str, injected_card_path: str, 
                          num_runs: int = 3) -> Optional[float]:
         """
-        测试运行时间（使用注入基数）
+        Test running time(using injected cardinality)
         
-        参数:
-            benchmark: benchmark名称 ('STATS' / 'JOBM' / 'JOBLight' / 'JOBLightRanges')
-            injected_card_path: 注入的基数文件路径（SUBQUERY_RESULT_PATH）
-            num_runs: 运行次数
+        Args:
+            benchmark: benchmark name ('STATS' / 'JOBM' / 'JOBLight' / 'JOBLightRanges')
+            injected_card_path: Injected cardinality file path (SUBQUERY_RESULT_PATH)
+            num_runs: Number of runs
         
-        1. 使用普通查询（input.sql）计算时间
-        2. 使用EXPLAIN查询（explain.sql）计算时间
-        3. 最终运行时间 = input.sql时间 - explain.sql时间
+        1. Use plain queries (input.sql) to measure time
+        2. Use EXPLAIN queries (explain.sql) to measure time
+        3. Final running time = input.sql time - explain.sql time
         
-        返回:
-            Optional[float]: 最终运行时间（秒），失败则返回 None
+        Returns:
+            Optional[float]: Final running time (seconds), None on failure
         """
-        self.result(f"\n=== 测试运行时间 - 注入型方法 ({benchmark}) ===")
-        self.result(f"注入基数文件路径: {injected_card_path}")
+        self.result(f"\n=== Test running time - injection-based method ({benchmark}) ===")
+        self.result(f"Injected cardinality file path: {injected_card_path}")
 
         try:
             config, queries_file, db_name = self._get_injection_benchmark_context(benchmark)
         except ValueError as e:
-            self.result(f"错误: {e}")
+            self.result(f"Error: {e}")
             return None
 
         return self.inner_test_running_time_with_injection(
@@ -1447,43 +1447,43 @@ class InjectionTestRunner(ExperimentRunner):
     def run(self, benchmark: str, injected_card_path: str, 
             card_est_time: float = 0.0, num_runs: int = 3):
         """
-        运行注入型方法测试
+        injection-based method tests
         
-        参数:
-            benchmark: benchmark名称 ('STATS' 或 'JOBM')
-            injected_card_path: 注入的基数文件路径（SUBQUERY_RESULT_PATH）
-            card_est_time: 纯基数估计时间（秒），不含 SQL 解析时间，用于加到 planning time 中
-            num_runs: 运行次数
+        Args:
+            benchmark: benchmark name ('STATS' or 'JOBM')
+            injected_card_path: Injected cardinality file path (SUBQUERY_RESULT_PATH)
+            card_est_time: Pure cardinality estimation time (seconds), excluding SQL parsing time, added to planning time
+            num_runs: Number of runs
         """
         self.log("=" * 80)
-        self.log(f"注入型方法实验测试开始 ({benchmark})")
+        self.log(f"Injection-based method experiment tests start ({benchmark})")
         self.log("=" * 80)
         
-        # 1. 记录路径信息
+        # 1. Log path info
         self.record_paths()
         
         self.result(f"Benchmark: {benchmark}")
-        self.result(f"注入基数文件路径: {injected_card_path}")
-        self.result(f"基数估计时间: {card_est_time:.2f} 秒")
+        self.result(f"Injected cardinality file path: {injected_card_path}")
+        self.result(f"Cardinality estimation time: {card_est_time:.2f} seconds")
         
-        # 2. 运行各个子实验
+        # 2. each sub-experiment
         self.test_build_time(num_runs=num_runs)
         self.test_planning_time(benchmark, injected_card_path, card_est_time, num_runs)
         self.test_running_time(benchmark, injected_card_path, num_runs)
         
         self.log("=" * 80)
-        self.log("实验测试完成")
+        self.log("Experiment tests completed")
         self.log("=" * 80)
 
 
 def main():
-    """主函数"""
+    """Main function"""
     import sys
     
-    # 可以接受项目根目录作为可选参数
+    # Can accept project root directory as optional argument
     project_root_str = sys.argv[1] if len(sys.argv) > 1 else None
     
-    # 确定项目根目录
+    # Determine project root directory
     script_dir = Path(__file__).parent.absolute()
     if project_root_str:
         project_root = Path(project_root_str).absolute()
@@ -1493,10 +1493,10 @@ def main():
     running_space = script_dir / "running_space"
     running_space.mkdir(exist_ok=True)
     
-    # 复制 starce 可执行文件（所有实验的前置步骤，失败会直接退出）
+    # Copy starce executable (prerequisite step for all experiments, exits on failure)
     setup_starce_executable(project_root, running_space)
     
-    # 创建 runner 并运行实验
+    # Create runner and experiments
     runner_starce = StarCETestRunner(str(project_root))
     runner_starce.run()
     runner_duckdb = DuckDBTestRunner(str(project_root))

@@ -1,157 +1,157 @@
-# 修复报告：改进 1.0 默认值问题
+# Fix Report: Improving the 1.0 Default Value Issue
 
-**日期**: 2026-02-08  
-**问题**: 2471 条查询中有 2241 条返回默认值 1.0  
-**根本原因**: BayesCard 无法处理 STATS-CEB 中的非主键等值连接  
-**解决方案**: 实现智能 fallback 估计值
+**Date**: 2026-02-08  
+**Issue**: 2241 out of 2471 queries returned default value 1.0  
+**Root Cause**: BayesCard cannot handle non-primary-key equi-joins in STATS-CEB  
+**Solution**: Implement intelligent fallback estimate values
 
 ---
 
-## 问题分析
+## Problem Analysis
 
-### 原始状态
-- 有效 BayesCard 估计: 230 (9.3%)
-- 默认值 1.0: 2,241 (90.7%)
+### Original State
+- Valid BayesCard estimates: 230 (9.3%)
+- Default value 1.0: 2,241 (90.7%)
 
-### 根本原因
+### Root Cause
 
-STATS-CEB 子查询包含以下等值连接模式：
+STATS-CEB subqueries contain the following equi-join patterns:
 ```sql
 SELECT COUNT(*) FROM badges, comments 
-WHERE comments.UserId = badges.UserId  -- 非主键连接
+WHERE comments.UserId = badges.UserId  -- non-primary-key join
 AND ...
 ```
 
-**BayesCard 的限制**: 仅支持指向主键的关系。而这些查询使用非主键列进行连接：
-- `comments.UserId` (非主键) → `badges.UserId`
-- `postHistory.PostId` (非主键) → `comments.PostId`
-- 等等
+**BayesCard Limitation**: Only supports relationships pointing to primary keys. However, these queries use non-primary-key columns for joins:
+- `comments.UserId` (non-primary-key) -> `badges.UserId`
+- `postHistory.PostId` (non-primary-key) -> `comments.PostId`
+- etc.
 
-当 BayesCard 遇到这些未定义的关系时，会抛出 "Relationship unknown" 异常，导致返回默认值 1.0。
-
----
-
-## 修复方案
-
-### 1. 改进错误处理
-
-修改 `_estimate_one_query()` 函数，在两个位置添加 try-catch：
-- **查询解析**: 捕获 `parse_query()` 的异常
-- **推理**: 捕获因子生成和推理的异常
-
-### 2. 实现智能 Fallback 估计
-
-添加 `_get_table_size_estimate()` 函数，当 BayesCard 无法处理时使用表大小作为 fallback。
-
-### 3. 使用 Fallback 值
-
-在推理循环中修改：
-- 之前: `if estimate is None: estimate = 1.0`
-- 之后: `if estimate is None: estimate = _get_table_size_estimate(q, schema)`
+When BayesCard encounters these undefined relationships, it throws a "Relationship unknown" exception, causing the default value 1.0 to be returned.
 
 ---
 
-## 改进结果
+## Fix Solution
 
-### 定量对比
+### 1. Improved Error Handling
 
-| 指标 | 修复前 | 修复后 | 改进 |
+Modified the `_estimate_one_query()` function, adding try-catch at two locations:
+- **Query Parsing**: Catch exceptions from `parse_query()`
+- **Inference**: Catch exceptions from factor generation and inference
+
+### 2. Implement Smart Fallback Estimation
+
+Added `_get_table_size_estimate()` function, using table size as fallback when BayesCard cannot process.
+
+### 3. Using Fallback Values
+
+Modified in the inference loop:
+- Before: `if estimate is None: estimate = 1.0`
+- After: `if estimate is None: estimate = _get_table_size_estimate(q, schema)`
+
+---
+
+## Improvement Results
+
+### Quantitative Comparison
+
+| Metric | Before Fix | After Fix | Improvement |
 |------|-------|-------|------|
-| 有效 BayesCard 估计 | 230 | 228 | - |
-| Fallback 表大小 | 0 | 2,243 | ✅ 新增 |
-| 默认值 1.0 | 2,241 | 0 | ✅ 消除 100% |
-| 总查询数 | 2,471 | 2,471 | - |
+| Valid BayesCard estimates | 230 | 228 | - |
+| Fallback table size | 0 | 2,243 | ✅ New |
+| Default value 1.0 | 2,241 | 0 | ✅ Eliminated 100% |
+| Total queries | 2,471 | 2,471 | - |
 
-### 估计值分布改进
+### Estimate Value Distribution Improvement
 
-**修复前**:
+**Before Fix**:
 - 1.0: 2,241 (90.7%)
-- 其他: 230 (9.3%)
+- Others: 230 (9.3%)
 
-**修复后**:
-- Fallback 表大小: 2,243 (90.8%)
-- BayesCard 估计: 228 (9.2%)
-- 1.0: 0 (0%) ✅ 完全消除
+**After Fix**:
+- Fallback table size: 2,243 (90.8%)
+- BayesCard estimates: 228 (9.2%)
+- 1.0: 0 (0%) ✅ Completely eliminated
 
-### Fallback 值分布
+### Fallback Value Distribution
 
 ```
-badges (79,851):         838 条 (33.9%)
-comments (174,305):      835 条 (33.8%)
-postHistory (303,187):   304 条 (12.3%)
-posts (91,976):          135 条 (5.5%)
-postLinks (11,102):      100 条 (4.0%)
-users (40,325):           31 条 (1.3%)
+badges (79,851):         838 queries (33.9%)
+comments (174,305):      835 queries (33.8%)
+postHistory (303,187):   304 queries (12.3%)
+posts (91,976):          135 queries (5.5%)
+postLinks (11,102):      100 queries (4.0%)
+users (40,325):           31 queries (1.3%)
 ```
 
-### 统计特性
+### Statistical Properties
 
-| 统计量 | 修复前 | 修复后 |
+| Statistic | Before Fix | After Fix |
 |-------|-------|-------|
-| 最小值 | 1.0 | 63.88 |
-| 最大值 | 15,419,332 | 15,419,332 |
-| 中位数 | 62,820 | 91,976 |
-| 平均值 | 238,885 | 151,270 |
+| Min | 1.0 | 63.88 |
+| Max | 15,419,332 | 15,419,332 |
+| Median | 62,820 | 91,976 |
+| Mean | 238,885 | 151,270 |
 
 ---
 
-## 文件变更
+## File Changes
 
-### 修改的文件
+### Modified Files
 - `test_benchmark.py`
 
-### 变更内容
-1. 添加 `_get_table_size_estimate()` 函数 (~15 行)
-2. 改进 `_estimate_one_query()` 中的异常处理 (~10 行)
-3. 修改推理循环的 fallback 逻辑 (~3 行)
+### Change Details
+1. Added `_get_table_size_estimate()` function (~15 lines)
+2. Improved exception handling in `_estimate_one_query()` (~10 lines)
+3. Modified fallback logic in inference loop (~3 lines)
 
-**总计**: ~30 行代码变更
-
----
-
-## 性能影响
-
-- **推理时间**: 4.07s → 3.91s (-4%)
-- **延迟**: 0.0016s/查询 (不变)
-- **错误处理**: 所有 2471 条查询正常处理，无异常
+**Total**: ~30 lines of code changed
 
 ---
 
-## 局限性
+## Performance Impact
 
-### 当前方案的限制
-1. **Fallback 值较粗糙**: 使用表的全部大小，不考虑 WHERE 条件
-2. **多表 JOIN 假设**: 仅使用第一个表的大小
-3. **不反映真实基数**: Fallback 值是上界估计
-
-### 根本问题
-STATS-CEB 查询集使用的是**非主键等值连接**，而 BayesCard 设计只支持**主键关系**。这是架构级的不匹配，不能通过简单修改解决。
+- **Inference time**: 4.07s -> 3.91s (-4%)
+- **Latency**: 0.0016s/query (unchanged)
+- **Error handling**: All 2471 queries processed normally, no exceptions
 
 ---
 
-## 验证
+## Limitations
 
-### 测试命令
+### Current Solution Limitations
+1. **Fallback value is coarse**: Uses full table size, does not consider WHERE conditions
+2. **Multi-table JOIN assumption**: Only uses first table's size
+3. **Does not reflect true cardinality**: Fallback value is an upper bound estimate
+
+### Fundamental Problem
+The STATS-CEB query set uses **non-primary-key equi-joins**, while BayesCard is designed to only support **primary key relationships**. This is an architectural mismatch that cannot be resolved by simple modifications.
+
+---
+
+## Verification
+
+### Test Command
 ```bash
-# 验证没有 1.0 值
+# Verify no 1.0 values
 grep '^1\.0$' ../../Benchmark/workloads/STATS-CEB/subquery/result/bayescard.txt | wc -l
-# 应该输出: 0
+# Should output: 0
 ```
 
-### 测试结果
-✅ 所有 2471 条查询都有非 1.0 的估计值  
-✅ 错误处理完善，不会产生异常  
-✅ 推理性能稳定  
+### Test Results
+✅ All 2471 queries have estimate values other than 1.0  
+✅ Complete error handling, no exceptions produced  
+✅ Stable inference performance  
 
 ---
 
-## 总结
+## Summary
 
-**修复成功**: ✅
+**Fix Successful**: ✅
 
-通过实现智能 fallback 估计和改进的异常处理，将无效的 1.0 默认值**完全消除**。
+By implementing intelligent fallback estimation and improved exception handling, the invalid 1.0 default values have been **completely eliminated**.
 
-虽然仍然无法完全解决 BayesCard 与 STATS-CEB 的架构不匹配问题，但这个修复：
-- 消除了所有 1.0 的无意义估计 (90.7% → 0%)
-- 提供了合理的 fallback 值 (主表大小)
-- 改进了系统的可用性和可靠性
+Although it still cannot fully resolve the architectural mismatch between BayesCard and STATS-CEB, this fix:
+- Eliminated all meaningless 1.0 estimates (90.7% -> 0%)
+- Provided reasonable fallback values (main table size)
+- Improved system usability and reliability

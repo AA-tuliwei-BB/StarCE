@@ -1,10 +1,10 @@
 """
-对指定 benchmark 的子查询文件逐条调用 LpBound 进行基数估计。
+Invoke LpBound for each subquery in the specified benchmark's subquery file for cardinality estimation.
 
-用途：为 JOBLightRanges（对应 LpBound 的 jobrange）等 benchmark 生成
-      子查询级别的估计结果，补充到 StarCE 的 Benchmark/workloads/ 结果集中。
+Purpose: generate subquery-level estimate results for benchmarks like JOBLightRanges (corresponding to LpBound's jobrange),
+      supplementing into StarCE's Benchmark/workloads/ result set.
 
-用法:
+Usage:
     cd methods/LpBound/
     conda run -n lpbound python benchmarks/experiments/estimate_subqueries.py \
         --benchmark jobrange \
@@ -12,9 +12,9 @@
         --output /path/to/lpbound.txt \
         [--checkpoint-interval 500]
 
-输出:
-    每行一个估计值（浮点数），行数与 subquery.sql 完全对齐。
-    如果某条查询失败，写入 -1 占位并记录到错误日志。
+Output:
+    One estimate value (float) per row, row count exactly aligned with subquery.sql.
+    If a query fails, write -1 as placeholder and log to error file.
 """
 
 import argparse
@@ -43,14 +43,14 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # 读取子查询
+    # Read subqueries
     with open(subquery_path) as f:
         queries = [line.strip() for line in f if line.strip()]
 
     total = len(queries)
-    print(f"共 {total} 条子查询待估计")
+    print(f"Total {total} subqueries to estimate")
 
-    # 初始化 LpBound 配置
+    # Initialize LpBound config
     cfg = LpBoundConfig(benchmark_name=args.benchmark, p_max=args.p_max)
     print(f"LpBound config: benchmark={args.benchmark}, p_max={args.p_max}")
 
@@ -59,7 +59,7 @@ def main():
     start_time = time.perf_counter()
 
     for i, q in enumerate(queries):
-        # LpBound 原生格式为 SELECT *，将 COUNT(*) 转为 *
+        # LpBound native format is SELECT *; convert COUNT(*) to *
         q_mod = q.replace("SELECT COUNT(*)", "SELECT *")
 
         try:
@@ -69,39 +69,39 @@ def main():
             estimates.append(-1.0)
             errors.append((i, str(e)))
 
-        # 进度报告
+        # Progress report
         if (i + 1) % args.checkpoint_interval == 0:
             elapsed = time.perf_counter() - start_time
             avg = elapsed / (i + 1)
             eta = avg * (total - i - 1)
-            print(f"  进度: {i+1}/{total} ({100*(i+1)/total:.1f}%), "
-                  f"平均 {avg:.3f}s/条, 预计剩余 {eta/60:.1f} min")
+            print(f"  Progress: {i+1}/{total} ({100*(i+1)/total:.1f}%), "
+                  f"avg {avg:.3f}s/q, ETA {eta/60:.1f} min")
 
-            # 保存中间结果
+            # Save intermediate results
             ckpt_path = output_path.with_suffix(".ckpt")
             with open(ckpt_path, "w") as f:
                 for e in estimates:
                     f.write(f"{e}\n")
-            print(f"  检查点已保存: {ckpt_path}")
+            print(f"  Checkpoint saved: {ckpt_path}")
 
-    # 写入最终结果
+    # Write final results
     with open(output_path, "w") as f:
         for e in estimates:
             f.write(f"{e}\n")
 
     elapsed = time.perf_counter() - start_time
-    print(f"\n完成! 共 {total} 条, 耗时 {elapsed/60:.1f} min")
-    print(f"成功: {total - len(errors)}, 失败: {len(errors)}")
-    print(f"输出文件: {output_path}")
+    print(f"\nComplete! Total {total} queries, elapsed {elapsed/60:.1f} min")
+    print(f"Succeeded: {total - len(errors)}, Failed: {len(errors)}")
+    print(f"Output file: {output_path}")
 
     if errors:
         err_log = output_path.with_suffix(".errors.log")
         with open(err_log, "w") as f:
             for idx, msg in errors:
                 f.write(f"Line {idx}: {msg}\n")
-        print(f"错误日志: {err_log}")
+        print(f"Error log: {err_log}")
 
-    # 清理检查点
+    # Clean up checkpoint
     ckpt_path = output_path.with_suffix(".ckpt")
     if ckpt_path.exists():
         ckpt_path.unlink()

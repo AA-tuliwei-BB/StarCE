@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-将 End-to-End-CardEst-Benchmark 中的方法估计结果映射到 Benchmark/ 目录。
-支持 FLAT、BayesCard、DeepDB、NeuroCard 四种方法。
+Map method estimation results from End-to-End-CardEst-Benchmark to the Benchmark/ directory.
+Supports FLAT, BayesCard, DeepDB, and NeuroCard.
 
-归一化策略:
-  1. 表名按字典序排序
-  2. 对所有等值 join 条件做 Union-Find 建立等价类
-  3. 每个等价类内列按字典序排序, 用第一个列做锚点, 生成最小不冗余 join
-  4. filter 按字典序排序
-  5. 签名 = (sorted_tables, canonical_joins, sorted_filters) 精确匹配
+Normalization strategy:
+  1. Sort table names lexicographically
+  2. Run Union-Find on all equi-join conditions to establish equivalence classes
+  3. Within each equivalence class, sort columns lexicographically, use the first column as anchor, generate minimal non-redundant joins
+  4. Sort filters lexicographically
+  5. Signature = (sorted_tables, canonical_joins, sorted_filters) exact match
 """
 
 import re, sys
@@ -45,7 +45,7 @@ def parse_sql(sql: str) -> dict | None:
 
 def canonicalize(parsed: dict) -> tuple | None:
     """
-    返回规范签名: (sorted_tables, canonical_joins, sorted_filters)
+    Return canonical signature: (sorted_tables, canonical_joins, sorted_filters)
     """
     sig, _groups = _canonicalize_inner(parsed)
     return sig
@@ -53,8 +53,8 @@ def canonicalize(parsed: dict) -> tuple | None:
 
 def _canonicalize_inner(parsed: dict) -> tuple:
     """
-    返回 (签名, 列等价类列表)。
-    列等价类: [[table.column, ...], ...]  每组是等值连接的所有列
+    Return (signature, list of column equivalence classes).
+    Column equivalence classes: [[table.column, ...], ...]  each group is all columns connected via equi-joins
     """
     a2t = parsed['a2t']
     tables = [re.sub(r'\d+$', '', t) for t in parsed['tables']]
@@ -108,11 +108,11 @@ def _canonicalize_inner(parsed: dict) -> tuple:
     return (tables, canonical_joins, canonical_filts), col_groups
 
 
-# ── 桥接表推断 ──
+# ── Bridge table inference ──
 
-# STATS: 根据等值列名推断桥接表
+# STATS: infer bridge table from equi-join column name
 def stats_bridge_for_column(col: str) -> str | None:
-    """根据列名推断桥接表: userid/owneruserid -> users, postid/relatedpostid -> posts"""
+    """Infer bridge table from column name: userid/owneruserid -> users, postid/relatedpostid -> posts"""
     col = col.lower()
     if col in ('userid', 'owneruserid', 'lasteditoruserid'):
         return 'users'
@@ -127,26 +127,27 @@ def joblight_bridge_for_column(col: str) -> str | None:
         return 'title'
     return None
 
-# 桥接表的主键
+# Primary keys of bridge tables
 BRIDGE_KEY = {'users': 'users.id', 'posts': 'posts.id', 'title': 'title.id'}
 
 
 def add_bridges_and_match(our_sig, col_groups, sp_map, bridge_fn):
     """
-    对未匹配的查询尝试加桥接表。每个等价类按列名推断桥接表,
-    添加桥接表的主键列到等价类中, 重新规范化后匹配。
-    返回匹配到的 estimate 或 None。
+    Try adding bridge tables for unmatched queries. For each equivalence class,
+    infer bridge tables from column names, add bridge table primary key columns
+    to the equivalence class, re-normalize, then match.
+    Returns the matched estimate or None.
     """
     tables, joins, filts = our_sig
     if not col_groups:
         return None
 
-    # 为每个等价类推断桥接表
+    # infer bridge tables for each equivalence class
     bridge_tables = set()
-    extra_joins = []  # 需要额外添加的 join 条件 (table.col = bridge.key)
+    extra_joins = []  # additional join conditions to add (table.col = bridge.key)
 
     for group in col_groups:
-        # 从该组的列名推断桥接
+        # infer bridges from column names in this group
         col_names = {c.split('.')[1] for c in group}
         bridges_for_group = set()
         for cn in col_names:
@@ -156,7 +157,7 @@ def add_bridges_and_match(our_sig, col_groups, sp_map, bridge_fn):
 
         for bt in bridges_for_group:
             bridge_tables.add(bt)
-            # 将该组所有列连接到桥接表主键
+            # connect all columns in this group to bridge table primary key
             bk = BRIDGE_KEY[bt]
             for col in group:
                 extra_joins.append(f"{col} = {bk}")
@@ -164,14 +165,14 @@ def add_bridges_and_match(our_sig, col_groups, sp_map, bridge_fn):
     if not bridge_tables:
         return None
 
-    # 构建新的表集和 join 集
+    # build new table set and join set
     new_tables = tuple(sorted(set(tables) | bridge_tables))
-    # 将原有 join 和新增桥接 join 合并, 重新做 Union-Find
+    # merge original joins and new bridge joins, re-run Union-Find
     all_joins = list(joins) + extra_joins
 
-    # 模拟 parse_sql 的输出结构来重新 canonicalize
-    # 需要 a2t 来规范化列名, 但这里已经是规范化的 table.column 了
-    # 直接做 Union-Find
+    # simulate parse_sql output structure to re-canonicalize
+    # need a2t to normalize column names, but these are already normalized table.column
+    # directly run Union-Find
     parent = {}
     def find(x):
         if x not in parent: parent[x] = x
@@ -211,7 +212,7 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
     print(f"{name}")
     print(f"{'='*60}")
 
-    # 构建 SP 映射: 签名 -> [(line_no, estimate)]
+    # build SP mapping: signature -> [(line_no, estimate)]
     sp_sig_to_list = defaultdict(list)
     sp_err = 0
     for i, sql in enumerate(sp_sqls):
@@ -226,10 +227,10 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
     sp_conflicts = sum(1 for sig, lst in sp_sig_to_list.items()
                        if len(set(e for _, e in lst)) > 1)
 
-    print(f"  SP: {len(sp_sqls)}条 -> {len(sp_map)}个唯一签名, "
-          f"签名内冲突:{sp_conflicts}, 解析失败:{sp_err}")
+    print(f"  SP: {len(sp_sqls)} entries -> {len(sp_map)} unique signatures, "
+          f"intra-signature conflicts:{sp_conflicts}, parse failures:{sp_err}")
 
-    # 匹配
+    # match
     out = [None] * len(our_sqls)
     unmatched = []
     bridge_matched = 0
@@ -256,17 +257,17 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
 
     m = sum(1 for e in out if e is not None)
     u = len(unmatched)
-    print(f"  直接匹配: {m - bridge_matched}, 桥接匹配: {bridge_matched}")
-    print(f"  总计: {m}/{len(our_sqls)} ({100*m/len(our_sqls):.1f}%)")
-    print(f"  未匹配: {u}")
+    print(f"  direct matches: {m - bridge_matched}, bridge matches: {bridge_matched}")
+    print(f"  total: {m}/{len(our_sqls)} ({100*m/len(our_sqls):.1f}%)")
+    print(f"  unmatched: {u}")
 
-    # 重复使用检测
+    # duplicate usage detection
     sp_multi_use = [(sig, cnt) for sig, cnt in match_count_per_sp.items() if cnt > 1]
     if sp_multi_use:
         sp_multi_use.sort(key=lambda x: -x[1])
-        print(f"  SP签名被多条our匹配: {len(sp_multi_use)}个签名, 涉及{sum(cnt for _,cnt in sp_multi_use)}条our")
+        print(f"  SP signatures matched by multiple our queries: {len(sp_multi_use)} signatures, involving {sum(cnt for _,cnt in sp_multi_use)} our entries")
 
-    # 按表数分布
+    # distribution by table count
     by_n = defaultdict(lambda: [0, 0])
     for i, sql in enumerate(our_sqls):
         p = parse_sql(sql)
@@ -279,9 +280,9 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
     for n in sorted(by_n):
         ma, um = by_n[n]
         if ma + um > 0:
-            print(f"    {n}表: {ma} matched, {um} unmatched ({100*ma/(ma+um):.0f}%)")
+            print(f"    {n}-table: {ma} matched, {um} unmatched ({100*ma/(ma+um):.0f}%)")
 
-    # 按原因分类
+    # classify by reason
     tbl_diff = 0; join_diff = 0; filt_diff = 0
     for item in unmatched:
         if isinstance(item[1], str): continue
@@ -294,7 +295,7 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
     print(f"    table_mismatch: {tbl_diff}, join_mismatch: {join_diff}, filter_mismatch: {filt_diff}")
 
     if unmatched:
-        print(f"\n  ── 未匹配示例 (前10条) ──")
+        print(f"\n  ── Unmatched examples (first 10) ──")
         for idx, sig in unmatched[:10]:
             if isinstance(sig, str): print(f"    [{idx}] {sig}"); continue
             t, j, f = sig
@@ -305,7 +306,7 @@ def map_dataset(name, sp_sqls, estimates, our_sqls, out_path, bridge_fn=None):
         for e in out:
             f.write(f"{e}\n" if e is not None else "MISSING\n")
     ok = (u == 0)
-    print(f"\n  结果: {'OK' if ok else f'MISSING={u}'} -> {out_path}")
+    print(f"\n  result: {'OK' if ok else f'MISSING={u}'} -> {out_path}")
     return ok
 
 
@@ -347,7 +348,7 @@ def main():
 
     if not all_ok:
         print("\n" + "=" * 60)
-        print("存在无法匹配的查询。")
+        print("There are queries that could not be matched.")
         print("=" * 60)
         sys.exit(1)
 

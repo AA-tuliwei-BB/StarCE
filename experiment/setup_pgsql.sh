@@ -3,22 +3,22 @@ set -euo pipefail
 
 # postgres -D $PSQL_DATA_DIRECTORY &
 
-# ===== 配置区：按需修改 =====
-# Postgres 连接信息
+# ===== Configuration: modify as needed =====
+# Postgres connection info
 PG_HOST="127.0.0.1"
 PG_PORT="5432"
 PG_USER="postgres"
 PG_PASSWORD=""
 
-# 目标数据库名
+# Target database name
 PG_DB_STATS="stats"
 PG_DB_IMDB="imdb"
 
-# SafeBound 脚本路径
+# SafeBound script path
 SAFEBOUND_DIR="../methods/SafeBound"
 STATS_SCRIPT="CreateStatsBenchmark.bash"
 IMDB_SCRIPT="CreateJOBBenchmark.bash"
-# ===== 配置区结束 =====
+# ===== Configuration end =====
 
 export PGHOST="${PG_HOST}"
 export PGPORT="${PG_PORT}"
@@ -32,14 +32,14 @@ ensure_db() {
   fi
 }
 
-echo "==> 导入 STATS 数据库"
+echo "==> Import STATS database"
 ensure_db "${PG_DB_STATS}"
 (
   cd "${SAFEBOUND_DIR}"
   bash "${STATS_SCRIPT}"
 )
 
-echo "==> 导入 IMDB 数据库"
+echo "==> Import IMDB database"
 ensure_db "${PG_DB_IMDB}"
 (
   cd "${SAFEBOUND_DIR}"

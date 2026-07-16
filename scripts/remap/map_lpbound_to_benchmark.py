@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-将 LpBound 子查询级别基数估计映射到 Benchmark/workloads/ 目录。
+Map LpBound subquery-level cardinality estimates to the Benchmark/workloads/ directory.
 
-支持数据集: STATS-CEB, JOBLight
+Supported datasets: STATS-CEB, JOBLight
 """
 
 import re
@@ -12,7 +12,7 @@ from pathlib import Path
 
 PROJ = Path(__file__).resolve().parent.parent.parent
 
-# ─── 数据集配置 ──────────────────────────────────────────────────
+# ─── Dataset configuration ───────────────────────────────────────
 
 DATASETS = {
     'STATS-CEB': {
@@ -56,7 +56,7 @@ DATASETS = {
 }
 
 
-# ─── SQL 解析与规范化 ───────────────────────────────────────────
+# ─── SQL parsing and normalization ────────────────────────────────
 
 def parse_sql(sql: str) -> dict | None:
     sql = re.sub(r'\s+', ' ', sql).strip().lower().rstrip(';')
@@ -88,7 +88,7 @@ def parse_sql(sql: str) -> dict | None:
 
 
 def canonicalize(parsed: dict) -> tuple:
-    """返回 (canonical_joins, canonical_filts, col_groups)"""
+    """Return (canonical_joins, canonical_filts, col_groups)"""
     a2t = parsed['a2t']
     joins = parsed['joins']
     filts = parsed['filts']
@@ -151,10 +151,10 @@ def normalize_lp_tables_str(tables_str: str) -> str:
     return ' '.join(sorted(parts))
 
 
-# ─── 核心映射 ───────────────────────────────────────────────────
+# ─── Core mapping ────────────────────────────────────────────────
 
 def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> dict:
-    """构建 StarCE 子查询 → 估计值 的映射。method 可选 lpbound / safebound / duckdb 等。"""
+    """Build StarCE subquery -> estimate mapping. method can be lpbound / safebound / duckdb etc."""
 
     lp_name = cfg['lp_name']
     table_map = cfg['table_map']
@@ -168,7 +168,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
         parts = tables_str.strip().split()
         return tuple(sorted(table_map.get(p, p.lower()) for p in parts))
 
-    # ═══ 读取 LpBound 子查询 SQL ═══
+    # ═══ Read LpBound subquery SQL ═══
     lp_sqls = {}
     subquery_csv = lp_dir / f'benchmarks/workloads/{lp_name}/{lp_name}_subqueries.csv'
     with open(subquery_csv) as f:
@@ -180,7 +180,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
                 nk = (qid, normalize_lp_tables_str(parts[1]))
                 lp_sqls[nk] = parts[2]
 
-    # ═══ 读取 LpBound 估计值与真实基数 ═══
+    # ═══ Read LpBound estimates and true cardinalities ═══
     lp_estimates = {}
     for m in [method, 'truecardinality']:
         lp_estimates[m] = {}
@@ -194,7 +194,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
                 lp_estimates[m][nk] = float(parts[2])
     lp_true = lp_estimates['truecardinality']
 
-    # ═══ 构建 LpBound 条目索引 ═══
+    # ═══ Build LpBound entry index ═══
     lp_entries = []
     for (qid, norm_ts_str), sql in lp_sqls.items():
         card_val = lp_true.get((qid, norm_ts_str))
@@ -210,7 +210,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
     for idx, e in enumerate(lp_entries):
         lp_by_ts_card[(e[2], e[3])].append(idx)
 
-    # ═══ 读取 StarCE 数据 ═══
+    # ═══ Read StarCE data ═══
     sc_sqls = []
     with open(sc_subquery_path) as f:
         for line in f:
@@ -228,7 +228,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
                 except ValueError:
                     sc_real.append(None)
 
-    # ═══ 匹配 ═══
+    # ═══ Match ═══
     mapping = [None] * len(sc_sqls)
     stats = {'pass1_card': 0, 'pass2_sig': 0, 'pass3_bridge': 0, 'unmatched': 0}
 
@@ -240,7 +240,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
         sig = canonicalize(parsed) if parsed else ((), (), [])
         sc_data.append((ts, card, sig))
 
-    # Pass 1: (table_set, true_cardinality) 精确匹配
+    # Pass 1: exact match by (table_set, true_cardinality)
     for i, (ts, card, sig) in enumerate(sc_data):
         if ts is None or card is None:
             continue
@@ -250,7 +250,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
             mapping[i] = (e[0], e[1])
             stats['pass1_card'] += 1
 
-    # Pass 2: 多候选用签名消歧
+    # Pass 2: disambiguate multiple candidates using signatures
     for i, (ts, card, sig) in enumerate(sc_data):
         if mapping[i] is not None or ts is None or card is None:
             continue
@@ -266,7 +266,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
                 mapping[i] = (e[0], e[1])
             stats['pass2_sig'] += 1
 
-    # Pass 3: 中心表桥接回退
+    # Pass 3: center-table bridge fallback
     for i, (ts, card, sig) in enumerate(sc_data):
         if mapping[i] is not None or ts is None:
             continue
@@ -325,7 +325,7 @@ def build_lpbound_mapping(lp_dir: Path, cfg: dict, method: str = 'lpbound') -> d
             'sc_data': sc_data}
 
 
-# ─── 输出 ───────────────────────────────────────────────────────
+# ─── Output ──────────────────────────────────────────────────────
 
 def write_and_report(result: dict, out_dir: Path, method: str = 'lpbound'):
     mapping = result['mapping']
@@ -351,20 +351,20 @@ def write_and_report(result: dict, out_dir: Path, method: str = 'lpbound'):
     print(f"  {method}.txt: {matched}/{n} ({100*matched/n:.1f}%), {missing} MISSING")
 
 
-# ─── 主入口 ─────────────────────────────────────────────────────
+# ─── Main entry ──────────────────────────────────────────────────
 
 def main():
     if len(sys.argv) < 2:
-        print(f"用法: python {sys.argv[0]} <dataset> [method]")
-        print(f"数据集: {list(DATASETS.keys())}")
-        print(f"方法: lpbound (默认), safebound, duckdb")
+        print(f"Usage: python {sys.argv[0]} <dataset> [method]")
+        print(f"Datasets: {list(DATASETS.keys())}")
+        print(f"Methods: lpbound (default), safebound, duckdb")
         sys.exit(1)
 
     dataset = sys.argv[1]
     method = sys.argv[2] if len(sys.argv) > 2 else 'lpbound'
 
     if dataset not in DATASETS:
-        print(f"未知数据集: {dataset}。可选: {list(DATASETS.keys())}")
+        print(f"Unknown dataset: {dataset}. Available: {list(DATASETS.keys())}")
         sys.exit(1)
 
     cfg = DATASETS[dataset]
@@ -372,22 +372,22 @@ def main():
     out_dir = PROJ / cfg['out_dir']
 
     print("=" * 60)
-    print(f"{method} → {dataset} 子查询基数估计映射")
+    print(f"{method} -> {dataset} subquery cardinality estimate mapping")
     print("=" * 60)
 
     result = build_lpbound_mapping(lp_dir, cfg, method)
     stats = result['stats']
     n = len(result['mapping'])
 
-    print(f"\nStarCE 子查询总数: {n}")
-    print(f"  Pass 1 (ts+card 精确): {stats['pass1_card']}")
-    print(f"  Pass 2 (签名消歧):     {stats['pass2_sig']}")
-    print(f"  Pass 3 (桥接表):       {stats['pass3_bridge']}")
-    print(f"  MISSING:               {stats['unmatched']}")
+    print(f"\nStarCE subquery total: {n}")
+    print(f"  Pass 1 (ts+card exact):  {stats['pass1_card']}")
+    print(f"  Pass 2 (signature disamb): {stats['pass2_sig']}")
+    print(f"  Pass 3 (bridge table):    {stats['pass3_bridge']}")
+    print(f"  MISSING:                  {stats['unmatched']}")
 
-    print(f"\n写入 {out_dir}:")
+    print(f"\nWriting to {out_dir}:")
     write_and_report(result, out_dir, method)
-    print("\n完成!")
+    print("\nDone!")
 
 
 if __name__ == '__main__':

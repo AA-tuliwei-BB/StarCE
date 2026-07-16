@@ -1,62 +1,62 @@
-# DuckDB 环境搭建
+# DuckDB Environment Setup
 
-## 前置条件
+## Prerequisites
 
-- gcc / cmake 等编译工具链
-- DuckDB 构建依赖（详见项目根目录 `build.sh`）
-- TestEnv conda 环境（Python duckdb 包 v1.5.2）
+- gcc / cmake and other build toolchain
+- DuckDB build dependencies (see project root `build.sh` for details)
+- TestEnv conda environment (Python duckdb package v1.5.2)
 
-## 编译 DuckDB + StarCE
+## Build DuckDB + StarCE
 
-在项目根目录执行：
+Execute in the project root directory:
 
 ```bash
-./build.sh          # release 模式
-./build.sh debug    # debug 模式
+./build.sh          # release mode
+./build.sh debug    # debug mode
 ```
 
-`build.sh` 分为两个阶段：
+`build.sh` has two phases:
 
-1. **cmake duckdb** — 配置并编译 DuckDB 核心库，输出到 `duckdb/build/release/`（或 `duckdb/build/debug/`）
-2. **cmake starce** — 将 StarCE 扩展链接到 DuckDB，最终二进制为 `duckdb/build/release/duckdb`
+1. **cmake duckdb** — Configure and compile the DuckDB core library, output to `duckdb/build/release/` (or `duckdb/build/debug/`)
+2. **cmake starce** — Link the StarCE extension to DuckDB, final binary is `duckdb/build/release/duckdb`
 
-编译完成后，DuckDB 二进制位于 `duckdb/build/release/duckdb`（release）或 `duckdb/build/debug/duckdb`（debug）。
+After compilation, the DuckDB binary is located at `duckdb/build/release/duckdb` (release) or `duckdb/build/debug/duckdb` (debug).
 
-## 创建数据库文件
+## Create Database Files
 
-### STATS 数据库
+### STATS Database
 
 ```bash
 bash setup/duckdb/create_stats_db.sh [duckdb_binary_path]
 ```
 
-- 在 `Benchmark/duckdb/` 下创建 `stats.db`（约 22 MB）
-- 包含 8 张表：badges, comments, postHistory, postLinks, posts, tags, users, votes
-- 数据来源：`Benchmark/STATS/*.csv`
+- Creates `stats.db` under `Benchmark/duckdb/` (~22 MB)
+- Contains 8 tables: badges, comments, postHistory, postLinks, posts, tags, users, votes
+- Data source: `Benchmark/STATS/*.csv`
 
-### IMDB 数据库
+### IMDB Database
 
 ```bash
 bash setup/duckdb/create_imdb_db.sh [duckdb_binary_path]
 ```
 
-- 在 `Benchmark/duckdb/` 下创建 `imdb.db`（约 2.6 GB）
-- 包含 21 张 IMDB 表
-- 数据来源：`Benchmark/IMDB/*.csv`
+- Creates `imdb.db` under `Benchmark/duckdb/` (~2.6 GB)
+- Contains 21 IMDB tables
+- Data source: `Benchmark/IMDB/*.csv`
 
-## Schema 说明
+## Schema Notes
 
-- **STATS** — 使用 `Benchmark/STATS/stats_duckDB.sql`，主键使用 `CREATE SEQUENCE` 替代 PostgreSQL 的 `SERIAL` 类型，以兼容 DuckDB
-- **IMDB** — 使用 `Benchmark/IMDB/imdb_schema.sql`，该 schema 本身即为 DuckDB 兼容格式，无需修改（不含 SERIAL 类型）
+- **STATS** — Uses `Benchmark/STATS/stats_duckDB.sql`, with primary keys using `CREATE SEQUENCE` instead of PostgreSQL `SERIAL` type for DuckDB compatibility
+- **IMDB** — Uses `Benchmark/IMDB/imdb_schema.sql`, which is natively DuckDB-compatible and requires no modification (no SERIAL types)
 
-## 注意事项
+## Notes
 
-- **IMDB CSV 无表头** — COPY 命令不加 `HEADER` 选项
-- **STATS CSV 有表头** — COPY 命令需要 `HEADER` 选项
-- 脚本在数据库文件已存在时会跳过创建，防止误覆盖；如需重建请手动 `rm` 对应的 `.db` 文件
+- **IMDB CSV has no header** — COPY command does not use `HEADER` option
+- **STATS CSV has header** — COPY command requires `HEADER` option
+- The script skips creation when the database file already exists to prevent accidental overwrites; to rebuild, manually `rm` the corresponding `.db` file
 
-## StarCE 使用
+## StarCE Usage
 
-StarCE 通过不同的 schema JSON 文件来区分 workload（如 `schema_joblight.json` 定义 JOBLight 的表和列子集）。
+StarCE distinguishes workloads via different schema JSON files (e.g., `schema_joblight.json` defines the table and column subset for JOBLight).
 
-对于 IMDB 系列 workload（JOBLight、JOBM 等），只需一个全量的 `imdb.db`，StarCE 会根据 schema JSON 中的表名和列名自动筛选所需数据。不需要为每个 workload 单独创建数据库文件。
+For IMDB-series workloads (JOBLight, JOBM, etc.), only a single full `imdb.db` is needed; StarCE automatically filters the required data based on table and column names in the schema JSON. No need to create separate database files for each workload.

@@ -1,60 +1,60 @@
-# StarCE 统一环境搭建
+# StarCE Unified Environment Setup
 
-本目录提供完整的项目环境搭建指南和脚本。
+This directory provides a complete project environment setup guide and scripts.
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 1. Conda 环境
+# 1. Conda environment
 conda env create -f setup/conda/environment.yml
 conda activate TestEnv
 
-# 2. 数据集初始化
-bash setup/dataset/init_stats.sh      # 验证 STATS-CEB
-bash setup/dataset/init_imdb.sh       # 下载 IMDB (~3.5GB)
+# 2. Dataset initialization
+bash setup/dataset/init_stats.sh      # Verify STATS-CEB
+bash setup/dataset/init_imdb.sh       # Download IMDB (~3.5GB)
 
-# 3. 编译 StarCE (DuckDB + StarCE)
+# 3. Build StarCE (DuckDB + StarCE)
 ./build.sh
 
-# 4. 创建 DuckDB 数据库
+# 4. Create DuckDB databases
 bash setup/duckdb/create_stats_db.sh
 bash setup/duckdb/create_imdb_db.sh
 
-# 5. PostgreSQL 环境（见 setup/postgresql/README.md）
+# 5. PostgreSQL environment (see setup/postgresql/README.md)
 ```
 
-## 目录结构
+## Directory Structure
 
-| 目录 | 说明 |
+| Directory | Description |
 |------|------|
-| `conda/` | Conda 环境导出文件，Python 3.10.4 / TestEnv |
-| `dataset/` | 数据集初始化脚本（数据落地到 Benchmark/） |
-| `postgresql/` | PostgreSQL 13.1 安装、配置、建库全流程 |
-| `duckdb/` | DuckDB 编译、.db 文件创建、CSV 导入 |
+| `conda/` | Conda environment export files, Python 3.10.4 / TestEnv |
+| `dataset/` | Dataset initialization scripts (data lands in Benchmark/) |
+| `postgresql/` | PostgreSQL 13.1 installation, configuration, and database creation |
+| `duckdb/` | DuckDB compilation, .db file creation, CSV import |
 
-## 数据集
+## Datasets
 
-| 数据集 | 表数 | 大小 | 位置 |
+| Dataset | Tables | Size | Location |
 |--------|------|------|------|
-| STATS-CEB | 8 | ~39 MB | `Benchmark/STATS/`（仓库已有）|
-| IMDB | 21 | ~4.8 GB | `Benchmark/IMDB/`（需下载）|
+| STATS-CEB | 8 | ~39 MB | `Benchmark/STATS/` (included in repo) |
+| IMDB | 21 | ~4.8 GB | `Benchmark/IMDB/` (requires download) |
 
-## 构建产物
+## Build Artifacts
 
-| 产物 | 位置 | 说明 |
+| Artifact | Location | Description |
 |------|------|------|
-| stats.db | `Benchmark/duckdb/stats.db` | STATS DuckDB 数据库 |
-| imdb.db | `Benchmark/duckdb/imdb.db` | IMDB 全量 DuckDB 数据库 |
-| stats (PG) | PostgreSQL | STATS-CEB 数据库 |
-| imdb (PG) | PostgreSQL | 完整 IMDB 数据库 |
-| imdblight (PG) | PostgreSQL | JOBLight 子集（6 表）|
-| imdblightranges (PG) | PostgreSQL | JOBLightRanges 子集（6 表）|
-| imdbm (PG) | PostgreSQL | JOBM 子集（17 表）|
+| stats.db | `Benchmark/duckdb/stats.db` | STATS DuckDB database |
+| imdb.db | `Benchmark/duckdb/imdb.db` | Full IMDB DuckDB database |
+| stats (PG) | PostgreSQL | STATS-CEB database |
+| imdb (PG) | PostgreSQL | Full IMDB database |
+| imdblight (PG) | PostgreSQL | JOBLight subset (6 tables) |
+| imdblightranges (PG) | PostgreSQL | JOBLightRanges subset (6 tables) |
+| imdbm (PG) | PostgreSQL | JOBM subset (17 tables) |
 
-## 后续
+## Next Steps
 
-环境搭建完成后，参考以下 skill 进行实验：
+After environment setup, refer to the following skills for experiments:
 
-- [starce-usage](../.claude/skills/starce-usage/SKILL.md) — StarCE 运行方法
-- [pg-end2end](../.claude/skills/pg-end2end/SKILL.md) — PG 端对端测试
-- [experiment-workflow](../.claude/skills/experiment-workflow/SKILL.md) — 实验流程总览
+- [starce-usage](../.claude/skills/starce-usage/SKILL.md) — StarCE usage guide
+- [pg-end2end](../.claude/skills/pg-end2end/SKILL.md) — PG end-to-end testing
+- [experiment-workflow](../.claude/skills/experiment-workflow/SKILL.md) — Experiment workflow overview

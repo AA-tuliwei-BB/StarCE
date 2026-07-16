@@ -1,82 +1,82 @@
 # StarCE
 
-基于 DuckDB 的基数估计系统，使用度序列统计（Degree Sequence Statistics）对 Join 查询进行基数估计。
+A DuckDB-based cardinality estimation system that uses Degree Sequence Statistics for cardinality estimation of join queries.
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 1. 环境
+# 1. Environment
 conda env create -f setup/conda/environment.yml
 conda activate TestEnv
 
-# 2. 数据
+# 2. Data
 bash setup/dataset/init_stats.sh
 bash setup/dataset/init_imdb.sh
 
-# 3. 编译
+# 3. Build
 ./build.sh
 
-# 4. 创建 DuckDB 数据库
+# 4. Create DuckDB database
 bash setup/duckdb/create_stats_db.sh
 bash setup/duckdb/create_imdb_db.sh
 ```
 
-完整环境搭建（含 PostgreSQL）见 [setup/README.md](setup/README.md)。
+For full environment setup (including PostgreSQL), see [setup/README.md](setup/README.md).
 
-## 项目结构
+## Project Structure
 
 ```
-├── main.cpp                      # StarCE 入口：统计收集 + SQL 执行
-├── duckdb/                       # DuckDB 源码 + StarCE 扩展头文件
+├── main.cpp                      # StarCE entry: statistics collection + SQL execution
+├── duckdb/                       # DuckDB source + StarCE extension headers
 │   └── src/include/duckdb/starce/
-│       ├── starce.hpp            # StatisticManager（核心估计逻辑）
-│       ├── statistic.hpp         # DSStatistic、DegreeSequence
-│       └── equalset.hpp          # EqualSet 定义与序列化
+│       ├── starce.hpp            # StatisticManager (core estimation logic)
+│       ├── statistic.hpp         # DSStatistic, DegreeSequence
+│       └── equalset.hpp          # EqualSet definition and serialization
 ├── methods/
-│   ├── FactorJoin/               # FactorJoin 方法
-│   ├── SafeBound/                # SafeBound 方法
-│   └── LpBound/                  # LpBound 方法
-├── experiment/                   # 实验脚本和 Notebook
-├── Benchmark/                    # 基准数据集和 Workload
-│   ├── STATS/                    # STATS-CEB 数据 (8 表)
-│   ├── IMDB/                     # IMDB 数据 (21 表)
-│   └── workloads/                # 查询 Workload
-└── setup/                        # 统一环境搭建指南
+│   ├── FactorJoin/               # FactorJoin method
+│   ├── SafeBound/                # SafeBound method
+│   └── LpBound/                  # LpBound method
+├── experiment/                   # Experiment scripts and notebooks
+├── Benchmark/                    # Benchmark datasets and workloads
+│   ├── STATS/                    # STATS-CEB data (8 tables)
+│   ├── IMDB/                     # IMDB data (21 tables)
+│   └── workloads/                # Query workloads
+└── setup/                        # Unified environment setup guide
 ```
 
-## 数据集
+## Datasets
 
-| 数据集 | 表数 | 大小 | 说明 |
+| Dataset | Tables | Size | Description |
 |--------|------|------|------|
-| STATS-CEB | 8 | ~39 MB | Stack Overflow 数据，仓库已有 |
-| IMDB | 21 | ~4.8 GB | Internet Movie Database，需下载 |
-| JOBLight | 6 | IMDB 子集 | 仅 6 张核心表 |
-| JOBLightRanges | 6 | IMDB 子集 | JOBLight + Range 谓词 |
-| JOBM | 17 | IMDB 子集 | 去掉 4 张宽表 |
+| STATS-CEB | 8 | ~39 MB | Stack Overflow data, included in repo |
+| IMDB | 21 | ~4.8 GB | Internet Movie Database, requires download |
+| JOBLight | 6 | IMDB subset | Only 6 core tables |
+| JOBLightRanges | 6 | IMDB subset | JOBLight + Range predicates |
+| JOBM | 17 | IMDB subset | Excludes 4 wide tables |
 
-## 外部方法
+## External Methods
 
-| 方法 | 说明 |
+| Method | Description |
 |------|------|
-| FactorJoin | 贝叶斯网络 + 采样基数估计 |
-| SafeBound | 安全界限基数估计 |
-| LpBound | 线性规划界限估计 |
+| FactorJoin | Bayesian network + sampling cardinality estimation |
+| SafeBound | Safe bound cardinality estimation |
+| LpBound | Linear programming bound estimation |
 | FLAT / FSPN | Factorized Sum-Product Network |
-| DeepDB / BayesCard | 深度学习基数估计 |
-| NeuroCard | 神经基数估计 |
+| DeepDB / BayesCard | Deep learning cardinality estimation |
+| NeuroCard | Neural cardinality estimation |
 
-## 编译
+## Build
 
 ```bash
-./build.sh          # release 模式 → build/starce
-./build.sh debug    # debug 模式 → build-debug/starce
+./build.sh          # release mode → build/starce
+./build.sh debug    # debug mode → build-debug/starce
 ```
 
-## 实验
+## Experiments
 
 ```bash
 cd experiment
 python ExperimentRunner.py
 ```
 
-详细实验流程、配置文件、评估方法见 Claude Code skills（`/experiment-workflow`、`/starce-usage` 等）。
+For detailed experiment workflows, configuration files, and evaluation methods, see Claude Code skills (`/experiment-workflow`, `/starce-usage`, etc.).

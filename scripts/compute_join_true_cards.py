@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-通过 GROUP BY 下推计算 join 查询的真实基数。
+Compute true cardinality of join queries via GROUP BY pushdown.
 
-算法：对每个基表按 join key 做 GROUP BY COUNT(*)，单表谓词下推到 CTE 的 WHERE 中，
-然后连接分组结果，最后 SUM(cnt 的乘积)。避免直接 join 产生巨大的中间结果。
+Algorithm: For each base table, GROUP BY join key with COUNT(*); push single-table predicates into CTE WHERE;
+then join the grouped results and SUM(product of cnt). Avoids generating huge intermediate results from direct joins.
 
-支持 JOBM / JOBLight / JOBLightRanges / JobJoin / STATS 等 benchmark。
+Supports JOBM / JOBLight / JOBLightRanges / JobJoin / STATS benchmarks.
 
-用法：
+Usage:
     python scripts/compute_join_true_cards.py \
         --db Benchmark/duckdb/imdb.db \
         --queries benchmark/jobjoin/queries.sql \
@@ -22,30 +22,30 @@ from collections import defaultdict
 
 
 def qid(name):
-    """双引号包裹标识符，防止关键字冲突（如 DuckDB 的 AT）。"""
+    """Wrap identifier in double quotes to prevent keyword conflicts (e.g., DuckDB's AT)."""
     return f'"{name}"'
 
 
 def parse_query(query):
     """
-    解析查询，返回 (aliases_map, join_conditions, predicates)。
+    Parse query, return (aliases_map, join_conditions, predicates).
 
     aliases_map: {alias: table_name}
     join_conditions: [(left_alias, left_col, right_alias, right_col)]
-    predicates: {alias: [condition_string]}  — 单表谓词，已按 alias 归类
+    predicates: {alias: [condition_string]}  -- single-table predicates, grouped by alias
     """
     from_match = re.search(
         r'FROM\s+(.*?)\s+WHERE\s+',
         query, re.IGNORECASE | re.DOTALL
     )
     if not from_match:
-        raise ValueError(f"无法解析 FROM 子句: {query[:100]}")
+        raise ValueError(f"Cannot parse FROM clause: {query[:100]}")
 
     from_text = from_match.group(1)
 
     aliases_map = {}
     for m in re.finditer(r'(?i)(\w+)\s+AS\s+(\w+)', from_text):
-        # 统一小写：SQL 标识符大小写不敏感
+        # Unified lowercase: SQL identifiers are case-insensitive
         aliases_map[m.group(2).lower()] = m.group(1).lower()
 
     where_match = re.search(
@@ -53,7 +53,7 @@ def parse_query(query):
         query, re.IGNORECASE | re.DOTALL
     )
     if not where_match:
-        raise ValueError(f"无法解析 WHERE 子句: {query[:100]}")
+        raise ValueError(f"Cannot parse WHERE clause: {query[:100]}")
 
     where_text = where_match.group(1).rstrip(';')
 
@@ -68,21 +68,21 @@ def parse_query(query):
         if jc:
             join_conditions.append(jc)
         else:
-            # 归类单表谓词
+            # Classify single-table predicates
             refs = find_alias_refs(cond, aliases_map)
             if len(refs) == 1:
                 alias = refs[0]
                 predicates[alias].append(cond)
             elif len(refs) > 1:
-                # 跨表谓词留在外层 WHERE
+                # Cross-table predicates stay in outer WHERE
                 cross_predicates.append(cond)
-            # refs == 0: 无法归类的表达式也留在外层（如纯常量）
+            # refs == 0: unclassifiable expressions stay in outer WHERE too (e.g., pure constants)
 
     return aliases_map, join_conditions, dict(predicates), cross_predicates
 
 
 def find_alias_refs(cond, aliases_map):
-    """返回条件中引用的表别名列表（去重），大小写不敏感。"""
+    """Return deduplicated list of table aliases referenced in the condition (case-insensitive)."""
     refs = set()
     for alias in aliases_map:
         if re.search(rf'\b{re.escape(alias)}\.\w+', cond, re.IGNORECASE):
@@ -91,7 +91,7 @@ def find_alias_refs(cond, aliases_map):
 
 
 def split_and(text):
-    """按顶层 AND 拆分条件，正确处理引号和括号。"""
+    """Split conditions at top-level AND, correctly handling quotes and parentheses."""
     parts = []
     current = []
     depth = 0
@@ -135,8 +135,8 @@ def split_and(text):
 
 def parse_join_condition(cond, aliases_map):
     """
-    如果是 join 条件 (alias.col = alias.col)，返回 (left_alias, left_col, right_alias, right_col)。
-    否则返回 None。
+    If it is a join condition (alias.col = alias.col), return (left_alias, left_col, right_alias, right_col).
+    Otherwise return None.
     """
     m = re.match(
         r'^\s*(\w+)\.(\w+)\s*(=|!=|<>)\s*(\w+)\.(\w+)\s*$',
@@ -161,7 +161,7 @@ def parse_join_condition(cond, aliases_map):
 
 
 def get_join_keys(aliases_map, join_conditions):
-    """返回 {alias: [join_key_columns]}。"""
+    """Return {alias: [join_key_columns]}."""
     keys = defaultdict(set)
     for left_alias, left_col, right_alias, right_col in join_conditions:
         keys[left_alias].add(left_col)
@@ -171,20 +171,20 @@ def get_join_keys(aliases_map, join_conditions):
 
 def build_grouped_query(aliases_map, join_conditions, predicates, cross_predicates):
     """
-    构建使用 GROUP BY 下推的计数查询。
-    predicates: {alias: [cond_str]}  — 单表谓词
-    cross_predicates: [cond_str]     — 跨表谓词，留在外层 WHERE
+    Build a count query using GROUP BY pushdown.
+    predicates: {alias: [cond_str]}  -- single-table predicates
+    cross_predicates: [cond_str]     -- cross-table predicates, stay in outer WHERE
     """
     join_keys = get_join_keys(aliases_map, join_conditions)
 
-    # 构建 CTE：每个表按 join key GROUP BY，带单表谓词
+    # Build CTEs: each table GROUP BY join key, with single-table predicates
     ctes = []
     for alias in sorted(aliases_map):
         table_name = aliases_map[alias]
         cols = join_keys.get(alias, [])
         col_list = ', '.join(qid(c) for c in cols)
 
-        # 单表谓词：去掉 alias. 前缀（CTE 内部只有基表，不需要别名限定）
+        # Single-table predicates: strip alias. prefix (CTE body only has base table, no alias qualification needed)
         preds = predicates.get(alias, [])
         fixed_preds = []
         for pred in preds:
@@ -213,17 +213,17 @@ def build_grouped_query(aliases_map, join_conditions, predicates, cross_predicat
                 f"    )"
             )
 
-    # JOIN 条件
+    # JOIN conditions
     join_clauses = []
     for left_alias, left_col, right_alias, right_col in join_conditions:
         join_clauses.append(
             f"{qid(left_alias)}.{qid(left_col)} = {qid(right_alias)}.{qid(right_col)}"
         )
 
-    # 跨表谓词
+    # Cross-table predicates
     all_outer_conds = join_clauses + cross_predicates
 
-    # SELECT: SUM(cnt 乘积)
+    # SELECT: SUM(product of cnt)
     cnt_product = ' * '.join(
         f"{qid(alias)}.cnt" for alias in sorted(aliases_map)
     )
@@ -251,7 +251,7 @@ def build_grouped_query(aliases_map, join_conditions, predicates, cross_predicat
 
 
 def compute_query(con, query):
-    """解析查询并返回真实基数。"""
+    """Parse query and return true cardinality."""
     aliases_map, join_conditions, predicates, cross_predicates = parse_query(query)
     gq = build_grouped_query(aliases_map, join_conditions, predicates, cross_predicates)
     result = con.execute(gq).fetchone()
@@ -259,7 +259,7 @@ def compute_query(con, query):
 
 
 def process_queries(con, queries, label):
-    """处理一组查询，返回基数列表。"""
+    """Process a set of queries, return cardinality list."""
     cards = []
     for i, q in enumerate(queries, 1):
         if not q.strip():
@@ -269,7 +269,7 @@ def process_queries(con, queries, label):
             cards.append(card)
             n_tables = len(re.findall(r'(?i)\bAS\s+(\w+)', q))
             if i <= 5 or i % 200 == 0 or i == len(queries):
-                print(f"  {label} Q{i:<4d} ({n_tables}表): {card:,}")
+                print(f"  {label} Q{i:<4d} ({n_tables} tables): {card:,}")
         except Exception as e:
             print(f"  {label} Q{i:<4d}: ERROR - {e}", file=sys.stderr)
             cards.append(-1)
@@ -278,39 +278,39 @@ def process_queries(con, queries, label):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='通过 GROUP BY 下推计算 join 查询真实基数'
+        description='Compute join query true cardinality via GROUP BY pushdown'
     )
-    parser.add_argument('--db', required=True, help='DuckDB 数据库路径')
-    parser.add_argument('--queries', required=True, help='主查询文件路径')
-    parser.add_argument('--output', required=True, help='主查询真实基数输出文件')
+    parser.add_argument('--db', required=True, help='DuckDB database path')
+    parser.add_argument('--queries', required=True, help='Main query file path')
+    parser.add_argument('--output', required=True, help='Main query true cardinality output file')
     parser.add_argument('--subquery-sql', default=None,
-                        help='subquery.sql 路径（同时计算子查询真实基数）')
+                        help='subquery.sql path (also compute subquery true cardinalities)')
     parser.add_argument('--subquery-output', default=None,
-                        help='子查询真实基数输出文件（默认与 --subquery-sql 同目录 result/real.txt）')
+                        help='Subquery true cardinality output file (default: result/real.txt in same dir as --subquery-sql)')
     args = parser.parse_args()
 
     import duckdb
 
     con = duckdb.connect(args.db)
 
-    # 主查询
+    # Main queries
     with open(args.queries) as f:
         queries = [l.strip() for l in f if l.strip()]
-    print(f"主查询: {len(queries)} 条")
-    cards = process_queries(con, queries, "主")
+    print(f"Main queries: {len(queries)} entries")
+    cards = process_queries(con, queries, "Main")
 
     with open(args.output, 'w') as f:
         for c in cards:
             f.write(f"{c}\n")
-    print(f"主查询真实基数 → {args.output}")
+    print(f"Main query true cardinalities -> {args.output}")
 
-    # 子查询
+    # Subqueries
     if args.subquery_sql:
         import os
         with open(args.subquery_sql) as f:
             sub_queries = [l.strip() for l in f if l.strip()]
-        print(f"\n子查询: {len(sub_queries)} 条")
-        sub_cards = process_queries(con, sub_queries, "子")
+        print(f"\nSubqueries: {len(sub_queries)} entries")
+        sub_cards = process_queries(con, sub_queries, "Sub")
 
         if args.subquery_output:
             sub_out = args.subquery_output
@@ -321,10 +321,10 @@ def main():
         with open(sub_out, 'w') as f:
             for c in sub_cards:
                 f.write(f"{c}\n")
-        print(f"子查询真实基数 → {sub_out}")
+        print(f"Subquery true cardinalities -> {sub_out}")
 
     con.close()
-    print("\n完成。")
+    print("\nDone.")
 
 
 if __name__ == '__main__':

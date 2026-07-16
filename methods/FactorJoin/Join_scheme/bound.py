@@ -138,8 +138,8 @@ class Bound_ensemble:
         rest_group_tables = []
         for table in tables:
             assert key_group in factors[table].equivalent_variables
-            # 用 list comprehension 移除所有 key_group 出现（同表多列映射到同一等价组时
-            # equivalent_variables 中有重复，remove 只移除第一个会导致误判为 rest_group）
+            # Use list comprehension to remove all key_group occurrences (when same table's multiple columns map to the same equivalence group,
+            # equivalent_variables has duplicates, remove only removes the first causing misclassification as rest_group)
             temp = [v for v in factors[table].equivalent_variables if v != key_group]
             if len(temp) == 0:
                 eliminated_tables.append(table)
@@ -157,13 +157,13 @@ class Bound_ensemble:
         for table in eliminated_tables:
             bin_modes = self.table_buckets[table].oned_bin_modes[relevant_keys[key_group][table]]
             pdf = factors[table].pdfs
-            # 若 table 的 pdf 是多维的（同表多列映射到同一等价组），
-            # 按 independence 分解为多个 1D marginal，每个与对应 mode 配对
+            # If the table's pdf is multi-dimensional (same table's multiple columns map to the same equivalence group),
+            # decompose by independence into multiple 1D marginals, each paired with the corresponding mode
             if pdf.ndim == 1:
                 all_probs_eliminated.append(pdf)
                 all_modes_eliminated.append(np.minimum(bin_modes, pdf))
             else:
-                # pdf 是 ndim > 1 的数组，逐轴分解
+                # pdf is an ndim > 1 array, decompose axis by axis
                 for axis in range(pdf.ndim):
                     marginal = np.sum(pdf, axis=tuple(a for a in range(pdf.ndim) if a != axis))
                     all_probs_eliminated.append(marginal)
@@ -181,12 +181,12 @@ class Bound_ensemble:
                 idx_f = factors[table].equivalent_variables.index(key_group)
                 idx_b = self.table_buckets[table].id_attributes.index(relevant_keys[key_group][table])
                 actual_key = relevant_keys[key_group][table]
-                # PDF 切片只取决于 idx_f（key_group 在 factor.pdfs 的哪个轴）
+                # PDF slice depends only on idx_f (which axis of factor.pdfs the key_group is on)
                 if idx_f == 0:
                     pdfs_slice = factors[table].pdfs[:, i]
                 else:
                     pdfs_slice = factors[table].pdfs[i, :]
-                # 模式切片：有 twod_bin_modes 时按 idx_b 决定方向，否则用 1D 近似
+                # Mode slice: if twod_bin_modes available, determine direction by idx_b, otherwise use 1D approximation
                 if actual_key in self.table_buckets[table].twod_bin_modes:
                     bin_modes = self.table_buckets[table].twod_bin_modes[actual_key]
                     if idx_b == 0:
@@ -194,7 +194,7 @@ class Bound_ensemble:
                     else:
                         modes_slice = np.minimum(bin_modes[i, :], pdfs_slice)
                 else:
-                    # 表有 3+ 个 join key，twod_bin_modes 未生成，用 1D 近似（独立性假设）
+                    # Table has 3+ join keys, twod_bin_modes not generated, use 1D approximation (independence assumption)
                     bm_1d = self.table_buckets[table].oned_bin_modes[actual_key]
                     modes_slice = np.minimum(bm_1d, pdfs_slice)
                 rest_group_probs_eliminated.append(pdfs_slice)
@@ -274,8 +274,8 @@ class Bound_ensemble:
         if tables_all is None:
             print("parse query not successful: ", query_str)
             return 1
-        # eliminate_one_key_group 只支持 2D factor（每个表最多 2 个 join key）。
-        # 对超过 2 个 join key 的表（如 movie_companies），取前 2 个（按字母序），第 3 个视为独立贡献忽略。
+        # eliminate_one_key_group only supports 2D factors (at most 2 join keys per table).
+        # For tables with more than 2 join keys (e.g., movie_companies), take the first 2 (alphabetically), the 3rd is treated as independent contribution and ignored.
         for alias in join_keys:
             if len(join_keys[alias]) > 2:
                 join_keys[alias] = set(sorted(join_keys[alias])[:2])
@@ -286,13 +286,13 @@ class Bound_ensemble:
         else:
             conditional_factors = self.get_all_id_conidtional_distribution_sample(query_str, query_name, tables_all,
                                                                                   join_keys)
-            # sampling 模式下：
-            # 1. join_keys/conditional_factors 以子查询别名（如 title1）为键，
-            #    而 table_buckets/equivalent_keys 以真实表名（如 title）为键，
-            #    需将两者重映射为真实表名。同表多别名（自连接）时合并而非覆盖。
-            # 2. Factor 没有 equivalent_variables，需根据 equivalent_group 补全。
-            # 3. 重映射后重建 equivalent_group，消除自连接导致的重复 key。
-            #    同表多别名时保留 join keys 最多的 factor，避免丢失 join key。
+            # In sampling mode:
+            # 1. join_keys/conditional_factors use subquery aliases (e.g., title1) as keys,
+            #    while table_buckets/equivalent_keys use real table names (e.g., title) as keys,
+            #    need to remap both to real table names. Merge rather than overwrite when same table has multiple aliases (self-join).
+            # 2. Factor has no equivalent_variables, need to complete based on equivalent_group.
+            # 3. Rebuild equivalent_group after remapping, eliminate duplicate keys caused by self-joins.
+            #    When same table has multiple aliases, keep the factor with the most join keys to avoid losing join keys.
             alias_keys_orig = {alias: keys for alias, keys in join_keys.items()}
             new_join_keys = {}
             for alias, keys in join_keys.items():
@@ -312,7 +312,7 @@ class Bound_ensemble:
                     if table not in new_cond_factors:
                         new_cond_factors[table] = conditional_factors[alias]
             conditional_factors = new_cond_factors
-            # 重建 equivalent_group，用重映射后的 join_keys（表名去重后无重复 key）
+            # Rebuild equivalent_group, using remapped join_keys (no duplicate keys after deduplication by table name)
             equivalent_group = get_join_hyper_graph(join_keys, self.equivalent_keys)
             key_to_group = {}
             for PK, keys in equivalent_group.items():
@@ -326,7 +326,7 @@ class Bound_ensemble:
                         if equiv_pk is None:
                             continue
                         new_equiv.append(equiv_pk)
-                        # 用整数（bin 数量）而非数组赋值，与 BN 模式的 cardinalities 格式保持一致
+                        # Use integer (bin count) instead of array assignment, consistent with BN mode cardinalities format
                         if equiv_pk not in factor.cardinalities:
                             factor.cardinalities[equiv_pk] = factor.cardinalities[var]
                     factor.equivalent_variables = new_equiv

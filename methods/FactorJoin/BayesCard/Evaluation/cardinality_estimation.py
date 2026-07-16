@@ -99,7 +99,7 @@ def construct_table_query(BN, table_query, attr, ops, val, epsilon=1e-6):
                 if len(val) == 0:
                     return None
                 if len(val) > 1:
-                    # 多个元素视为 IN 查询，直接使用列表作为 query_domain
+                    # Multiple elements treated as IN query, use list directly as query_domain
                     query_domain = val
                 else:
                     val = val[0]

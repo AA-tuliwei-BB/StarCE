@@ -1,52 +1,52 @@
 ---
 name: starce-estimation-internals
-description: StarCE 估计机制详解：DegreeSequence 度序列压缩表示、DSStatistic 多表 join 统计体、EqualSet 等价类、统计信息收集流程（CollectStatistics）、基数估计流程（EstimateCardinality: AttrEset→DSStatistic→谓词过滤→Merge）、AdjustRate/PredMethod/CompressPrecision 参数含义及已知局限性。当用户提到 StarCE 内部机制、度序列、DSStatistic、EqualSet、Merge 点积、AdjustToAverage、统计收集、估计流程时使用。
+description: Detailed explanation of StarCE estimation mechanisms: DegreeSequence compressed degree sequence representation, DSStatistic multi-table join statistics, EqualSet equivalence classes, statistics collection flow (CollectStatistics), cardinality estimation flow (EstimateCardinality: AttrEset→DSStatistic→predicate filtering→Merge), AdjustRate/PredMethod/CompressPrecision parameter meanings, and known limitations. Use when mentioning StarCE internals, degree sequence, DSStatistic, EqualSet, Merge dot product, AdjustToAverage, statistics collection, estimation flow.
 ---
 
-# StarCE 估计机制详解
+# StarCE Estimation Mechanism Details
 
-## 核心数据结构
+## Core Data Structures
 
-### DegreeSequence（度序列）
+### DegreeSequence
 
-`statistic.hpp` 中定义。压缩表示一列值的频率分布：
+Defined in `statistic.hpp`. Compressed representation of frequency distribution for a column's values:
 
 ```
-maxDegree: [d1, d2, d3, ...]   // 每个桶的最大度（降序）
-count:     [c1, c2, c3, ...]   // 每个桶中有多少个不同值
+maxDegree: [d1, d2, d3, ...]   // Max degree per bucket (descending)
+count:     [c1, c2, c3, ...]   // Number of distinct values in each bucket
 ```
 
-- `GetCard()` = Σ count[i] × maxDegree[i]（总行数）
-- `GetNDV()` = Σ count[i]（不同值数量）
-- `AddDegree(degree, count, precision)` 按 log(precision) 分桶压缩
-- `dot(other)` 对两个度序列做点积（用于 join 上界估计）
+- `GetCard()` = Σ count[i] × maxDegree[i] (total row count)
+- `GetNDV()` = Σ count[i] (number of distinct values)
+- `AddDegree(degree, count, precision)` compresses into buckets by log(precision)
+- `dot(other)` computes dot product of two degree sequences (for join upper bound estimation)
 
-### DSStatistic（多表 join 统计体）
+### DSStatistic (Multi-Table Join Statistics)
 
-每个 EqualSet 对应一个 DSStatistic，包含：
+Each EqualSet corresponds to one DSStatistic, containing:
 
-- `card`：该 join 的真实基数（收集阶段计算）
-- `ds[table]`：每张表的度序列，表示"该表某个 join key 值在 join 结果中对应多少行"
-- `centralDs`：中心表的度序列（用于 StarSplit 模式）
+- `card`: true cardinality of this join (computed during collection phase)
+- `ds[table]`: degree sequence per table, representing "how many rows a given join key value corresponds to in the join result"
+- `centralDs`: degree sequence of the central table (used in StarSplit mode)
 
 ### EqualSet
 
-一组 `(TableName, ColumnName)` 对，表示 schema 中通过 join 条件等价的列集合。例如：
+A set of `(TableName, ColumnName)` pairs, representing columns in the schema that are equivalent via join conditions. Example:
 
 ```
 {badges.UserId, users.Id, postHistory.UserId, votes.UserId}
 ```
 
-StarCE 在 schema 分析阶段预先枚举所有 EqualSet 的子集，并为每个子集收集 DSStatistic。
+StarCE pre-enumerates all EqualSet subsets during schema analysis and collects DSStatistic for each subset.
 
 ---
 
-## 统计信息收集（main.cpp: CollectStatistics）
+## Statistics Collection (main.cpp: CollectStatistics)
 
-对每个 EqualSet，执行如下 SQL 收集度序列：
+For each EqualSet, execute the following SQL to collect degree sequences:
 
 ```sql
--- 对每张表按 join key 分组，统计每个值的出现次数
+-- For each table, group by join key and count occurrences per value
 SELECT val, table1_cnt, table2_cnt, ..., COUNT(*) AS freq
 FROM (
   SELECT val, SUM(CASE WHEN tbl='t1' THEN cnt ELSE 0 END) AS t1_cnt, ...
@@ -57,88 +57,88 @@ FROM (
 ) GROUP BY table1_cnt, table2_cnt, ...
 ```
 
-**注意**：收集时已过滤 NULL 值（`WHERE col IS NOT NULL`）。
+**Note**: NULL values are filtered during collection (`WHERE col IS NOT NULL`).
 
-对每个 `(t1_cnt, t2_cnt, ...)` 组合，调用 `DSStatistic::AddDegree`：
+For each `(t1_cnt, t2_cnt, ...)` combination, `DSStatistic::AddDegree` is called:
 
 ```cpp
-// 对每张表，degree = 其他所有表的 cnt 之积
+// For each table, degree = product of all other tables' cnt
 ds[table].AddDegree(product / table_cnt, table_cnt * freq)
 card += product * freq
 ```
 
-收集完成后调用 `FinishCollection()`，对度序列降序排列并截断到 card 上界。
+After collection, `FinishCollection()` is called to sort degree sequences in descending order and truncate to the card upper bound.
 
-统计信息序列化到 `experiment/running_space/statistics_{benchmark}.json`。
+Statistics are serialized to `experiment/running_space/statistics_{benchmark}.json`.
 
 ---
 
-## 基数估计（starce.hpp: EstimateCardinality）
+## Cardinality Estimation (starce.hpp: EstimateCardinality)
 
-输入：当前查询涉及的表 ID 列表 `rels`。
+Input: list of table IDs `rels` involved in the current query.
 
-**Step 1：识别 AttrEset（join 列等价类）**
+**Step 1: Identify AttrEset (join column equivalence classes)**
 
-`GetAttrEsetFromRels(rels)` 从全局 `attrEsets`（由 `AddPredicate` 构建）中提取当前查询的等价类。每个 AttrEset 对应一个 EqualSet。
+`GetAttrEsetFromRels(rels)` extracts the query's equivalence classes from global `attrEsets` (built by `AddPredicate`). Each AttrEset corresponds to an EqualSet.
 
-**Step 2：加载 DSStatistic**
+**Step 2: Load DSStatistic**
 
-对每个 AttrEset，调用 `GetStatisticsFromEset(eset)` 从预收集的统计信息中加载对应的 DSStatistic。
+For each AttrEset, call `GetStatisticsFromEset(eset)` to load the corresponding DSStatistic from pre-collected statistics.
 
-**Step 3：应用谓词过滤（PredMethod=0，默认）**
+**Step 3: Apply Predicate Filtering (PredMethod=0, default)**
 
-对有谓词的表：
+For tables with predicates:
 ```cpp
-singleStats = DSStatistic(table_id, GetTableCard(table_id))  // 过滤后单表基数
+singleStats = DSStatistic(table_id, GetTableCard(table_id))  // filtered single-table cardinality
 singleStats.AdjustToAverage(relNDV, PredicateAdjustRate)
 dsStats[i].Merge(singleStats, table_id)
 ```
 
-`AdjustToAverage` 将度序列的极端值向均值方向收缩：
+`AdjustToAverage` shrinks the degree sequence's extreme values toward the mean:
 ```
 maxDegree[i] = maxDegree[i] × k + avgDegree × (1 - k)
 ```
-其中 `k = PredicateAdjustRate`（默认等于 AdjustRate，约 0.1）。
+where `k = PredicateAdjustRate` (default equals AdjustRate, approximately 0.1).
 
-**Step 4：Merge 多个 AttrEset**
+**Step 4: Merge Multiple AttrEsets**
 
-当两个 AttrEset 共享同一张表时，通过该表的度序列进行 Merge：
+When two AttrEsets share a common table, they are merged through that table's degree sequence:
 
 ```cpp
-// 对共享表的度序列做点积
+// Dot product of the shared table's degree sequences
 newCard += count × degree1 × degree2
 ```
 
-这是一个上界估计：假设两侧的度序列独立，实际 join 结果 ≤ 点积结果。
+This is an upper bound estimate: assuming independence of degree sequences on both sides, the actual join result ≤ the dot product result.
 
-**Step 5：返回所有根节点的 card 乘积**
+**Step 5: Return product of all root node cards**
 
 ---
 
-## 关键参数
+## Key Parameters
 
-| 参数 | 默认值 | 含义 |
+| Parameter | Default | Meaning |
 |------|--------|------|
-| `AdjustRate` | 从统计信息中读取（约 0.1） | Merge 后向均值收缩的比例 |
-| `PredicateAdjustRate` | 同 AdjustRate | 谓词过滤时的收缩比例 |
-| `CompressPrecision` | 2.0 | 度序列分桶精度（log 底数） |
-| `PredMethod` | 0 | 0=调整率，1=均匀假设 |
-| `EnableStarSplit` | false | 是否将大 EqualSet 拆分为 star 子集 |
+| `AdjustRate` | Read from statistics file (~0.1) | Shrinkage ratio toward mean after Merge |
+| `PredicateAdjustRate` | Same as AdjustRate | Shrinkage ratio during predicate filtering |
+| `CompressPrecision` | 2.0 | Degree sequence bucketing precision (log base) |
+| `PredMethod` | 0 | 0=adjustment rate, 1=uniformity assumption |
+| `EnableStarSplit` | false | Whether to split large EqualSets into star subsets |
 
 ---
 
-## 已知局限性
+## Known Limitations
 
-### 1. 高选择性谓词下度序列失效
+### 1. Degree Sequence Breakdown Under Highly Selective Predicates
 
-EqualSet 的度序列基于无谓词的 schema 统计。当某张表的谓词选择性很高（如保留 20% 的行），Merge 操作中该表的极端 max_degree 无法被有效压缩，导致高估。
+Degree sequences in EqualSets are based on schema statistics without predicates. When a table's predicate selectivity is very high (e.g., retaining 20% of rows), the table's extreme max_degree in Merge cannot be effectively compressed, leading to overestimation.
 
-典型案例：STATS Q57，postHistory 谓词将行数压缩到 22.1%，但 EqualSet A（5 表 UserId join）中 postHistory 的 max_degree = 2.78e+8，Merge 后估计值比真实值高 1000x+。
+Typical case: STATS Q57, postHistory predicate compresses rows to 22.1%, but in EqualSet A (5-table UserId join), postHistory's max_degree = 2.78e+8, and the post-Merge estimate exceeds the true value by 1000x+.
 
-### 2. 多 EqualSet Merge 的误差累积
+### 2. Multi-EqualSet Merge Error Accumulation
 
-当查询的 join 图跨越多个 EqualSet 时，每次 Merge 都可能引入高估，误差在多步 Merge 中累积放大。
+When a query's join graph spans multiple EqualSets, overestimation may be introduced at each Merge step, with errors accumulating and amplifying across multiple Merges.
 
-### 3. 不同 EqualSet 间的相关性被忽略
+### 3. Correlation Between Different EqualSets Ignored
 
-Merge 假设两个 EqualSet 的度序列独立，但实际数据中不同 join 列之间可能存在相关性（如同一用户在多张表中的活跃度相关）。
+Merge assumes independence of degree sequences across two EqualSets, but in real data, different join columns may be correlated (e.g., the same user's activity level correlated across multiple tables).

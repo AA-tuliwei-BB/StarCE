@@ -1,49 +1,49 @@
-"""StarCE 实验统一绘图样式。
+"""Unified plotting style for StarCE experiments.
 
-集中管理跨方法配色、展示名、方法排序，以及提琴图绘制辅助函数，供
-experiment/ 下各 Evaluate notebook 共用（notebook 工作目录为 experiment/，
-已有 ``sys.path.append(os.path.abspath('.'))``，可直接 ``import plot_style``）。
+Centralizes cross-method color schemes, display names, method ordering, and violin plot helper functions for
+use by Evaluate notebooks under experiment/ (notebook working directory is experiment/,
+already has ``sys.path.append(os.path.abspath('.'))``, can directly ``import plot_style``).
 
-配色原则：StarCE 独占全图唯一红色调（最醒目），其余方法按语义分四组，
-组内共享色调、按深浅区分：
-  - StarCE 家族   : 红   (StarCE / StarCE-upper)
-  - G1 传统 DB    : 蓝   (DuckDB / Postgres)
-  - G2 Bound      : 绿   (SafeBound / LpBound)
-  - G3 PGM/因子   : 紫   (BayesCard / FactorJoin / DeepDB)
-  - G4 学习/神经  : 橙   (Flat / NeuroCard)
+Color principle: StarCE gets the only red tone in the entire figure (most eye-catching), other methods are grouped into four semantic groups,
+sharing hues within groups, differentiated by shade:
+  - StarCE family   : Red   (StarCE / StarCE-upper)
+  - G1 Traditional DB    : Blue   (DuckDB / Postgres)
+  - G2 Bound      : Green   (SafeBound / LpBound)
+  - G3 PGM/Factor   : Purple   (BayesCard / FactorJoin / DeepDB)
+  - G4 Learning/Neural  : Orange   (Flat / NeuroCard)
 
-用法约定：
-  - 跨方法对比图（精度、估计延迟）用 ``METHOD_COLORS`` / ``get_method_color``。
-  - 参数扫描图（CompressPrecision、PredMethod 变体等非方法类别）用
-    ``generate_color_palette`` 取一组区分色。
+Usage conventions:
+  - Cross-method comparison plots (accuracy, estimation latency) use ``METHOD_COLORS`` / ``get_method_color``.
+  - Parameter sweep plots (CompressPrecision, PredMethod variants, etc., non-method categories) use
+    ``generate_color_palette`` to get a set of distinguishing colors.
 """
 
 import matplotlib as mpl
 from matplotlib.colors import to_hex
 
 
-# ========== 统一方法配色（规范展示名 -> hex）==========
-# 每个方法一个清晰独立的色相（无两个同色系），最大化区分度；红色只留给
-# StarCE（全图唯一，配合满不透明度+粗描边=最醒目）。分组仅体现在出图顺序
-# （见 METHOD_ORDER），不体现在颜色上。
+# ========== Unified method colors (canonical display name -> hex) ==========
+# Each method gets a clear, independent hue (no two share the same color family), maximizing differentiation; red is reserved only for
+# StarCE (unique in the entire figure, full opacity + bold stroke = most eye-catching). Grouping is only reflected in the drawing order
+# (see METHOD_ORDER), not in the colors.
 METHOD_COLORS = {
-    # StarCE 家族 —— 红（StarCE 唯一鲜红最醒目，Upper 深红同族）
+    # StarCE family — Red (StarCE unique bright red most eye-catching, Upper dark red same family)
     "StarCE":       "#E31A1C",
     "StarCE-Upper": "#7F0000",
-    # 其余方法各自独立色相（避开红）
-    "DuckDB":       "#1F77B4",  # 蓝
-    "Postgres":     "#17BECF",  # 青
-    "SafeBound":    "#9467BD",  # 紫
-    "LpBound":      "#E377C2",  # 粉
-    "BayesCard":    "#FF7F0E",  # 橙
-    "FactorJoin":   "#8C564B",  # 棕
-    "DeepDB":       "#BCBD22",  # 橄榄
-    "Flat":         "#2CA02C",  # 绿
-    "NeuroCard":    "#7F7F7F",  # 灰
+    # Other methods each get independent hues (avoiding red)
+    "DuckDB":       "#1F77B4",  # Blue
+    "Postgres":     "#17BECF",  # Cyan
+    "SafeBound":    "#9467BD",  # Purple
+    "LpBound":      "#E377C2",  # Pink
+    "BayesCard":    "#FF7F0E",  # Orange
+    "FactorJoin":   "#8C564B",  # Brown
+    "DeepDB":       "#BCBD22",  # Olive
+    "Flat":         "#2CA02C",  # Green
+    "NeuroCard":    "#7F7F7F",  # Gray
 }
 
-# 方法出图顺序：StarCE 置首（最左最醒目），其后 DuckDB 组、SafeBound 组、
-# FactorJoin 紫组、Flat 橙组。
+# Method drawing order: StarCE first (leftmost, most eye-catching), then DuckDB group, SafeBound group,
+# FactorJoin purple group, Flat orange group.
 METHOD_ORDER = [
     "StarCE", "StarCE-Upper",
     "DuckDB", "Postgres",
@@ -52,10 +52,10 @@ METHOD_ORDER = [
     "Flat", "NeuroCard",
 ]
 
-# 未知方法回退色。
+# Fallback color for unknown methods.
 FALLBACK_COLOR = "#BBBBBB"
 
-# 小写别名 -> 规范展示名。
+# Lowercase alias -> canonical display name.
 _SPECIAL_CASES = {
     "duckdb": "DuckDB",
     "starce": "StarCE",
@@ -74,7 +74,7 @@ _SPECIAL_CASES = {
 
 
 def method_display_name(method_name):
-    """把任意大小写/别名的方法名转换成规范展示名。"""
+    """Convert method names of any case/alias to canonical display names."""
     base = method_name.lower()
     if base in _SPECIAL_CASES:
         return _SPECIAL_CASES[base]
@@ -82,23 +82,23 @@ def method_display_name(method_name):
 
 
 def get_method_color(method_name):
-    """按方法名（大小写/别名不敏感）取统一配色，未知名回退灰色并告警。"""
+    """Get unified color by method name (case/alias insensitive), fallback gray with warning for unknowns."""
     display = method_display_name(method_name)
     if display in METHOD_COLORS:
         return METHOD_COLORS[display]
-    print(f"[plot_style] 未知方法 '{method_name}'（-> '{display}'），回退 {FALLBACK_COLOR}")
+    print(f"[plot_style] Unknown method '{method_name}'（-> '{display}'）, fallback  {FALLBACK_COLOR}")
     return FALLBACK_COLOR
 
 
 def method_colors(method_names):
-    """批量返回 {规范展示名: 颜色}，供图例/循环使用。"""
+    """Batch return {canonical display name: color}, for legend/loop use."""
     return {method_display_name(m): get_method_color(m) for m in method_names}
 
 
 def generate_color_palette(n):
-    """为非方法类别（参数扫描、变体等）生成 n 个区分色。
+    """Generate n distinguishing colors for non-method categories (parameter sweeps, variants, etc.).
 
-    收敛各 notebook 原先重复定义的实现：n<=10 用 tab10，否则 tab20。
+    Converge previously duplicated implementations across notebooks: tab10 for n<=10, tab20 otherwise.
     """
     if n <= 10:
         cmap = mpl.colormaps["tab10"]
@@ -109,21 +109,21 @@ def generate_color_palette(n):
 
 def draw_violins(ax, dataset, positions, colors, widths, *, emphasize_mask=None,
                  base_alpha=0.7, emph_alpha=1.0, edgecolor="black"):
-    """在 ax 上绘制一组配色一致的提琴图。
+    """Draw a set of consistently-colored violin plots on ax.
 
-    参数
-    ----
+    Parameters
+    ----------
     dataset : list[array-like]
-        每个位置一列数值（如各方法的 log10 相对误差）。
-    positions, widths : 传给 ``ax.violinplot``。
+        One numeric column per position (e.g. log10 relative error of each method).
+    positions, widths : passed to ``ax.violinplot``.
     colors : list[str]
-        与 dataset 一一对应的填充色。
+        Fill colors one-to-one with dataset.
     emphasize_mask : list[bool] | None
-        为真的 body 用满不透明度（StarCE 突出用）；None 表示不强调。提琴主体
-        本身不描边（``edgecolor`` 仅用于内部中位线/须线）。
-    返回
-    ----
-    matplotlib 的 violinplot 字典（含 'bodies' 等），供追加图例/微调。
+        True bodies use full opacity (for highlighting StarCE); None means no emphasis. The violin body
+        itself has no edge (``edgecolor`` only used for internal median/whisker lines).
+    Returns
+    -------
+    matplotlib violinplot dict (contains 'bodies' etc.), for adding legend/fine-tuning.
     """
     vplot = ax.violinplot(
         dataset,

@@ -80,8 +80,8 @@ def parse_sql_value(raw_value, keep_type_cast=True):
 
 def sql_to_joingraph(sql_query, keep_type_cast=True):
     """
-    解析 SQL 查询并转换为 JoinQueryGraph（用于 Stats benchmark）
-    解析 FROM 子句、WHERE 中等值连接条件以及过滤谓词。
+    Parse SQL query and convert to JoinQueryGraph (for Stats benchmark)
+    Parse FROM clause, WHERE equi-join conditions, and filter predicates.
     """
     import re
 
@@ -167,10 +167,10 @@ def collect_predicate_examples(sqls, max_per_type=2):
 def print_sql_roundtrip(sqls, indices):
     for idx in indices:
         if idx < 1 or idx > len(sqls):
-            print(f"索引超出范围: {idx}")
+            print(f"Index out of range: {idx}")
             continue
         sql = sqls[idx - 1]
-        print(f"\n--- SQL #{idx} 原始 ---")
+        print(f"\n--- SQL #{idx} original ---")
         print(sql)
         try:
             query = sql_to_joingraph(sql)
@@ -178,7 +178,7 @@ def print_sql_roundtrip(sqls, indices):
             print("--- getSQLQuery ---")
             print(query.getSQLQuery())
         except Exception as e:
-            print(f"解析失败: {e}")
+            print(f"Parse failed: {e}")
 
 
 def create_db_conn(db_name, host, port, user):
@@ -232,20 +232,20 @@ def evaluate_postgres_stats(
         for estimate in postgres_estimates:
             f.write(f"{estimate}\n")
 
-    print(f"结果已保存到: {output_file}")
+    print(f"Results saved to: {output_file}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Stats 上测试 PostgreSQL 基数估计（SafeBound 接口）")
+    parser = argparse.ArgumentParser(description="Test PostgreSQL cardinality estimation on Stats (SafeBound interface)")
     parser.add_argument(
         "--sql-file",
         default=rootFileDirectory + "Workloads/StatsQueries.sql",
-        help="Stats 查询文件路径",
+        help="Stats query file path",
     )
     parser.add_argument(
         "--output-file",
         default="Postgres_Inference_Stats_manual.txt",
-        help="输出 TXT 路径（一行一个 Estimate）",
+        help="Output TXT path (one estimate per line)",
     )
     parser.add_argument(
         "--statistics-target",
@@ -257,43 +257,43 @@ def main():
         "--limit",
         type=int,
         default=None,
-        help="只测试前 N 条查询（可选）",
+        help="Test only first N queries (optional)",
     )
     parser.add_argument(
         "--check-indices",
         default="",
-        help="打印指定SQL索引的SQL回拼结果（1-based，逗号分隔）",
+        help="Print SQL reconstruction results for specified SQL indices (1-based, comma-separated)",
     )
     parser.add_argument(
         "--check-only",
         action="store_true",
-        help="只做SQL回拼检查，不执行估计",
+        help="Only do SQL reconstruction check, do not execute estimation",
     )
     parser.add_argument(
         "--verify-predicates",
         action="store_true",
-        help="自动挑选典型谓词类型并打印回拼结果",
+        help="Auto-pick typical predicate types and print reconstruction results",
     )
     parser.add_argument(
         "--db-host",
         default="127.0.0.1",
-        help="数据库主机",
+        help="Database host",
     )
     parser.add_argument(
         "--db-port",
         type=int,
         default=5432,
-        help="数据库端口",
+        help="Database port",
     )
     parser.add_argument(
         "--db-user",
         default=os.environ.get("USER"),
-        help="数据库用户名",
+        help="Database username",
     )
     parser.add_argument(
         "--db-name",
         default="stats",
-        help="数据库名",
+        help="Database name",
     )
     args = parser.parse_args()
 
@@ -308,7 +308,7 @@ def main():
         picked = []
         for key in sorted(examples.keys()):
             picked.extend(examples[key])
-        print("自动选择的索引:", ",".join(str(x) for x in picked))
+        print("Auto-selected indices:", ",".join(str(x) for x in picked))
         print_sql_roundtrip(sqls, picked)
         if args.check_only:
             return

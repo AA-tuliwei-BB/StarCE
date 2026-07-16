@@ -41,7 +41,7 @@ bool QueryGraphManager::Build(JoinOrderOptimizer &optimizer, LogicalOperator &op
 			// std::string filterString = relation_manager.GetFilterString(i);
 			std::string table_name = stats[i].table_name;
 			if (table_name.substr(0, 6) == "joined") {
-				// 去掉所有 "joined with"和前后空格
+				// Remove all "joined with" and surrounding whitespace
 				table_name = StringUtil::Replace(table_name, "joined with", "");
 				StringUtil::Trim(table_name);
 			}
@@ -135,10 +135,10 @@ void QueryGraphManager::CreateHyperGraphEdges() {
 						query_graph.CreateEdge(*filter_info->left_set, *filter_info->right_set, filter_info);
 						query_graph.CreateEdge(*filter_info->right_set, *filter_info->left_set, filter_info);
 						// TAG-STARCE
-						// starce 启用条件
-						// 1. left_set 和 right_set 的 count 都为 1 (没有超边)
-						// 2. filter_info->join_type 是 INNER JOIN
-						// 3. filter 是等值条件，而且是单列的
+						// StarCE enable conditions
+						// 1. Both left_set and right_set have count 1 (no hyper-edges)
+						// 2. filter_info->join_type is INNER JOIN
+						// 3. filter is an equality condition and single-column
 						if (filter_info->left_set->count == 1 && filter_info->right_set->count == 1
 							&& filter_info->join_type == JoinType::INNER
 							&& comparison.GetExpressionType() == ExpressionType::COMPARE_EQUAL

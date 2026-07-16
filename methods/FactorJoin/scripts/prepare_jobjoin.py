@@ -2,11 +2,11 @@ import os
 import pickle
 from pathlib import Path
 
-# JobJoin 无谓词、主查询级评估的输入准备。
-# 从 Benchmark/workloads/JobJoin/queries.sql（31 行、每行一条纯 join 的 SELECT COUNT(*)）产出：
-#   1. checkpoints/jobjoin_main_queries/{1..31}.sql —— 每文件一条查询，供 get_query_binned_cards 按目录物化
-#   2. checkpoints/jobjoin_queries_clean.sql        —— 31 行干净 SELECT，供 test_on_jobjoin 逐行评估
-#   3. checkpoints/jobjoin_sub_to_main.pkl          —— 恒等映射 ["1",...,"31"]，评估时拼 {main_id}.pkl
+# JobJoin input preparation for predicate-free, main-query-level evaluation.
+# From Benchmark/workloads/JobJoin/queries.sql (31 rows, each a pure join SELECT COUNT(*)) produce:
+#   1. checkpoints/jobjoin_main_queries/{1..31}.sql -- one query per file, for get_query_binned_cards directory-based materialization
+#   2. checkpoints/jobjoin_queries_clean.sql        -- 31 clean SELECT rows, for test_on_jobjoin per-row evaluation
+#   3. checkpoints/jobjoin_sub_to_main.pkl          -- identity mapping ["1",...,"31"], concatenate {main_id}.pkl during evaluation
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

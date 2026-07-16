@@ -9,30 +9,30 @@ DATA_DIR="${PROJECT_ROOT}/Benchmark/IMDB"
 DB_FILE="${PROJECT_ROOT}/Benchmark/duckdb/imdb.db"
 
 if [ ! -f "${DUCKDB_BIN}" ]; then
-    echo "错误: DuckDB binary 未找到: ${DUCKDB_BIN}"
-    echo "请先编译: cd ${PROJECT_ROOT} && ./build.sh"
-    echo "或指定路径: $0 <path/to/duckdb>"
+    echo "Error: DuckDB binary not found: ${DUCKDB_BIN}"
+    echo "Please build first: cd ${PROJECT_ROOT} && ./build.sh"
+    echo "Or specify path: $0 <path/to/duckdb>"
     exit 1
 fi
 
 if [ -f "${DB_FILE}" ]; then
-    echo "imdb.db 已存在 (${DB_FILE})，删除以重建:"
+    echo "imdb.db already exists (${DB_FILE}), delete to rebuild:"
     echo "  rm ${DB_FILE}"
     exit 0
 fi
 
-echo "=== 创建 IMDB DuckDB 数据库 ==="
+echo "=== Create IMDB DuckDB database ==="
 echo "Schema: ${SCHEMA_SQL}"
-echo "数据: ${DATA_DIR}"
-echo "输出: ${DB_FILE}"
+echo "Data: ${DATA_DIR}"
+echo "Output: ${DB_FILE}"
 
 mkdir -p "$(dirname "$DB_FILE")"
 
-# 创建表结构
+# Create table structure
 "${DUCKDB_BIN}" "${DB_FILE}" < "${SCHEMA_SQL}"
-echo "表结构创建完成"
+echo "Table structure created"
 
-# 完整的 21 张 IMDB 表
+# Complete 21 IMDB tables
 TABLES=(aka_name aka_title cast_info char_name comp_cast_type company_name
         company_type complete_cast info_type keyword kind_type link_type
         movie_companies movie_info movie_info_idx movie_keyword movie_link
@@ -43,22 +43,22 @@ skipped=0
 for tbl in "${TABLES[@]}"; do
     csv="${DATA_DIR}/${tbl}.csv"
     if [ -f "${csv}" ]; then
-        echo "导入 ${tbl}..."
-        # IMDB CSV 无 HEADER
+        echo "Importing ${tbl}..."
+        # IMDB CSV has no HEADER
         "${DUCKDB_BIN}" "${DB_FILE}" -c "COPY ${tbl} FROM '${csv}' (DELIMITER ',');"
         success=$((success + 1))
     else
-        echo "警告: ${csv} 不存在，跳过 ${tbl}"
+        echo "Warning: ${csv} not found, skipping ${tbl}"
         skipped=$((skipped + 1))
     fi
 done
 
 echo ""
-echo "=== 完成 ==="
-echo "文件: ${DB_FILE}"
-echo "大小: $(du -h "${DB_FILE}" | cut -f1)"
-echo "导入: ${success} 表, 跳过: ${skipped} 表"
+echo "=== Done ==="
+echo "File: ${DB_FILE}"
+echo "Size: $(du -h "${DB_FILE}" | cut -f1)"
+echo "Imported: ${success} tables, Skipped: ${skipped} tables"
 if [ ${skipped} -gt 0 ]; then
-    echo "警告: 有 ${skipped} 张表未导入，请确保 IMDB 数据已初始化:"
+    echo "Warning: ${skipped} tables were not imported, please ensure IMDB data is initialized:"
     echo "  bash setup/dataset/init_imdb.sh"
 fi

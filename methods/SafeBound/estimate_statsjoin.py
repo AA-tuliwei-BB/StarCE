@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-为 StatsJoin benchmark 构建 SafeBound 并生成子查询基数估计。
+Build SafeBound for StatsJoin benchmark and generate subquery cardinality estimates.
 
-用法:
+Usage:
     cd methods/SafeBound
     python estimate_statsjoin.py
 """
@@ -17,13 +17,13 @@ from SafeBoundUtils import *
 from JoinGraphUtils import *
 from SQLParser import *
 
-# === 配置 ===
+# === Configuration ===
 DATA_DIR = 'Data/Stats'
 PKL_PATH = './StatObjects/SafeBound_StatsJoin.pkl'
 SUBQUERY_FILE = '../../Benchmark/workloads/StatsJoin/subquery/subquery.sql'
 OUTPUT_FILE = '../../Benchmark/workloads/StatsJoin/subquery/result/safebound.txt'
 
-# STATS 8 表配置
+# STATS 8-table configuration
 tableNames = ["badges", "comments", "postHistory", "postLinks",
               "posts", "tags", "users", "votes"]
 
@@ -36,7 +36,7 @@ joinColumns = [["Id", "UserId"],
                ["Id"],
                ["Id", "PostId", "UserId"]]
 
-# StatsJoin 无谓词，filterColumns 全为空
+# StatsJoin has no predicates, filterColumns are all empty
 filterColumns = [[] for _ in tableNames]
 
 FKtoKDict = {
@@ -51,7 +51,7 @@ FKtoKDict = {
 
 
 def sql_to_joingraph(sql_query):
-    """解析 SQL 查询并转换为 JoinQueryGraph"""
+    """Parse SQL query and convert to JoinQueryGraph"""
     query = JoinQueryGraph()
 
     from_match = re.search(r'FROM\s+(.+?)(?:\s+WHERE|$)', sql_query, re.IGNORECASE)
@@ -79,27 +79,27 @@ def sql_to_joingraph(sql_query):
 
 
 def main():
-    # === 步骤1: 构建或加载 SafeBound ===
+    # === Step 1: Build or load SafeBound ===
     if os.path.exists(PKL_PATH):
-        print(f"加载已有 SafeBound: {PKL_PATH}")
+        print(f"Loading existing SafeBound: {PKL_PATH}")
         safeBound = pickle.load(open(PKL_PATH, 'rb'))
     else:
-        print("构建 SafeBound (StatsJoin, 无谓词)...")
-        # 加载 CSV 数据
+        print("Building SafeBound (StatsJoin, no predicates)...")
+        # Load CSV data
         data = {}
         for table in tableNames:
             csv_path = os.path.join(DATA_DIR, f"{table}.csv")
             if os.path.exists(csv_path):
                 data[table] = pd.read_csv(csv_path)
-                print(f"  加载 {table}: {len(data[table])} 行")
+                print(f"  Loading {table}: {len(data[table])} rows")
             else:
-                raise FileNotFoundError(f"CSV 文件不存在: {csv_path}")
+                raise FileNotFoundError(f"CSV file does not exist: {csv_path}")
 
-        # 选择需要的列
+        # Select needed columns
         tables = [data[t][list(set(joinColumns[i] + filterColumns[i]))]
                   for i, t in enumerate(tableNames)]
 
-        # 构建 SafeBound (filterColumns 全部为空列表)
+        # Build SafeBound (filterColumns are all empty lists)
         safeBound = SafeBound(
             tableDFs=tables,
             tableNames=tableNames,
@@ -110,16 +110,16 @@ def main():
         )
         del data
 
-        # 保存
+        # Save
         os.makedirs(os.path.dirname(PKL_PATH), exist_ok=True)
         pickle.dump(safeBound, open(PKL_PATH, 'wb'))
-        print(f"SafeBound 已保存: {PKL_PATH} ({os.path.getsize(PKL_PATH):,} bytes)")
+        print(f"SafeBound saved: {PKL_PATH} ({os.path.getsize(PKL_PATH):,} bytes)")
 
-    # === 步骤2: 运行估计 ===
-    print(f"\n读取子查询: {SUBQUERY_FILE}")
+    # === Step 2: Run estimation ===
+    print(f"\nReading subqueries: {SUBQUERY_FILE}")
     with open(SUBQUERY_FILE) as f:
         sqls = [l.strip() for l in f if l.strip()]
-    print(f"共 {len(sqls)} 条子查询")
+    print(f"Total {len(sqls)} subqueries")
 
     estimates = []
     for i, sql in enumerate(sqls, 1):
@@ -129,20 +129,20 @@ def main():
             bound = safeBound.functionalFrequencyBound(query)
             estimates.append(int(bound))
         except Exception as e:
-            print(f"  Q{i} 错误: {e}")
+            print(f"  Q{i} error: {e}")
             estimates.append(-1)
 
         if i % 50 == 0:
-            print(f"  进度: {i}/{len(sqls)}")
+            print(f"  Progress: {i}/{len(sqls)}")
 
-    # === 步骤3: 写入结果 ===
+    # === Step 3: Write results ===
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, 'w') as f:
         for c in estimates:
             f.write(f"{c}\n")
 
     neg = sum(1 for e in estimates if e < 0)
-    print(f"\nSafeBound 完成: {len(estimates)} 条 -> {OUTPUT_FILE} ({neg} 条失败)")
+    print(f"\nSafeBound complete: {len(estimates)} estimates -> {OUTPUT_FILE} ({neg} failed)")
 
 
 if __name__ == '__main__':
