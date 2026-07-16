@@ -1,0 +1,15 @@
+select COUNT(*) from movie_info mi, title t where mi.info_type_id = 16 and t.production_year > 2010 and mi.movie_id=t.id;
+select COUNT(*) from movie_companies mc, title t where t.production_year > 2010 and mc.movie_id=t.id;
+select COUNT(*) from cast_info ci, title t where ci.role_id = 2 and t.production_year > 2010 and ci.movie_id=t.id;
+select COUNT(*) from movie_keyword mk, title t where t.production_year > 2010 and mk.movie_id=t.id;
+select COUNT(*) from title t, movie_info mi, movie_companies mc where t.production_year > 2010 and t.id=mc.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, cast_info ci where t.production_year > 2010 and ci.role_id = 2 and t.id=ci.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_keyword mk where t.production_year > 2010 and mi.info_type_id = 16 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_companies mc, cast_info ci where t.production_year > 2010 and t.id=mc.movie_id and ci.role_id = 2 and t.id=ci.movie_id;
+select COUNT(*) from title t, movie_companies mc, movie_keyword mk where t.production_year > 2010 and t.id=mc.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, cast_info ci, movie_keyword mk where t.production_year > 2010 and ci.role_id = 2 and t.id=ci.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_companies mc, cast_info ci where t.production_year > 2010 and t.id=mc.movie_id and ci.role_id = 2 and t.id=ci.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_companies mc, movie_keyword mk where t.production_year > 2010 and t.id=mc.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, cast_info ci, movie_keyword mk where t.production_year > 2010 and ci.role_id = 2 and t.id=ci.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_companies mc, cast_info ci, movie_keyword mk where t.production_year > 2010 and t.id=mc.movie_id and ci.role_id = 2 and t.id=ci.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_companies mc, cast_info ci, movie_keyword mk where t.production_year > 2010 and t.id=mc.movie_id and ci.role_id = 2 and t.id=ci.movie_id and mi.info_type_id = 16 and t.id=mi.movie_id and t.id=mk.movie_id;

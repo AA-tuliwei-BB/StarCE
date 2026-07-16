@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+不要使用表面修复！不要擅自加所谓健壮性检查！遇到问题要报出来！
+永远不要擅自做git更改！
+不要轻易写报告文档，直接在对话框告诉我
+不要轻易使用workaround、fallback等方案，如果需要，一定要与用户确认
+空行不要加空格、缩进
+Always respond in Chinese-simplified

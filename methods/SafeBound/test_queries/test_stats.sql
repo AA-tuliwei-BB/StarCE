@@ -1,0 +1,3 @@
+SELECT COUNT(*) FROM badges;
+SELECT COUNT(*) FROM badges WHERE UserId = 1;
+SELECT COUNT(*) FROM posts WHERE Score > 10;

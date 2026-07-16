@@ -1,0 +1,19 @@
+.vscode
+.idea
+
+__pycache__
+*.pyc
+.mypy_cache
+brad.egg-info
+
+.DS_Store
+._.DS_Store
+*.swp
+
+*.ipynb
+*.xml
+
+Debug
+
+# Data files (copied from SafeBound for processing)
+Data/

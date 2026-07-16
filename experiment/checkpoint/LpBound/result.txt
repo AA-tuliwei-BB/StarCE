@@ -1,0 +1,26 @@
+[2026-07-12 16:15:00] LpBound 实验结果
+[2026-07-12 16:15:00] 时间: 2026-07-12T16:15:00.395331
+[2026-07-12 16:15:00] 
+[2026-07-12 16:15:00] --- Build Time (seconds) ---
+[2026-07-12 16:15:00]   Benchmark               L1 only  All norms
+[2026-07-12 16:15:00]   ----------------------------------------
+[2026-07-12 16:15:00]   STATS                       N/A        N/A
+[2026-07-12 16:15:00]   JOBLight                    N/A        N/A
+[2026-07-12 16:15:00]   JOBLightRanges              N/A        N/A
+[2026-07-12 16:15:00]   JobJoin                     N/A        N/A
+[2026-07-12 16:15:00]   SubgraphMatching            N/A        N/A
+[2026-07-12 16:15:00] 
+--- Estimate Time ---
+[2026-07-12 16:15:00]   Benchmark             Par avg(ms)  Queries   Total(s)  #Subqueries
+[2026-07-12 16:15:00]   -------------------------------------------------------------------
+[2026-07-12 16:15:00]   JobJoin                   19.4848       31      0.604        12007
+[2026-07-12 16:15:00]   JOBLight                   0.5494       70     0.0385         1354
+[2026-07-12 16:15:00]   STATS                      1.1956      146     0.1746         5662
+[2026-07-12 16:15:00] 
+  * Par avg = parallel 模式每查询平均时间（ms）
+[2026-07-12 16:15:00]   * Total = Par avg × Queries，即全量估计总时间（s）
+[2026-07-12 16:15:00] 
+  CSV 已保存: /home/liwei/starCE/experiment/checkpoint/LpBound/benchmark_times.csv
+[2026-07-12 16:15:00]   JSON 已保存: /home/liwei/starCE/experiment/checkpoint/LpBound/timing_details.json
+[2026-07-12 16:15:00] 
+总耗时: 61s

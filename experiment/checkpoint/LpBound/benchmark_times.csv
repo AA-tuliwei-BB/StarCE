@@ -1,0 +1,5 @@
+Benchmark,BuildTime_L1,BuildTime_All,EstSeq_ms,EstPar_ms,EstBuild_us,EstSolve_us,NumSubqueries,StatisticsSize
+JOBLight,26.5,35.7,0.1677,0.5494,13.779,152.885,1354,1250976
+JOBLightRanges,81.3,98.7,,,,,,7557408
+JobJoin,18.5,28.4,0.3753,19.4848,32.007,342.045,12007,46464
+STATS,44.8,48.8,0.1978,1.1956,15.249,181.558,5662,916704

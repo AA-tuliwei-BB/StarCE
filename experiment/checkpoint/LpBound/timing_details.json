@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-07-12T16:15:00.411628",
+  "build_time": {
+    "stats": {
+      "l1": 44.8,
+      "all": 48.8
+    },
+    "joblight": {
+      "l1": 26.5,
+      "all": 35.7
+    },
+    "jobrange": {
+      "l1": 81.3,
+      "all": 98.7
+    },
+    "jobjoin": {
+      "l1": 18.5,
+      "all": 28.4
+    },
+    "subgraph_matching": {
+      "l1": 1.0,
+      "all": 1.8
+    }
+  },
+  "estimate_time": {
+    "stats": {
+      "sequential_ms": 0.1978,
+      "total_subqueries": 5662,
+      "build_us": 15.249,
+      "solve_us": 181.558,
+      "parallel_ms": 1.1956,
+      "num_queries": 146,
+      "total_parallel_s": 0.1746
+    },
+    "joblight": {
+      "sequential_ms": 0.1677,
+      "total_subqueries": 1354,
+      "build_us": 13.779,
+      "solve_us": 152.885,
+      "parallel_ms": 0.5494,
+      "num_queries": 70,
+      "total_parallel_s": 0.0385
+    },
+    "jobjoin": {
+      "sequential_ms": 0.3753,
+      "total_subqueries": 12007,
+      "build_us": 32.007,
+      "solve_us": 342.045,
+      "parallel_ms": 19.4848,
+      "num_queries": 31,
+      "total_parallel_s": 0.604
+    }
+  }
+}

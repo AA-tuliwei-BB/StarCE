@@ -1,0 +1,5 @@
+,BuildTime,Size,Benchmark,Run
+0,81.482058,31252.0,jobjoin,4
+1,32.085849,5703326.0,Stats,5
+2,159.449419,1727550.0,JOBLight,5
+3,205.419736,2948286.0,JOBLightRanges,5

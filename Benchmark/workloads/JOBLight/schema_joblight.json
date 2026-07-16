@@ -1,0 +1,39 @@
+{
+    "PredColumns": [
+        {"TableName":"cast_info", "ColumnName":"note"},
+        {"TableName":"movie_companies", "ColumnName":"note"},
+        {"TableName":"movie_info", "ColumnName":"info"},
+        {"TableName":"movie_info", "ColumnName":"note"},
+        {"TableName":"title", "ColumnName":"episode_nr"},
+        {"TableName":"title", "ColumnName":"production_year"},
+        {"TableName":"title", "ColumnName":"title"}
+    ],
+    "EqualSets": [
+        {
+            "Entries": [
+                {"TableName": "title", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "movie_id"},
+                {"TableName": "movie_info_idx", "ColumnName": "movie_id"},
+                {"TableName": "movie_keyword", "ColumnName": "movie_id"},
+                {"TableName": "movie_info", "ColumnName": "movie_id"},
+                {"TableName": "cast_info", "ColumnName": "movie_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "title", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "movie_id"},
+                {"TableName": "movie_info_idx", "ColumnName": "movie_id"},
+                {"TableName": "movie_keyword", "ColumnName": "movie_id"},
+                {"TableName": "movie_info", "ColumnName": "movie_id"},
+                {"TableName": "cast_info", "ColumnName": "movie_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "movie_info_idx", "ColumnName": "info_type_id"},
+                {"TableName": "movie_info", "ColumnName": "info_type_id"}
+            ]
+        }
+    ]
+}

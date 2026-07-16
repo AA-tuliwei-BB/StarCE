@@ -1,0 +1,34 @@
+{
+    "EqualSets": [
+        {
+            "Entries": [
+                { "TableName": "users", "ColumnName": "Id" },
+                { "TableName": "posts", "ColumnName": "OwnerUserId" },
+                { "TableName": "postHistory", "ColumnName": "UserId" },
+                { "TableName": "comments", "ColumnName": "UserId" },
+                { "TableName": "votes", "ColumnName": "UserId" },
+                { "TableName": "badges", "ColumnName": "UserId" }
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "posts", "ColumnName": "Id"},
+                {"TableName": "postLinks", "ColumnName": "PostId"},
+                {"TableName": "postHistory", "ColumnName": "PostId"},
+                {"TableName": "comments", "ColumnName": "PostId"},
+                {"TableName": "votes", "ColumnName": "PostId"},
+                {"TableName": "tags", "ColumnName": "ExcerptPostId"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "posts", "ColumnName": "Id"},
+                {"TableName": "postLinks", "ColumnName": "RelatedPostId"},
+                {"TableName": "postHistory", "ColumnName": "PostId"},
+                {"TableName": "comments", "ColumnName": "PostId"},
+                {"TableName": "votes", "ColumnName": "PostId"},
+                {"TableName": "tags", "ColumnName": "ExcerptPostId"}
+            ]
+        }
+    ]
+}

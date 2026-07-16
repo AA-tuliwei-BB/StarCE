@@ -1,0 +1,17 @@
+method,benchmark,build_time_sec,statistics_size_bytes,build_missing,size_missing
+StarCE,JOBLight,2.971360683441162,132517.0,False,False
+StarCE,JOBLightRanges,2.8679187297821045,132517.0,False,False
+StarCE,JOBM,12.425936937332152,2264505.0,False,False
+StarCE,STATS,0.1288716793060302,224134.0,False,False
+SafeBound,JOBLight,80.983544,362156.0,False,False
+SafeBound,JOBLightRanges,111.661874,608152.0,False,False
+SafeBound,JOBM,1120.034836,3560276.0,False,False
+SafeBound,STATS,12.458139,1268066.0,False,False
+Postgre,JOBLight,13.92749152891338,606208.0,False,False
+Postgre,JOBLightRanges,12.683274714276196,614400.0,False,False
+Postgre,JOBM,14.782436531037092,745472.0,False,False
+Postgre,STATS,0.3313689287751913,573440.0,False,False
+FactorJoin,JOBLight,2038.057469367981,1702591.0,False,False
+FactorJoin,JOBLightRanges,717.6058702468872,934500.0,False,False
+FactorJoin,JOBM,176.5957489013672,41770.0,False,False
+FactorJoin,STATS,36.32618522644043,6181066.0,False,False
