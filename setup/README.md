@@ -21,6 +21,7 @@ bash setup/duckdb/create_stats_db.sh
 bash setup/duckdb/create_imdb_db.sh
 
 # 5. PostgreSQL environment (see setup/postgresql/README.md)
+#    ⚠️ PG 13.1 required — do NOT use conda/apt PG (18.x/16.x are incompatible)
 ```
 
 ## Directory Structure

@@ -75,6 +75,7 @@ cmake -S . -B "${STARCE_BUILD_DIR}" -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
 cmake --build "${STARCE_BUILD_DIR}" -j "${JOBS}"
 
 # Copy to running_space for ExperimentRunner
+mkdir -p experiment/running_space
 cp "${STARCE_BUILD_DIR}/starce" experiment/running_space/starce
 
 echo "Build complete!"

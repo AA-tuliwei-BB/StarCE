@@ -343,14 +343,19 @@ def check_duckdb_binary() -> bool:
 
 def check_postgresql() -> bool:
     """Check if PostgreSQL is accepting connections."""
-    result = subprocess.run(
-        ["/usr/local/pgsql/13.1/bin/psql", "-U", "postgres", "-c", "SELECT 1"],
-        capture_output=True, text=True,
-    )
-    if result.returncode == 0:
-        log(f"  [OK] PostgreSQL is running")
-        return True
-    log(f"  [MISSING] PostgreSQL not reachable. Run bash setup_pgsql.sh first.")
+    for psql_path in ["/usr/local/pgsql/13.1/bin/psql", "/home/liwei/pgsql13/bin/psql", "psql"]:
+        for pguser in ["postgres", "liwei"]:
+            try:
+                result = subprocess.run(
+                    [psql_path, "-U", pguser, "-c", "SELECT 1"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.returncode == 0:
+                    log(f"  [OK] PostgreSQL is running ({psql_path} -U {pguser})")
+                    return True
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                break
+    log(f"  [MISSING] PostgreSQL not reachable. See setup/postgresql/README.md")
     return False
 
 
@@ -395,6 +400,16 @@ def check_prerequisites(methods: list[str]) -> dict[str, bool]:
     return method_ok
 
 
+def cleanup_stale_processes():
+    """Kill stale starce/duckdb processes that may hold database locks."""
+    for name in ["running_space/starce", "running_space/duckdb"]:
+        subprocess.run(["pkill", "-f", name], capture_output=True)
+    for db in ["Benchmark/duckdb/imdb.db", "Benchmark/duckdb/stats.db"]:
+        dbp = SCRIPT_DIR.parent / db
+        if dbp.exists():
+            subprocess.run(["fuser", "-k", str(dbp)], capture_output=True)
+
+
 # ---------------------------------------------------------------------------
 # Phase runners
 # ---------------------------------------------------------------------------
@@ -402,6 +417,7 @@ def check_prerequisites(methods: list[str]) -> dict[str, bool]:
 def run_phase1(methods: list[str], method_ok: dict[str, bool],
                force: bool = False) -> dict[str, bool]:
     """Run Phase 1: Test notebooks for each method. Skips already-done steps."""
+    cleanup_stale_processes()
     log("=" * 60)
     log("PHASE 1: Data Generation (Test notebooks)")
     log("=" * 60)
@@ -445,6 +461,7 @@ def run_phase1(methods: list[str], method_ok: dict[str, bool],
             ok = False
 
         results[m] = ok
+        cleanup_stale_processes()
 
     return results
 
@@ -619,12 +636,12 @@ Examples:
         reset_state()
         log("Checkpoint state cleared.")
 
-    run_phase1 = not args.phase2_only
-    run_phase2_ = not args.phase1_only
+    do_phase1 = not args.phase2_only
+    do_phase2 = not args.phase1_only
 
     # Dry run
     if args.dry_run:
-        print_dry_run(args.methods, run_phase1, run_phase2_, args.force)
+        print_dry_run(args.methods, do_phase1, do_phase2, args.force)
         return
 
     # --- Real execution ---
@@ -645,13 +662,13 @@ Examples:
     log(f"StarCE reproduce.py started (run_id={run_id})")
     log(f"Project root: {PROJECT_ROOT}")
     log(f"Selected methods: {args.methods}")
-    log(f"Phase 1: {run_phase1}, Phase 2: {run_phase2_}, Force: {args.force}")
+    log(f"Phase 1: {do_phase1}, Phase 2: {do_phase2}, Force: {args.force}")
     os.chdir(SCRIPT_DIR)
 
     overall_ok = True
 
     # Phase 1
-    if run_phase1:
+    if do_phase1:
         if args.skip_prereq_check:
             method_ok = {m: True for m in args.methods}
         else:
@@ -672,7 +689,7 @@ Examples:
         log("Phase 1: SKIPPED (--phase2-only)")
 
     # Phase 2
-    if run_phase2_:
+    if do_phase2:
         ok = run_phase2(force=args.force)
         if not ok:
             overall_ok = False
