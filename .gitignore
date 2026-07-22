@@ -73,5 +73,4 @@ experiment/pg_end2end/log/*.log
 experiment/pg_end2end/test_scripts
 
 *.pyc
-
-back
+.ipynb_checkpoints

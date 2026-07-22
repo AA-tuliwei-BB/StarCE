@@ -1,31 +1,31 @@
 ---
-description: TestEnv Python 环境配置和依赖信息
+description: TestEnv Python environment configuration and dependency info
 alwaysApply: true
 ---
 
-# TestEnv Python 环境
+# TestEnv Python Environment
 
-**当前项目使用 TestEnv conda 环境**
+**Current project uses the TestEnv conda environment**
 
-## 环境信息
+## Environment Info
 
-- **环境名称**: TestEnv
-- **Python 版本**: 3.10.4
-- **Python 路径**: `/home/liwei/miniconda3/envs/TestEnv/bin/python`
-- **环境路径**: `/home/liwei/miniconda3/envs/TestEnv`
-- **激活命令**: `conda activate TestEnv`
-- **pip 版本**: 22.1.2
+- **Environment name**: TestEnv
+- **Python version**: 3.10.4
+- **Python path**: `/home/liwei/miniconda3/envs/TestEnv/bin/python`
+- **Environment path**: `/home/liwei/miniconda3/envs/TestEnv`
+- **Activation command**: `conda activate TestEnv`
+- **pip version**: 22.1.2
 
-## 系统环境
+## System Environment
 
 - **OS**: Ubuntu 22.04.5 LTS (Jammy Jellyfish)
 - **GCC**: 12.3.0
 - **GPU**: NVIDIA Driver 580.95.05, CUDA 13.0
-- **包总数**: ~241 (conda + pip)
+- **Total packages**: ~241 (conda + pip)
 
-## 核心依赖
+## Core Dependencies
 
-### 数值计算与数据处理
+### Numerical Computing & Data Processing
 - **NumPy**: 1.22.0 (pypi)
 - **Pandas**: 1.5.3 (pypi)
 - **SciPy**: 1.7.3 (conda)
@@ -33,14 +33,14 @@ alwaysApply: true
 - **Bottleneck**: 1.3.5 (conda)
 - **Cython**: 0.29.30 (conda)
 
-### 机器学习
+### Machine Learning
 - **PyTorch**: 2.10.0 (pypi, CUDA 12.8)
 - **XGBoost**: 3.1.3 (pypi)
 - **Scikit-learn**: 1.1.2 (pypi)
 - **Triton**: 3.6.0 (pypi)
 - **opt-einsum**: 3.4.0 (pypi)
 
-### NVIDIA/CUDA 组件 (PyTorch 依赖)
+### NVIDIA/CUDA Components (PyTorch dependencies)
 - nvidia-cublas-cu12 12.8.4.1
 - nvidia-cuda-cupti-cu12 12.8.90
 - nvidia-cuda-nvrtc-cu12 12.8.93
@@ -59,7 +59,7 @@ alwaysApply: true
 - cuda-bindings 12.9.4 (pypi)
 - cuda-pathfinder 1.3.3 (pypi)
 
-### MKL 组件 (Intel 数学库)
+### MKL Components (Intel Math Library)
 - mkl 2021.4.0
 - mkl-service 2.4.0
 - mkl_fft 1.3.1
@@ -67,28 +67,28 @@ alwaysApply: true
 - intel-openmp 2021.4.0
 - blas 1.0 (mkl)
 
-### 贝叶斯网络与概率建模
+### Bayesian Networks & Probabilistic Modeling
 - **pgmpy**: 0.1.26 (pypi)
 - **pomegranate**: 0.14.3 (conda)
 - **pyro-ppl**: 1.9.1 (pypi)
 - **pyro-api**: 0.1.2 (pypi)
 
-### 数据库
-- **psycopg2**: 2.8.6 (conda, PostgreSQL 连接)
+### Database
+- **psycopg2**: 2.8.6 (conda, PostgreSQL connection)
 - **duckdb**: 1.5.2 (pypi)
 - **sqlparse**: 0.5.5 (pypi)
 
-### 数据可视化
+### Data Visualization
 - **Matplotlib**: 3.5.2 (conda)
 - **Seaborn**: 0.13.2 (pypi)
 - **Patsy**: 0.5.2 (pypi)
 - **Statsmodels**: 0.13.2 (conda)
 
-### 符号计算
+### Symbolic Computation
 - **SymPy**: 1.14.0 (pypi)
 - **mpmath**: 1.3.0 (pypi)
 
-### Jupyter 支持
+### Jupyter Support
 - **jupyterlab**: 3.4.4 (conda)
 - **notebook**: 6.4.12 (conda)
 - **ipykernel**: 6.15.2 (conda)
@@ -97,8 +97,8 @@ alwaysApply: true
 - **nbconvert**: 6.4.4 (conda)
 - **nbformat**: 5.3.0 (conda)
 
-### 其他工具
-- **tables**: 3.10.1 (pypi, HDF5 支持)
+### Other Tools
+- **tables**: 3.10.1 (pypi, HDF5 support)
 - **blosc2**: 2.7.1 (pypi)
 - **fastcluster**: 1.1.26 (conda)
 - **jenkspy**: 0.4.1 (pypi)
@@ -130,7 +130,7 @@ alwaysApply: true
 - **rsa**: 4.9.1 (pypi)
 - **httplib2**: 0.31.2 (pypi)
 
-### 系统级 C 库 (conda)
+### System-level C Libraries (conda)
 - openssl 1.1.1q, sqlite 3.39.2, bzip2 1.0.8, zlib 1.2.12, zstd 1.5.2, lz4-c 1.9.3, xz 5.2.5
 - ncurses 6.3, readline 8.1.2, libffi 3.3, libpq 12.9, krb5 1.19.2, tk 8.6.12
 - zeromq 4.3.4, expat 2.4.4, libxml2 2.9.14, libxslt 1.1.35
@@ -139,15 +139,15 @@ alwaysApply: true
 - dbus 1.13.18, glib 2.69.1, icu 58.2, pcre 8.45, fftw 3.3.9, yaml 0.2.5
 - libsodium 1.0.18, libevent 2.1.12
 
-### QT/GUI 组件
+### QT/GUI Components
 - qt-main 5.15.2, qt-webengine 5.15.9, qtwebkit 5.212
 - pyqt 5.15.7, pyqt5-sip 12.11.0, sip 6.6.2
 - gstreamer 1.14.0, gst-plugins-base 1.14.0
 
-## 完整 pip freeze
+## Full pip freeze
 
 <details>
-<summary>展开查看完整 pip freeze 输出（共 ~170 包）</summary>
+<summary>Expand to see full pip freeze output (~170 packages)</summary>
 
 ```
 annotated-types==0.7.0
@@ -325,22 +325,22 @@ xgboost==3.1.3
 ```
 </details>
 
-## 使用指南
+## Usage Guide
 
-### 激活环境
+### Activate Environment
 
 ```bash
 conda activate TestEnv
 ```
 
-### 验证环境
+### Verify Environment
 
 ```bash
 python --version  # Python 3.10.4
-python -c "import numpy, pandas, torch; print('环境正常')"
+python -c "import numpy, pandas, torch; print('environment OK')"
 ```
 
-### 常用包导入
+### Common Imports
 
 ```python
 import numpy as np
@@ -350,24 +350,24 @@ from pgmpy.models import BayesianNetwork
 import psycopg2
 ```
 
-## 注意事项
+## Notes
 
-1. **PyTorch CUDA 版本**: 使用 CUDA 12.8，驱动版本 580.95.05 兼容
-2. **NumPy 版本**: 使用 1.22.0，注意与旧代码的兼容性
-3. **Pandas**: 使用 1.5.3，部分 API 可能与 2.x 版本不同
-4. **PostgreSQL 连接**: psycopg2 已安装，可直接连接数据库
-5. **HDF5 支持**: tables 包已安装，支持 SafeBound 的 .hdf 缓存文件
-6. **DuckDB**: 1.5.2 (pypi)，用于 StarCE 基数估计
+1. **PyTorch CUDA version**: Uses CUDA 12.8, compatible with driver version 580.95.05
+2. **NumPy version**: Uses 1.22.0 — be aware of compatibility with older code
+3. **Pandas**: Uses 1.5.3 — some APIs may differ from 2.x versions
+4. **PostgreSQL connection**: psycopg2 is installed, ready for database connections
+5. **HDF5 support**: tables package is installed, supports SafeBound's .hdf cache files
+6. **DuckDB**: 1.5.2 (pypi), used for StarCE cardinality estimation
 
-## 与项目方法的对应
+## Method-to-Environment Mapping
 
-- **FactorJoin**: 支持 BN 模式(pgmpy)和采样模式(psycopg2)
-- **SafeBound**: 支持 HDF5 缓存(tables)和贝叶斯网络(pgmpy)
-- **StarCE**: DuckDB 为 C++ 项目，Python 环境用于数据预处理和评估
+- **FactorJoin**: Supports BN mode (pgmpy) and sampling mode (psycopg2)
+- **SafeBound**: Supports HDF5 caching (tables) and Bayesian networks (pgmpy)
+- **StarCE**: DuckDB is a C++ project; the Python environment is used for data preprocessing and evaluation
 
-## 依赖安装
+## Dependency Installation
 
-如需重新安装依赖:
+To reinstall dependencies:
 
 ```bash
 conda activate TestEnv
@@ -375,20 +375,20 @@ pip install -r methods/FactorJoin/requirements.txt
 pip install -r methods/SafeBound/requirements.txt
 ```
 
-## 常见问题
+## FAQ
 
-**Q: NumPy 版本冲突**
+**Q: NumPy version conflict**
 ```bash
 pip install numpy==1.22.0 --force-reinstall
 ```
 
-**Q: PyTorch CUDA 不可用**
+**Q: PyTorch CUDA unavailable**
 ```bash
 python -c "import torch; print(torch.cuda.is_available())"
-# 如果 False，检查 CUDA 驱动或使用 CPU 版本
+# If False, check CUDA driver or use CPU version
 ```
 
-**Q: psycopg2 导入错误**
+**Q: psycopg2 import error**
 ```bash
 pip install psycopg2-binary==2.8.6
 ```
