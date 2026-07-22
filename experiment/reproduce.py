@@ -103,6 +103,105 @@ STEP_TIMEOUTS: dict[str, int] = {
 
 LOG_FILE = SCRIPT_DIR / "reproduce.log"
 STATE_FILE = SCRIPT_DIR / "reproduce_state.json"
+CONFIG_FILE = SCRIPT_DIR / "reproduce_config.json"
+
+# Default config values — filled in by load_config() on first run
+_config: dict = {}
+
+
+# ---------------------------------------------------------------------------
+# Environment config
+# ---------------------------------------------------------------------------
+
+def load_config() -> dict:
+    """Load environment config from disk. Auto-detect or prompt on first run."""
+    global _config
+    if _config:
+        return _config
+
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                _config = json.load(f)
+            return _config
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # No config yet — auto-detect then prompt if needed
+    _config = _auto_detect_or_prompt()
+    save_config(_config)
+    return _config
+
+
+def save_config(config: dict):
+    """Persist environment config to disk."""
+    tmp = CONFIG_FILE.with_suffix(".json.tmp")
+    try:
+        with open(tmp, "w") as f:
+            json.dump(config, f, indent=2)
+        tmp.replace(CONFIG_FILE)
+    except OSError:
+        pass
+
+
+def _auto_detect_or_prompt() -> dict:
+    """Try to auto-detect PostgreSQL; prompt user if detection fails."""
+    # Try common psql paths × users
+    candidate_paths = [
+        "/home/liwei/pgsql-13.1/bin/psql",
+        "/usr/local/pgsql/13.1/bin/psql",
+        "psql",  # fallback: whatever is on PATH
+    ]
+    candidate_users = ["liwei", "postgres"]
+
+    for psql_path in candidate_paths:
+        for pguser in candidate_users:
+            try:
+                result = subprocess.run(
+                    [psql_path, "-U", pguser, "-d", "postgres", "-c", "SELECT 1"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.returncode == 0:
+                    log(f"Auto-detected PostgreSQL: {psql_path} -U {pguser}")
+                    return {"postgresql": {"psql_path": psql_path, "user": pguser}}
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                break  # psql_path doesn't exist → try next path
+
+    # Detection failed — prompt
+    return _prompt_config()
+
+
+def _prompt_config() -> dict:
+    """Interactively prompt user for PostgreSQL configuration."""
+    print("\n" + "=" * 60)
+    print("  PostgreSQL not auto-detected. Please configure:")
+    print("=" * 60)
+
+    default_path = "/usr/local/pgsql/13.1/bin/psql"
+    psql_path = input(f"  Path to psql [{default_path}]: ").strip()
+    if not psql_path:
+        psql_path = default_path
+
+    default_user = "postgres"
+    pguser = input(f"  PostgreSQL user [{default_user}]: ").strip()
+    if not pguser:
+        pguser = default_user
+
+    # Verify the input works
+    try:
+        result = subprocess.run(
+            [psql_path, "-U", pguser, "-d", "postgres", "-c", "SELECT 1"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            print(f"  WARNING: connection failed: {result.stderr.strip()[-200:]}")
+            print(f"  Config saved but may not work. Run with --reconfigure to retry.\n")
+        else:
+            print(f"  OK: connected.\n")
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print(f"  WARNING: {e}\n")
+
+    return {"postgresql": {"psql_path": psql_path, "user": pguser}}
 
 
 # ---------------------------------------------------------------------------
@@ -342,20 +441,23 @@ def check_duckdb_binary() -> bool:
 
 
 def check_postgresql() -> bool:
-    """Check if PostgreSQL is accepting connections."""
-    for psql_path in ["/usr/local/pgsql/13.1/bin/psql", "/home/liwei/pgsql13/bin/psql", "psql"]:
-        for pguser in ["postgres", "liwei"]:
-            try:
-                result = subprocess.run(
-                    [psql_path, "-U", pguser, "-c", "SELECT 1"],
-                    capture_output=True, text=True, timeout=5,
-                )
-                if result.returncode == 0:
-                    log(f"  [OK] PostgreSQL is running ({psql_path} -U {pguser})")
-                    return True
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                break
-    log(f"  [MISSING] PostgreSQL not reachable. See setup/postgresql/README.md")
+    """Check if PostgreSQL is accepting connections (uses configured values)."""
+    cfg = load_config()
+    pg = cfg.get("postgresql", {})
+    psql_path = pg.get("psql_path", "psql")
+    pguser = pg.get("user", "postgres")
+    try:
+        result = subprocess.run(
+            [psql_path, "-U", pguser, "-d", "postgres", "-c", "SELECT 1"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode == 0:
+            log(f"  [OK] PostgreSQL is running ({psql_path} -U {pguser})")
+            return True
+        log(f"  [FAIL] PostgreSQL connection failed: {result.stderr.strip()[-200:]}")
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        log(f"  [MISSING] psql not found at {psql_path}")
+    log(f"  See setup/postgresql/README.md. Run with --reconfigure to change PG settings.")
     return False
 
 
@@ -609,6 +711,10 @@ Examples:
         "--skip-prereq-check", action="store_true",
         help="Skip prerequisite checks (use at your own risk)",
     )
+    parser.add_argument(
+        "--reconfigure", action="store_true",
+        help="Clear environment config and re-detect / re-prompt",
+    )
     args = parser.parse_args()
 
     # --status: show state and exit
@@ -635,6 +741,14 @@ Examples:
     if args.reset_state:
         reset_state()
         log("Checkpoint state cleared.")
+
+    # --reconfigure: clear config and re-detect
+    if args.reconfigure:
+        CONFIG_FILE.unlink(missing_ok=True)
+        log("Environment config cleared. Will re-detect...")
+
+    # Load config (auto-detect or prompt on first run)
+    load_config()
 
     do_phase1 = not args.phase2_only
     do_phase2 = not args.phase1_only

@@ -6,6 +6,9 @@ build-debug
 cursor_files
 experiment/running_space/
 experiment/__pycache__
+experiment/reproduce_config.json
+experiment/reproduce.log
+experiment/reproduce.log.old
 # experiment/checkpoint/figures
 scripts/__pycache__
 methods/SafeBound/Source/*.c
