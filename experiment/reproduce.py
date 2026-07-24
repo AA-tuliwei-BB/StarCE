@@ -272,10 +272,17 @@ def step_skip(step_id: str, reason: str):
 
 
 def step_is_done(step_id: str) -> bool:
-    """Check if a step was already completed."""
+    """Check if a step was already completed successfully."""
     state = load_state()
     step = state["steps"].get(step_id, {})
     return step.get("status") == "done"
+
+
+def step_is_completed(step_id: str) -> bool:
+    """Check if a step is done or was intentionally skipped (no need to re-run)."""
+    state = load_state()
+    step = state["steps"].get(step_id, {})
+    return step.get("status") in ("done", "skipped")
 
 
 def step_status(step_id: str) -> str:
@@ -538,7 +545,7 @@ def run_phase1(methods: list[str], method_ok: dict[str, bool],
             continue
 
         # Checkpoint check
-        if step_is_done(step_id) and not force:
+        if step_is_completed(step_id) and not force:
             log(f"  SKIP: already done (use --force to re-run)")
             results[m] = True
             continue
@@ -584,7 +591,7 @@ def run_phase2(force: bool = False) -> bool:
         log(f"\n--- [{step_id}] ---")
 
         # Checkpoint check
-        if step_is_done(step_id) and not force:
+        if step_is_completed(step_id) and not force:
             log(f"  SKIP: already done (use --force to re-run)")
             continue
 
