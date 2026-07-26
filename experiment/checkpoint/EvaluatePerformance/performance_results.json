@@ -99,24 +99,6 @@
       "running_time": 1229.795607328415
     }
   },
-  "StarCE-tuned": {
-    "STATS": {
-      "planning_time": 0.3484574953715006,
-      "running_time": 281.7827839056651
-    },
-    "JOBM": {
-      "planning_time": 0.7407630284627278,
-      "running_time": 114.16642848650615
-    },
-    "JOBLight": {
-      "planning_time": 0.10718266169230144,
-      "running_time": 224.7749047279358
-    },
-    "JOBLightRanges": {
-      "planning_time": 1.8267997900644937,
-      "running_time": 1293.058126370112
-    }
-  },
   "Flat": {
     "STATS": {
       "planning_time": 0.36177587509155273,
