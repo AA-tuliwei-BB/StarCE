@@ -197,7 +197,7 @@ python run_experiment.py --dataset jobm --generate_models \
     --data_path ../../methods/SafeBound/Data/IMDB/{}.csv \
     --model_path checkpoints/jobm/model_jobm_default.pkl \
     --n_dim_dist 1 --bucket_method fixed_start_key \
-    --db_conn_kwargs "dbname=imdbm user=liwei host=localhost port=5432" \
+    --db_conn_kwargs "dbname=imdbm user=postgres host=localhost port=5432" \
     --prepare_sample --sampling_percentage 1.0 --sampling_type ss \
     --query_file_location ../../Benchmark/workloads/JOBM/queries.sql \
     --materialize_sample

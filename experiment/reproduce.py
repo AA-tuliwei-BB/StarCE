@@ -148,11 +148,10 @@ def _auto_detect_or_prompt() -> dict:
     """Try to auto-detect PostgreSQL; prompt user if detection fails."""
     # Try common psql paths × users
     candidate_paths = [
-        "/home/liwei/pgsql-13.1/bin/psql",
         "/usr/local/pgsql/13.1/bin/psql",
         "psql",  # fallback: whatever is on PATH
     ]
-    candidate_users = ["liwei", "postgres"]
+    candidate_users = ["postgres", os.environ.get("USER", "")]
 
     for psql_path in candidate_paths:
         for pguser in candidate_users:

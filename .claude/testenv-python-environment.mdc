@@ -11,8 +11,8 @@ alwaysApply: true
 
 - **Environment name**: TestEnv
 - **Python version**: 3.10.4
-- **Python path**: `/home/liwei/miniconda3/envs/TestEnv/bin/python`
-- **Environment path**: `/home/liwei/miniconda3/envs/TestEnv`
+- **Python path**: `/home/user/miniconda3/envs/TestEnv/bin/python`
+- **Environment path**: `/home/user/miniconda3/envs/TestEnv`
 - **Activation command**: `conda activate TestEnv`
 - **pip version**: 22.1.2
 

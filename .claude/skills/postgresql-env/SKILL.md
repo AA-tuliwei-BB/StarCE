@@ -11,7 +11,7 @@ description: PostgreSQL database environment configuration for the StarCE projec
 
 ```bash
 # Data directory
-PGDATA=/mnt/sdb1/tlw/pgdata
+PGDATA=~/pgdata
 
 # psql path
 /usr/local/pgsql/13.1/bin/psql
@@ -20,7 +20,7 @@ PGDATA=/mnt/sdb1/tlw/pgdata
 13.1
 
 # Connection example
-PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -d stats
+PGDATA=~/pgdata /usr/local/pgsql/13.1/bin/psql -d stats
 ```
 
 ### Existing Databases
@@ -29,8 +29,8 @@ PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -d stats
 |--------|------|------|--------|---------------|
 | `stats` | postgres | STATS-CEB data | 8 | STATS-CEB |
 | `imdb` | postgres | Full IMDB data | 21+ | IMDB-JOB |
-| `imdblight` | liwei | JOBLight subset | 6 | JOBLight |
-| `imdbm` | liwei | JOBM subset | 17 | JOBM |
+| `imdblight` | postgres | JOBLight subset | 6 | JOBLight |
+| `imdbm` | postgres | JOBM subset | 17 | JOBM |
 
 ## Database Details
 
@@ -54,7 +54,7 @@ votes       (328,064 rows)
 
 **Connection Example**:
 ```bash
-PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -d stats -c "\dt"
+PGDATA=~/pgdata /usr/local/pgsql/13.1/bin/psql -d stats -c "\dt"
 ```
 
 ### imdblight Database
@@ -129,7 +129,7 @@ movie_link      title
 ### List All Databases
 
 ```bash
-PGDATA=/mnt/sdb1/tlw/pgdata /usr/local/pgsql/13.1/bin/psql -l
+PGDATA=~/pgdata /usr/local/pgsql/13.1/bin/psql -l
 ```
 
 ### View Table Structure
@@ -236,7 +236,7 @@ conn = psycopg2.connect(conn_str)
 --data_path ../../methods/SafeBound/Data/Stats/{}.csv
 
 # IMDB sampling mode (requires database)
---db_conn_kwargs "dbname=imdbm user=liwei host=localhost port=5432"
+--db_conn_kwargs "dbname=imdbm user=postgres host=localhost port=5432"
 ```
 
 ### SafeBound Format
@@ -247,13 +247,13 @@ See specific config in `methods/SafeBound/`
 
 ```bash
 # Set PGDATA (if needed)
-export PGDATA=/mnt/sdb1/tlw/pgdata
+export PGDATA=~/pgdata
 
 # Add psql to PATH
 export PATH=/usr/local/pgsql/13.1/bin:$PATH
 
 # Set default user
-export PGUSER=liwei
+export PGUSER=postgres
 ```
 
 ## Troubleshooting
@@ -268,7 +268,7 @@ ps aux | grep postgres
 pgrep -a postgres
 
 # View data directory
-ls -la /mnt/sdb1/tlw/pgdata
+ls -la ~/pgdata
 ```
 
 ### Permission Issues

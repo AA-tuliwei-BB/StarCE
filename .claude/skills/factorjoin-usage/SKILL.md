@@ -80,7 +80,7 @@ FactorJoin is a factorization-based join query cardinality estimation framework 
 
 ```bash
 # Data directory
-PGDATA=/mnt/sdb1/tlw/pgdata
+PGDATA=~/pgdata
 
 # psql path
 /usr/local/pgsql/13.1/bin/psql
@@ -92,7 +92,7 @@ imdbm        # JOBM data
 imdb         # Full IMDB data
 
 # Users
-liwei (owner: imdblight, imdbm)
+postgres (owner: imdblight, imdbm)
 postgres (owner: stats, imdb)
 ```
 
@@ -206,7 +206,7 @@ python run_experiment.py --dataset imdb \
        --model_path checkpoints/ \
        --n_dim_dist 1 \
        --bucket_method fixed_start_key \
-       --db_conn_kwargs "dbname=imdbm user=liwei host=localhost port=5432" \
+       --db_conn_kwargs "dbname=imdbm user=postgres host=localhost port=5432" \
        --prepare_sample \
        --sampling_percentage 1.0 \
        --sampling_type ss

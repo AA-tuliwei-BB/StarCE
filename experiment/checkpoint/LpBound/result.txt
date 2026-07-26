@@ -20,7 +20,7 @@
   * Par avg = parallel 模式每查询平均时间（ms）
 [2026-07-12 16:15:00]   * Total = Par avg × Queries，即全量估计总时间（s）
 [2026-07-12 16:15:00] 
-  CSV 已保存: /home/liwei/starCE/experiment/checkpoint/LpBound/benchmark_times.csv
-[2026-07-12 16:15:00]   JSON 已保存: /home/liwei/starCE/experiment/checkpoint/LpBound/timing_details.json
+  CSV 已保存: /home/user/starCE/experiment/checkpoint/LpBound/benchmark_times.csv
+[2026-07-12 16:15:00]   JSON 已保存: /home/user/starCE/experiment/checkpoint/LpBound/timing_details.json
 [2026-07-12 16:15:00] 
 总耗时: 61s

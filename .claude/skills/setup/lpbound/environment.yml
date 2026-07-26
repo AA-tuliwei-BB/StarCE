@@ -98,4 +98,3 @@ dependencies:
       - tzdata==2025.2
       - urllib3==2.7.0
       - virtualenv==21.5.0
-prefix: /home/liwei/miniconda3/envs/lpbound

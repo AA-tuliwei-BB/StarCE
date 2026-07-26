@@ -7,6 +7,7 @@ cursor_files
 experiment/running_space/
 experiment/__pycache__
 experiment/reproduce_config.json
+experiment/reproduce_state.json
 experiment/reproduce.log
 experiment/reproduce.log.old
 # experiment/checkpoint/figures

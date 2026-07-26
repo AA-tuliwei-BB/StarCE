@@ -193,8 +193,8 @@ Statistics cache file: `experiment/running_space/statistics_{benchmark}.json`
 ## Related Resources
 
 - **Project root directory**: The directory where this repository is located
-- **PostgreSQL data directory**: `/mnt/sdb1/tlw/pgdata`
-- **Conda environment path**: `/home/liwei/miniconda3/envs/TestEnv`
+- **PostgreSQL data directory**: `~/pgdata`
+- **Conda environment path**: `/home/user/miniconda3/envs/TestEnv`
 
 ---
 

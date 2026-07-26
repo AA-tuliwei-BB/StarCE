@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--query_dir", default="checkpoints/jobm_main_queries")
     parser.add_argument("--save_dir", default="checkpoints/")
     parser.add_argument("--sampling_percentage", type=float, default=1.0)
-    parser.add_argument("--db_conn_kwargs", default="dbname=imdbm user=liwei host=localhost port=5432")
+    parser.add_argument("--db_conn_kwargs", default="dbname=imdbm host=localhost port=5432")
     args = parser.parse_args()
 
     schema = gen_jobm_schema(args.data_path)

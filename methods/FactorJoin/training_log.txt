@@ -1,6 +1,6 @@
-/home/liwei/miniconda3/envs/TestEnv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:275: FutureWarning: You are using a Python version (3.10.4) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+/home/user/miniconda3/envs/TestEnv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:275: FutureWarning: You are using a Python version (3.10.4) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
   warnings.warn(message, FutureWarning)
-/home/liwei/miniconda3/envs/TestEnv/lib/python3.10/site-packages/pgmpy/utils/utils.py:4: FutureWarning: 
+/home/user/miniconda3/envs/TestEnv/lib/python3.10/site-packages/pgmpy/utils/utils.py:4: FutureWarning: 
 
 All support for the `google.generativeai` package has ended. It will no longer be receiving 
 updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
@@ -27,13 +27,13 @@ INFO:BayesCard.Models.BN_single_model:Structure learning took 1.3781721591949463
 INFO:BayesCard.Models.Bayescard_BN:Model spec[('postHistory.UserId', 'postHistory.PostId'), ('postHistory.UserId', 'postHistory.CreationDate'), ('postHistory.PostHistoryTypeId', 'postHistory.UserId')]
 INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
 INFO:BayesCard.Models.Bayescard_BN:done, took 0.03932952880859375 secs.
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
 INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.10476422309875488 secs
 INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 91976 rows and 9 cols
@@ -41,13 +41,13 @@ INFO:BayesCard.Models.BN_single_model:Structure learning took 1.1640276908874512
 INFO:BayesCard.Models.Bayescard_BN:Model spec[('posts.AnswerCount', 'posts.PostTypeId'), ('posts.OwnerUserId', 'posts.CreationDate'), ('posts.Id', 'posts.Score'), ('posts.Id', 'posts.ViewCount'), ('posts.Id', 'posts.OwnerUserId'), ('posts.ViewCount', 'posts.AnswerCount'), ('posts.Id', 'posts.CommentCount'), ('posts.Id', 'posts.FavoriteCount')]
 INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
 INFO:BayesCard.Models.Bayescard_BN:done, took 0.03917980194091797 secs.
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
 INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.2869296073913574 secs
 INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 40325 rows and 6 cols
@@ -55,7 +55,7 @@ INFO:BayesCard.Models.BN_single_model:Structure learning took 0.3523533344268799
 INFO:BayesCard.Models.Bayescard_BN:Model spec[('users.Id', 'users.Reputation'), ('users.Reputation', 'users.CreationDate'), ('users.Id', 'users.Views'), ('users.Reputation', 'users.UpVotes'), ('users.Id', 'users.DownVotes')]
 INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
 INFO:BayesCard.Models.Bayescard_BN:done, took 0.01700592041015625 secs.
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
 INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.03913450241088867 secs
 INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 174305 rows and 4 cols
@@ -69,7 +69,7 @@ INFO:BayesCard.Models.BN_single_model:Structure learning took 0.1082983016967773
 INFO:BayesCard.Models.Bayescard_BN:Model spec[('postLinks.CreationDate', 'postLinks.PostId'), ('postLinks.CreationDate', 'postLinks.RelatedPostId'), ('postLinks.CreationDate', 'postLinks.LinkTypeId')]
 INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
 INFO:BayesCard.Models.Bayescard_BN:done, took 0.01166844367980957 secs.
-/home/liwei/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   val_count_iterator = value_counts.iteritems()
 INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.04307746887207031 secs
 INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 1032 rows and 2 cols
