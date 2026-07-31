@@ -1,178 +1,142 @@
 {
   "DuckDB": {
     "STATS": {
-      "planning_time": 0.14173475901285806,
-      "running_time": 224.68943198521933
+      "planning_time": 0.14472365379333496,
+      "running_time": 223.94806989034015
     },
     "JOBM": {
-      "planning_time": 0.24233547846476233,
-      "running_time": 42.54365372657776
+      "planning_time": 0.2458446820576986,
+      "running_time": 42.458618561426796
     },
     "JOBLight": {
-      "planning_time": 0.051728010177612305,
-      "running_time": 60.99414793650309
+      "planning_time": 0.051184733708699554,
+      "running_time": 60.56630150477091
     },
     "JOBLightRanges": {
-      "planning_time": 0.7600682576497396,
-      "running_time": 735.3531555334727
+      "planning_time": 0.7428123156229655,
+      "running_time": 770.6860338846842
     }
   },
   "StarCE": {
     "STATS": {
-      "planning_time": 0.16319425900777182,
-      "running_time": 114.68455934524536
+      "planning_time": 0.16202902793884277,
+      "running_time": 114.47984170913696
     },
     "JOBM": {
-      "planning_time": 0.38252878189086914,
-      "running_time": 36.73778470357259
+      "planning_time": 0.3830313682556152,
+      "running_time": 37.0680296421051
     },
     "JOBLight": {
-      "planning_time": 0.05601437886555989,
-      "running_time": 55.48716902732849
+      "planning_time": 0.05656830469767253,
+      "running_time": 54.75197958946228
     },
     "JOBLightRanges": {
-      "planning_time": 0.795881430308024,
-      "running_time": 480.65155124664307
+      "planning_time": 0.8027548789978027,
+      "running_time": 481.86685705184937
     }
   },
   "SafeBound": {
     "STATS": {
-      "planning_time": 2.4045608838399253,
-      "running_time": 125.46703028678894
+      "planning_time": 2.4038826624552407,
+      "running_time": 126.57641180356343
     },
     "JOBM": {
-      "planning_time": 66.11689392725627,
-      "running_time": 39.74991218249003
+      "planning_time": 66.12720759709676,
+      "running_time": 39.83871801694234
     },
     "JOBLight": {
-      "planning_time": 0.3776431878407796,
-      "running_time": 55.96017638842265
+      "planning_time": 0.3772478898366292,
+      "running_time": 56.450117349624634
     },
     "JOBLightRanges": {
-      "planning_time": 9.708918889363607,
-      "running_time": 503.41645336151123
+      "planning_time": 9.721007347106934,
+      "running_time": 513.465938170751
     }
   },
   "FactorJoin": {
     "STATS": {
-      "planning_time": 30.385783433914185,
-      "running_time": 117.54876168568929
+      "planning_time": 30.38630445798238,
+      "running_time": 119.2049245039622
     },
     "JOBM": {
-      "planning_time": 104.14182233810423,
-      "running_time": 50.353134632110596
+      "planning_time": 104.14325269063312,
+      "running_time": 49.82183035214742
     },
     "JOBLight": {
-      "planning_time": 1.8742202123006186,
-      "running_time": 59.112030347188316
+      "planning_time": 1.8760677178700766,
+      "running_time": 59.14718818664551
     },
     "JOBLightRanges": {
-      "planning_time": 36.966716051101685,
-      "running_time": 574.4229009946187
+      "planning_time": 36.97613000869751,
+      "running_time": 583.0542576313019
     }
   },
   "BayesCard": {
     "STATS": {
-      "planning_time": 37.50488209724427,
-      "running_time": 116.57074236869812
+      "planning_time": 37.50493168830872,
+      "running_time": 116.84547917048135
     },
     "JOBLight": {
-      "planning_time": 2.4293735027313232,
-      "running_time": 54.59670344988505
+      "planning_time": 2.4301621119181314,
+      "running_time": 54.80469290415446
     }
   },
   "TrueCard": {
     "STATS": {
-      "planning_time": 0.1505122184753418,
-      "running_time": 116.60272200902303
+      "planning_time": 0.1525111198425293,
+      "running_time": 116.70455582936604
     },
     "JOBM": {
-      "planning_time": 0.2924201488494873,
-      "running_time": 36.557799021403
+      "planning_time": 0.2829548517862956,
+      "running_time": 36.61439538002014
     },
     "JOBLight": {
-      "planning_time": 0.055604616800944015,
-      "running_time": 54.532583236694336
+      "planning_time": 0.05599641799926758,
+      "running_time": 54.3520348072052
     },
     "JOBLightRanges": {
-      "planning_time": 0.7971187432607014,
-      "running_time": 439.1079342365265
+      "planning_time": 0.7895356814066569,
+      "running_time": 439.54192598660785
     }
   },
   "Flat": {
     "STATS": {
-      "planning_time": 0.1519802411397298,
-      "running_time": 120.58700195948283
+      "planning_time": 0.1521914800008138,
+      "running_time": 120.71155699094136
     },
     "JOBLight": {
-      "planning_time": 0.052994728088378906,
-      "running_time": 52.43211714426676
+      "planning_time": 0.05501921971638997,
+      "running_time": 52.62942536671956
     }
   },
   "DeepDB": {
     "STATS": {
-      "planning_time": 0.152143398920695,
-      "running_time": 128.6651905377706
+      "planning_time": 0.15200694402058917,
+      "running_time": 129.529288371404
     },
     "JOBLight": {
-      "planning_time": 0.055038372675577804,
-      "running_time": 53.98022039731343
+      "planning_time": 0.05519509315490723,
+      "running_time": 53.93380777041117
     }
   },
   "NeuroCard": {
     "STATS": {
-      "planning_time": 0.15305805206298828,
-      "running_time": 116.99529735247295
+      "planning_time": 0.15190688769022623,
+      "running_time": 117.16329630215962
     },
     "JOBLight": {
-      "planning_time": 0.054704348246256515,
-      "running_time": 54.80510671933492
+      "planning_time": 0.0558019479115804,
+      "running_time": 55.09188508987427
     }
   },
   "LpBound": {
     "STATS": {
-      "planning_time": 0.3248293745676677,
-      "running_time": 121.96385526657104
+      "planning_time": 0.33365992190043137,
+      "running_time": 122.94758725166321
     },
     "JOBLight": {
-      "planning_time": 0.09165240224202473,
-      "running_time": 58.12049015363058
-    }
-  },
-  "starce-upper": {
-    "STATS": {
-      "planning_time": 0.1526178518931071,
-      "running_time": 118.3147702217102
-    },
-    "JOBM": {
-      "planning_time": 0.2868814468383789,
-      "running_time": 40.44219104448954
-    },
-    "JOBLight": {
-      "planning_time": 0.05531954765319824,
-      "running_time": 56.49046039581299
-    },
-    "JOBLightRanges": {
-      "planning_time": 0.7875781059265137,
-      "running_time": 508.89101219177246
-    }
-  },
-  "starce-split": {
-    "STATS": {
-      "planning_time": 0.16013479232788086,
-      "running_time": 115.82975610097249
-    },
-    "JOBM": {
-      "planning_time": 0.2893585364023844,
-      "running_time": 37.3774520556132
-    },
-    "JOBLight": {
-      "planning_time": 0.055711428324381515,
-      "running_time": 54.34248503049215
-    },
-    "JOBLightRanges": {
-      "planning_time": 0.8110024134318033,
-      "running_time": 485.2440041700999
+      "planning_time": 0.09291951751708985,
+      "running_time": 58.2497406800588
     }
   }
 }
