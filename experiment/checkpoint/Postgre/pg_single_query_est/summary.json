@@ -5,40 +5,35 @@
     "num_queries": 350,
     "num_calls": 350,
     "statistics_us": {
-      "mean": 9.0,
-      "median": 6.0,
-      "p95": 12.0,
-      "max": 128
+      "mean": 14.4,
+      "median": 12.0,
+      "p95": 24.0,
+      "max": 256
     },
     "histogram_us": [
       {
-        "lo": 2,
-        "hi": 4,
-        "count": 15
-      },
-      {
-        "lo": 4,
-        "hi": 8,
-        "count": 189
-      },
-      {
         "lo": 8,
         "hi": 16,
-        "count": 138
+        "count": 303
       },
       {
         "lo": 16,
         "hi": 32,
-        "count": 5
+        "count": 44
       },
       {
         "lo": 32,
         "hi": 64,
-        "count": 2
+        "count": 1
       },
       {
         "lo": 64,
         "hi": 128,
+        "count": 1
+      },
+      {
+        "lo": 128,
+        "hi": 256,
         "count": 1
       }
     ]
@@ -49,46 +44,41 @@
     "num_queries": 127,
     "num_calls": 127,
     "statistics_us": {
-      "mean": 15.5,
-      "median": 6.0,
+      "mean": 24.2,
+      "median": 12.0,
       "p95": 48.0,
       "max": 256
     },
     "histogram_us": [
       {
-        "lo": 2,
-        "hi": 4,
-        "count": 13
-      },
-      {
         "lo": 4,
         "hi": 8,
-        "count": 51
+        "count": 1
       },
       {
         "lo": 8,
         "hi": 16,
-        "count": 31
+        "count": 74
       },
       {
         "lo": 16,
         "hi": 32,
-        "count": 22
+        "count": 31
       },
       {
         "lo": 32,
         "hi": 64,
-        "count": 7
+        "count": 16
       },
       {
         "lo": 64,
         "hi": 128,
-        "count": 2
+        "count": 3
       },
       {
         "lo": 128,
         "hi": 256,
-        "count": 1
+        "count": 2
       }
     ]
   },
@@ -96,42 +86,37 @@
     "benchmark": "JOBLight",
     "database": "imdblight",
     "num_queries": 45,
-    "num_calls": 137,
+    "num_calls": 65,
     "statistics_us": {
-      "mean": 2.9,
-      "median": 0.5,
-      "p95": 12.0,
-      "max": 64
+      "mean": 12.6,
+      "median": 12.0,
+      "p95": 24.0,
+      "max": 128
     },
     "histogram_us": [
       {
-        "lo": 0,
-        "hi": 1,
-        "count": 92
-      },
-      {
-        "lo": 2,
-        "hi": 4,
-        "count": 7
-      },
-      {
         "lo": 4,
         "hi": 8,
-        "count": 28
+        "count": 20
       },
       {
         "lo": 8,
         "hi": 16,
-        "count": 8
+        "count": 40
       },
       {
         "lo": 16,
         "hi": 32,
-        "count": 1
+        "count": 3
       },
       {
         "lo": 32,
         "hi": 64,
+        "count": 1
+      },
+      {
+        "lo": 64,
+        "hi": 128,
         "count": 1
       }
     ]
@@ -140,43 +125,43 @@
     "benchmark": "JOBLightRanges",
     "database": "imdblightranges",
     "num_queries": 1399,
-    "num_calls": 5871,
+    "num_calls": 2999,
     "statistics_us": {
-      "mean": 2.4,
-      "median": 0.5,
-      "p95": 12.0,
-      "max": 64
+      "mean": 11.8,
+      "median": 6.0,
+      "p95": 24.0,
+      "max": 256
     },
     "histogram_us": [
       {
-        "lo": 0,
-        "hi": 1,
-        "count": 4434
-      },
-      {
-        "lo": 2,
-        "hi": 4,
-        "count": 255
-      },
-      {
         "lo": 4,
         "hi": 8,
-        "count": 608
+        "count": 1544
       },
       {
         "lo": 8,
         "hi": 16,
-        "count": 529
+        "count": 884
       },
       {
         "lo": 16,
         "hi": 32,
-        "count": 42
+        "count": 510
       },
       {
         "lo": 32,
         "hi": 64,
-        "count": 3
+        "count": 53
+      },
+      {
+        "lo": 64,
+        "hi": 128,
+        "count": 7
+      },
+      {
+        "lo": 128,
+        "hi": 256,
+        "count": 1
       }
     ]
   }
