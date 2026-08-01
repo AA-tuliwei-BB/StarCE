@@ -1,6 +1,8 @@
 # StarCE
 
-A DuckDB-based cardinality estimation system that uses Degree Sequence Statistics for cardinality estimation of join queries.
+StarCE is a cardinality estimator built on star degree summaries (StarDS): multi-table degree sequence statistics that capture exact cross-table alignment over a shared join key, yet are collected with one scan per table. Implemented inside DuckDB, StarCE estimates Berge-acyclic join queries, with or without predicates, by composing collected summaries via degree-sequence inference.
+
+This repository is the artifact for the paper "Cardinality Estimation with Star Degree Summaries" (submitted to PVLDB). It contains the full system, the baselines (SafeBound, LpBound, FactorJoin, BayesCard), all query workloads with true cardinalities and baseline estimates, and scripts that reproduce every experiment in the paper (Exp-1–7, Figures 5–8, Tables 2–3).
 
 ---
 ### ⚠️  ATTENTION — Source Code Location
