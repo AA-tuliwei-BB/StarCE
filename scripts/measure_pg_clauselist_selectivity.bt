@@ -1,0 +1,19 @@
+// 测量 PostgreSQL 谓词选择率计算 clauselist_selectivity 函数本体耗时（us 直方图）
+// 口径: uprobe/uretprobe 包住函数体, 天然剔除 parse / join 规划 / EXPLAIN 格式化等一切包装开销
+// 用法:
+//   1. sudo bpftrace scripts/measure_pg_clauselist_selectivity.bt   (终端 1)
+//   2. 另开终端执行单表谓词查询 (SELECT ... LIMIT 0 即可, 不实际执行)
+//   3. 终端 1 Ctrl-C 打印直方图
+// 附: @callstack 记录每次调用的调用栈(前 5 帧), 用于定位不同耗时的调用来源
+
+uprobe:/usr/local/pgsql/13.1/bin/postgres:clauselist_selectivity {
+    @start[tid] = nsecs;
+    @stack[tid] = ustack(5);
+}
+
+uretprobe:/usr/local/pgsql/13.1/bin/postgres:clauselist_selectivity /@start[tid]/ {
+    @dur_us = hist((nsecs - @start[tid]) / 1000);
+    @callstack[@stack[tid]] = count();
+    delete(@start[tid]);
+    delete(@stack[tid]);
+}

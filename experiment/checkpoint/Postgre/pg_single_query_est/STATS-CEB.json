@@ -1,0 +1,44 @@
+{
+  "benchmark": "STATS-CEB",
+  "database": "stats",
+  "num_queries": 350,
+  "num_calls": 350,
+  "statistics_us": {
+    "mean": 9.0,
+    "median": 6.0,
+    "p95": 12.0,
+    "max": 128
+  },
+  "histogram_us": [
+    {
+      "lo": 2,
+      "hi": 4,
+      "count": 15
+    },
+    {
+      "lo": 4,
+      "hi": 8,
+      "count": 189
+    },
+    {
+      "lo": 8,
+      "hi": 16,
+      "count": 138
+    },
+    {
+      "lo": 16,
+      "hi": 32,
+      "count": 5
+    },
+    {
+      "lo": 32,
+      "hi": 64,
+      "count": 2
+    },
+    {
+      "lo": 64,
+      "hi": 128,
+      "count": 1
+    }
+  ]
+}

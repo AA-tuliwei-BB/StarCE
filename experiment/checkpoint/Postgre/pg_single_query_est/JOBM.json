@@ -1,0 +1,49 @@
+{
+  "benchmark": "JOBM",
+  "database": "imdbm",
+  "num_queries": 127,
+  "num_calls": 127,
+  "statistics_us": {
+    "mean": 15.5,
+    "median": 6.0,
+    "p95": 48.0,
+    "max": 256
+  },
+  "histogram_us": [
+    {
+      "lo": 2,
+      "hi": 4,
+      "count": 13
+    },
+    {
+      "lo": 4,
+      "hi": 8,
+      "count": 51
+    },
+    {
+      "lo": 8,
+      "hi": 16,
+      "count": 31
+    },
+    {
+      "lo": 16,
+      "hi": 32,
+      "count": 22
+    },
+    {
+      "lo": 32,
+      "hi": 64,
+      "count": 7
+    },
+    {
+      "lo": 64,
+      "hi": 128,
+      "count": 2
+    },
+    {
+      "lo": 128,
+      "hi": 256,
+      "count": 1
+    }
+  ]
+}
