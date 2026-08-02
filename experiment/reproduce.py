@@ -88,7 +88,6 @@ EVALUATE_NOTEBOOKS = [
     "EvaluatePerformance.ipynb",
     "EvaluatePlanAndBuild.ipynb",
     "EvaluateCompress.ipynb",
-    "EvaluatePredMethod.ipynb",
     "EvaluateSplitStar.ipynb",
     "ScalabilityExperiment.ipynb",
 ]
