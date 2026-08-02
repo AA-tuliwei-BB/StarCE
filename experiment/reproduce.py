@@ -17,6 +17,11 @@ Usage:
     python reproduce.py --dry-run                  # Show what would be executed
     python reproduce.py --list-methods             # List available methods
     python reproduce.py --status                   # Show checkpoint state
+
+NOTE: on first run, if PostgreSQL is not auto-detected, this script prompts
+interactively for the psql path/user. In non-interactive environments
+(e.g. CI, ssh without tty), pre-create experiment/reproduce_config.json
+(see --reconfigure) so no prompt is needed.
 """
 
 import argparse

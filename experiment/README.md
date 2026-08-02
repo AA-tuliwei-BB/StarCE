@@ -106,8 +106,9 @@ These notebooks read from `checkpoint/` and `Benchmark/workloads/*/result/` to p
 | `EvaluatePerformance.ipynb` | Compare planning time and execution time across methods. | TestStarCE, TestDuckDB, TestSafebound (planning + runtime data) |
 | `EvaluatePlanAndBuild.ipynb` | Combined planning time + build time analysis across all methods. | TestStarCE, TestDuckDB, TestSafebound, TestFactorJoin, TestLpBound |
 | `EvaluateCompress.ipynb` | Test the impact of different `CompressPrecision` values on StarCE accuracy and build time (parameter sweep). | TestStarCE (with multiple CompressPrecision runs) |
-| `EvaluatePredMethod.ipynb` | Test the impact of StarCE predicate handling methods (`PredMethod`) on estimation accuracy. | TestStarCE (with multiple PredMethod runs) |
 | `EvaluateSplitStar.ipynb` | Test the impact of `EnableStarSplit` + `MaxStarSize` on accuracy, build time, and estimate time. | TestStarCE (with multiple SplitStar runs) |
+
+> Note: `EvaluatePredMethod.ipynb` was removed from this repo; its sweep data is committed under `checkpoint/StarCE/pred_method/`.
 | `ScalabilityExperiment.ipynb` | Evaluate StarCE scalability along two dimensions: data size (table row count) and query complexity (number of joins). | TestStarCE (scalability-specific runs) |
 
 ---
