@@ -73,9 +73,13 @@ Path: `Benchmark/workloads/<benchmark>/subquery/result/`
 | `postgres.txt` | PostgreSQL estimates |
 | `flat.txt`, `deepdb.txt`, `neurocard.txt` | External estimates (from Han et al. [10]; STATS-CEB and JOBLight only) |
 
-Coverage (number of subqueries): STATS-CEB 2,471 · JOBLight 451 · JOBLightRanges 8,292 · JOBM 6,424.
+Coverage (number of subqueries): STATS-CEB 2,471 · JOBLight 451 · JOBLightRanges 8,292 · JOBM 6,424 · StatsJoin 226.
 
 Naming exceptions per benchmark: JOBLightRanges uses `factorjoin_joblight.txt`; JOBM uses `starce_grouped.txt` and `factorjoin_remapped.txt`.
+
+Two pure-join benchmarks (no selection predicates) are also part of Fig. 5:
+- **JobJoin**: `Benchmark/workloads/JobJoin/result/*.txt` holds per-query cardinalities (31 queries, all 7 methods); `Benchmark/workloads/JobJoin/subquery/result/` holds subquery-level files (9,565, methods: `duckdb`/`factorjoin`/`real`/`safebound`).
+- **StatsJoin**: `Benchmark/workloads/StatsJoin/subquery/result/*.txt` holds subquery-level files (226, all 8 methods).
 
 ### Error Distributions (Exp-7)
 
@@ -85,6 +89,19 @@ Microbenchmark per-query error data:
 - `experiment/checkpoint/StarCE/compress_precision/compress_error_data.csv` (CompressPrecision sweep)
 - `experiment/checkpoint/StarCE/split_star/splitstar_error_data.csv` (SplitStar sweep)
 - `experiment/checkpoint/StarCE/pred_method/` (AR/PAR parameter sweep, one cardinality file per parameter combination)
+
+## Paper-to-Artifact Map
+
+| Paper figure/table | Experiment | Content | Reproduction command | Data location (committed) |
+|--------------------|-----------|---------|----------------------|---------------------------|
+| Fig. 5 | Exp-1 | Estimation accuracy, relative-error distributions across 6 benchmarks (log scale) | `python reproduce.py` (all methods) then `python reproduce.py --phase2-only` | `Benchmark/workloads/*/subquery/result/{real,starce,...}.txt`; plots `experiment/checkpoint/figures/accuracy_violin_*.pdf` |
+| Fig. 6 | Exp-2 | Per-subquery estimation latency (4 benchmarks) | same as Fig. 5 (Test notebooks produce `estimate_time` files) | `experiment/checkpoint/*/estimate_time_*.txt`, `experiment/checkpoint/PerQueryBreakdown/*.csv`; plot `estimate_time_violin_benchmarks_grouped.pdf` |
+| Table 2 | Exp-3, Exp-4 | Summary size and build time | `python reproduce.py --methods starce duckdb safebound factorjoin lpbound` then `--phase2-only` | `experiment/checkpoint/EvaluateBuild/`, `experiment/checkpoint/EvaluatePlanAndBuild/` |
+| Fig. 7 | Exp-5 | Build scalability (thread scaling + data scaling) | `ScalabilityExperiment.ipynb` (generates its own TPC-H data) | `experiment/checkpoint/StarCE/scalability_*.csv`, `scalability_*.pdf` |
+| Table 3 | Exp-6 | End-to-end performance (exec+plan on 4 workloads) | `python reproduce.py --methods starce duckdb safebound factorjoin` then `--phase2-only` | `experiment/checkpoint/EvaluatePlanAndBuild/`, `experiment/checkpoint/EvaluatePerformance/` |
+| Fig. 8 | Exp-7 | Parameter sensitivity (compression base, fan-out limit) | `EvaluateCompress.ipynb` (compression), `EvaluateSplitStar.ipynb` (fan-out) — both generate their own data | `experiment/checkpoint/StarCE/compress_precision/`, `experiment/checkpoint/StarCE/split_star/`; plots `compress_precision_*.pdf`, `splitstar_*.pdf` |
+
+Notes: (1) FLAT and NeuroCard estimates are from Han et al. [10], covering STATS and JOBLight only. (2) `reproduce.py` has no `--exp` flag; use `--methods` / `--phase1-only` / `--phase2-only` as shown above. (3) All commands run from `experiment/`.
 
 ## How to Reproduce Experiments
 
@@ -138,7 +155,7 @@ Methods under `methods/` are related works included for baseline comparison in e
 | SafeBound | `methods/SafeBound/` | SIGMOD 2023 |
 | LpBound | `methods/LpBound/` | SIGMOD 2025 |
 
-BayesCard is runnable from this repository: `experiment/TestBayesCard.ipynb` + `experiment/BayesCardRunner.py` (its model components reuse `methods/SafeBound/test_benchmark.py`). Its estimates are in `Benchmark/workloads/*/subquery/result/bayescard.txt`.
+BayesCard ships in this repository under two locations (both bundled with their respective upstream repos): `methods/FactorJoin/BayesCard/` and `methods/SafeBound/bayescard/`. It is runnable via `experiment/TestBayesCard.ipynb` + `experiment/BayesCardRunner.py`, which drive the training/inference path in `methods/SafeBound/test_benchmark.py`. Its estimates are in `Benchmark/workloads/*/subquery/result/bayescard.txt`.
 
 The following methods are included as estimate files only (not runnable in this repository); the numbers are taken from Han et al. [10]:
 

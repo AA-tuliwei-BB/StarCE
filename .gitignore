@@ -79,3 +79,4 @@ experiment/pg_end2end/test_scripts
 *.pyc
 .ipynb_checkpoints
 .vscode/
+paper.pdf

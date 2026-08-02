@@ -1,5 +1,18 @@
 # FactorJoin: A New Cardinality Estimation Framework for Join Queries
 
+## Note: BayesCard
+
+This directory also ships the upstream BayesCard implementation under `BayesCard/`
+(`Models/`, `Testing/`, `Evaluation/`), as distributed by the original FactorJoin
+repository.
+
+In the StarCE artifact, BayesCard experiments are driven from
+`experiment/TestBayesCard.ipynb` and `experiment/BayesCardRunner.py`; the
+training/inference path runs through `methods/SafeBound/test_benchmark.py` (which
+imports the bundled BayesCard components; another copy of BayesCard ships under
+`methods/SafeBound/bayescard/`). Estimates are written to
+`Benchmark/workloads/*/subquery/result/bayescard.txt`.
+
 
 ## Environment setup
   We use python version 3.7 and all required packages are specified in requirements.txt.
