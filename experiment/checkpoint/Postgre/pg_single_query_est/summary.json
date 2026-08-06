@@ -1,0 +1,168 @@
+{
+  "STATS-CEB": {
+    "benchmark": "STATS-CEB",
+    "database": "stats",
+    "num_queries": 350,
+    "num_calls": 350,
+    "statistics_us": {
+      "mean": 14.4,
+      "median": 12.0,
+      "p95": 24.0,
+      "max": 256
+    },
+    "histogram_us": [
+      {
+        "lo": 8,
+        "hi": 16,
+        "count": 303
+      },
+      {
+        "lo": 16,
+        "hi": 32,
+        "count": 44
+      },
+      {
+        "lo": 32,
+        "hi": 64,
+        "count": 1
+      },
+      {
+        "lo": 64,
+        "hi": 128,
+        "count": 1
+      },
+      {
+        "lo": 128,
+        "hi": 256,
+        "count": 1
+      }
+    ]
+  },
+  "JOBM": {
+    "benchmark": "JOBM",
+    "database": "imdbm",
+    "num_queries": 127,
+    "num_calls": 127,
+    "statistics_us": {
+      "mean": 24.2,
+      "median": 12.0,
+      "p95": 48.0,
+      "max": 256
+    },
+    "histogram_us": [
+      {
+        "lo": 4,
+        "hi": 8,
+        "count": 1
+      },
+      {
+        "lo": 8,
+        "hi": 16,
+        "count": 74
+      },
+      {
+        "lo": 16,
+        "hi": 32,
+        "count": 31
+      },
+      {
+        "lo": 32,
+        "hi": 64,
+        "count": 16
+      },
+      {
+        "lo": 64,
+        "hi": 128,
+        "count": 3
+      },
+      {
+        "lo": 128,
+        "hi": 256,
+        "count": 2
+      }
+    ]
+  },
+  "JOBLight": {
+    "benchmark": "JOBLight",
+    "database": "imdblight",
+    "num_queries": 45,
+    "num_calls": 65,
+    "statistics_us": {
+      "mean": 12.6,
+      "median": 12.0,
+      "p95": 24.0,
+      "max": 128
+    },
+    "histogram_us": [
+      {
+        "lo": 4,
+        "hi": 8,
+        "count": 20
+      },
+      {
+        "lo": 8,
+        "hi": 16,
+        "count": 40
+      },
+      {
+        "lo": 16,
+        "hi": 32,
+        "count": 3
+      },
+      {
+        "lo": 32,
+        "hi": 64,
+        "count": 1
+      },
+      {
+        "lo": 64,
+        "hi": 128,
+        "count": 1
+      }
+    ]
+  },
+  "JOBLightRanges": {
+    "benchmark": "JOBLightRanges",
+    "database": "imdblightranges",
+    "num_queries": 1399,
+    "num_calls": 2999,
+    "statistics_us": {
+      "mean": 11.8,
+      "median": 6.0,
+      "p95": 24.0,
+      "max": 256
+    },
+    "histogram_us": [
+      {
+        "lo": 4,
+        "hi": 8,
+        "count": 1544
+      },
+      {
+        "lo": 8,
+        "hi": 16,
+        "count": 884
+      },
+      {
+        "lo": 16,
+        "hi": 32,
+        "count": 510
+      },
+      {
+        "lo": 32,
+        "hi": 64,
+        "count": 53
+      },
+      {
+        "lo": 64,
+        "hi": 128,
+        "count": 7
+      },
+      {
+        "lo": 128,
+        "hi": 256,
+        "count": 1
+      }
+    ]
+  }
+}

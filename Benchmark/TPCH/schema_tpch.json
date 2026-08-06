@@ -1,0 +1,43 @@
+{
+    "EqualSets": [
+        {
+            "Entries": [
+                {"TableName": "customer", "ColumnName": "c_custkey"},
+                {"TableName": "orders", "ColumnName": "o_custkey"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "orders", "ColumnName": "o_orderkey"},
+                {"TableName": "lineitem", "ColumnName": "l_orderkey"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "lineitem", "ColumnName": "l_partkey"},
+                {"TableName": "part", "ColumnName": "p_partkey"},
+                {"TableName": "partsupp", "ColumnName": "ps_partkey"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "lineitem", "ColumnName": "l_suppkey"},
+                {"TableName": "supplier", "ColumnName": "s_suppkey"},
+                {"TableName": "partsupp", "ColumnName": "ps_suppkey"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "supplier", "ColumnName": "s_nationkey"},
+                {"TableName": "customer", "ColumnName": "c_nationkey"},
+                {"TableName": "nation", "ColumnName": "n_nationkey"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "nation", "ColumnName": "n_regionkey"},
+                {"TableName": "region", "ColumnName": "r_regionkey"}
+            ]
+        }
+    ]
+}

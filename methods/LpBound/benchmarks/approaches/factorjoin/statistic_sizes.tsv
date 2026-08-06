@@ -1,0 +1,23 @@
+cast_info_ss1d0 (table):	    72.07 MB    12.76176643371582       19.254054069519043
+movie_info_ss1d0 (table):	    49.60 MB    5.202035                5.202035
+person_info_ss1d0 (table):	    12.27 MB    0.7293577               1.0365276336
+title_ss1d0 (table):	        10.05 MB    0.83256340026           0.7136363983154
+name_ss1d0 (table):	            6.66 MB     not used                0.8496742248535156
+movie_companies_ss1d0 (table):	4.87 MB     1.14892292              1.148922920227
+char_name_ss1d0 (table):	    4.73 MB     not used                0.64119529
+movie_keyword_ss1d0 (table):	4.18 MB     1.6393175125            1.639317512512          
+movie_info_idx_ss1d0 (table):	2.84 MB     0.482956886             0.4829568862915
+aka_name_ss1d0 (table):	        2.21 MB     not used                0.24802303314
+aka_title_ss1d0 (table):	    1.73 MB     not used                0.24802303314
+company_name_ss1d0 (table):	    0.41 MB     not used                0.048293113 
+complete_cast_ss1d0 (table):	0.26 MB     not used                0.05508136749267578
+keyword_ss1d0 (table):	        0.16 MB     not used                0.026060104370
+movie_link_ss1d0 (table):	    0.06 MB     not used               0.0072650909423828125
+comp_cast_type_ss1d0 (table):	0.01 MB
+role_type_ss1d0 (table):	    0.01 MB
+kind_type_ss1d0 (table):	    0.01 MB
+link_type_ss1d0 (table):	    0.01 MB
+company_type_ss1d0 (table):	    0.01 MB
+info_type_ss1d0 (table):	    0.01 MB
+
+

@@ -1,0 +1,44 @@
+{
+  "benchmark": "JOBLightRanges",
+  "database": "imdblightranges",
+  "num_queries": 1399,
+  "num_calls": 2999,
+  "statistics_us": {
+    "mean": 11.8,
+    "median": 6.0,
+    "p95": 24.0,
+    "max": 256
+  },
+  "histogram_us": [
+    {
+      "lo": 4,
+      "hi": 8,
+      "count": 1544
+    },
+    {
+      "lo": 8,
+      "hi": 16,
+      "count": 884
+    },
+    {
+      "lo": 16,
+      "hi": 32,
+      "count": 510
+    },
+    {
+      "lo": 32,
+      "hi": 64,
+      "count": 53
+    },
+    {
+      "lo": 64,
+      "hi": 128,
+      "count": 7
+    },
+    {
+      "lo": 128,
+      "hi": 256,
+      "count": 1
+    }
+  ]
+}

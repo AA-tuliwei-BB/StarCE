@@ -1,0 +1,3 @@
+select COUNT(*) from title t, cast_info ci where t.production_year > 2007 and t.production_year < 2010 and ci.role_id = 2 and t.id=ci.movie_id;
+select COUNT(*) from title t, movie_companies mc where t.production_year > 2007 and t.production_year < 2010 and t.id=mc.movie_id;
+select COUNT(*) from title t, cast_info ci, movie_companies mc where t.production_year > 2007 and t.production_year < 2010 and ci.role_id = 2 and t.id=ci.movie_id and t.id=mc.movie_id;

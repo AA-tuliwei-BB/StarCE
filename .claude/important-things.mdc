@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+- No surface fixes. Do not arbitrarily add so-called robustness checks. Report issues when encountered.
+- Never make git changes without explicit confirmation.
+- Do not generate report documents; respond directly in the conversation.
+- Do not use workarounds or fallback solutions without confirming with the user first.
+- Empty lines must not contain spaces or indentation characters.
+- Always respond in Chinese-simplified.

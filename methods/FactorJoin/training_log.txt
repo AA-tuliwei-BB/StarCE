@@ -1,0 +1,124 @@
+/home/user/miniconda3/envs/TestEnv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:275: FutureWarning: You are using a Python version (3.10.4) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/home/user/miniconda3/envs/TestEnv/lib/python3.10/site-packages/pgmpy/utils/utils.py:4: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.006158351898193359 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 79851 rows and 2 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.13714194297790527 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('badges.UserId', 'badges.Date')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.008939743041992188 secs.
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.0705106258392334 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 328064 rows and 5 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.928520679473877 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('votes.PostId', 'votes.VoteTypeId'), ('votes.PostId', 'votes.CreationDate'), ('votes.VoteTypeId', 'votes.UserId'), ('votes.VoteTypeId', 'votes.BountyAmount')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.03996157646179199 secs.
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.05357027053833008 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 303187 rows and 4 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 1.3781721591949463 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('postHistory.UserId', 'postHistory.PostId'), ('postHistory.UserId', 'postHistory.CreationDate'), ('postHistory.PostHistoryTypeId', 'postHistory.UserId')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.03932952880859375 secs.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.10476422309875488 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 91976 rows and 9 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 1.1640276908874512 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('posts.AnswerCount', 'posts.PostTypeId'), ('posts.OwnerUserId', 'posts.CreationDate'), ('posts.Id', 'posts.Score'), ('posts.Id', 'posts.ViewCount'), ('posts.Id', 'posts.OwnerUserId'), ('posts.ViewCount', 'posts.AnswerCount'), ('posts.Id', 'posts.CommentCount'), ('posts.Id', 'posts.FavoriteCount')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.03917980194091797 secs.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.2869296073913574 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 40325 rows and 6 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.3523533344268799 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('users.Id', 'users.Reputation'), ('users.Reputation', 'users.CreationDate'), ('users.Id', 'users.Views'), ('users.Reputation', 'users.UpVotes'), ('users.Id', 'users.DownVotes')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.01700592041015625 secs.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.03913450241088867 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 174305 rows and 4 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.7506685256958008 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('comments.UserId', 'comments.Score'), ('comments.PostId', 'comments.CreationDate'), ('comments.CreationDate', 'comments.UserId')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.023555755615234375 secs.
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.005583286285400391 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 11102 rows and 4 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.10829830169677734 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('postLinks.CreationDate', 'postLinks.PostId'), ('postLinks.CreationDate', 'postLinks.RelatedPostId'), ('postLinks.CreationDate', 'postLinks.LinkTypeId')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.01166844367980957 secs.
+/home/user/project/starCE/methods/FactorJoin/BayesCard/Models/tools.py:71: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+  val_count_iterator = value_counts.iteritems()
+INFO:BayesCard.Models.BN_single_model:Discretizing table takes 0.04307746887207031 secs
+INFO:BayesCard.Models.BN_single_model:Learning BN optimal structure from data with 1032 rows and 2 cols
+INFO:BayesCard.Models.BN_single_model:Structure learning took 0.007643938064575195 secs.
+INFO:BayesCard.Models.Bayescard_BN:Model spec[('tags.Count', 'tags.ExcerptPostId')]
+INFO:BayesCard.Models.Bayescard_BN:calling pgm.BayesianModel.fit...
+INFO:BayesCard.Models.Bayescard_BN:done, took 0.003292560577392578 secs.
+stats
+bucketizing equivalent key group: {'posts.Id', 'tags.ExcerptPostId', 'postLinks.PostId', 'comments.PostId', 'votes.PostId', 'postLinks.RelatedPostId', 'postHistory.PostId'}
+bucketizing equivalent key group: {'comments.UserId', 'votes.UserId', 'badges.UserId', 'posts.OwnerUserId', 'users.Id', 'postHistory.UserId'}
+badges
+{'badges.UserId': 'categorical', 'badges.Date': 'continuous'}
+Discretizing table takes 0.006254673004150391 secs
+Structure learning took 0.13722014427185059 secs.
+done, parameter learning took 0.00897526741027832 secs.
+votes
+{'votes.PostId': 'categorical', 'votes.VoteTypeId': 'categorical', 'votes.CreationDate': 'continuous', 'votes.UserId': 'categorical', 'votes.BountyAmount': 'categorical'}
+Discretizing table takes 0.07059407234191895 secs
+Structure learning took 0.928619384765625 secs.
+done, parameter learning took 0.040030717849731445 secs.
+postHistory
+{'postHistory.PostHistoryTypeId': 'categorical', 'postHistory.PostId': 'categorical', 'postHistory.CreationDate': 'continuous', 'postHistory.UserId': 'categorical'}
+Discretizing table takes 0.0536494255065918 secs
+Structure learning took 1.3782744407653809 secs.
+done, parameter learning took 0.0393986701965332 secs.
+posts
+{'posts.Id': 'categorical', 'posts.PostTypeId': 'categorical', 'posts.CreationDate': 'continuous', 'posts.Score': 'categorical', 'posts.ViewCount': 'continuous', 'posts.OwnerUserId': 'categorical', 'posts.AnswerCount': 'categorical', 'posts.CommentCount': 'categorical', 'posts.FavoriteCount': 'categorical'}
+Discretizing table takes 0.10483217239379883 secs
+Structure learning took 1.1641299724578857 secs.
+done, parameter learning took 0.03922700881958008 secs.
+users
+{'users.Id': 'categorical', 'users.Reputation': 'categorical', 'users.CreationDate': 'continuous', 'users.Views': 'categorical', 'users.UpVotes': 'categorical', 'users.DownVotes': 'categorical'}
+Discretizing table takes 0.2869868278503418 secs
+Structure learning took 0.3524444103240967 secs.
+done, parameter learning took 0.01704120635986328 secs.
+comments
+{'comments.PostId': 'categorical', 'comments.Score': 'categorical', 'comments.CreationDate': 'continuous', 'comments.UserId': 'categorical'}
+Discretizing table takes 0.03923487663269043 secs
+Structure learning took 0.7507667541503906 secs.
+done, parameter learning took 0.023602724075317383 secs.
+postLinks
+{'postLinks.CreationDate': 'continuous', 'postLinks.PostId': 'categorical', 'postLinks.RelatedPostId': 'categorical', 'postLinks.LinkTypeId': 'boolean'}
+Discretizing table takes 0.005634307861328125 secs
+Structure learning took 0.10838842391967773 secs.
+done, parameter learning took 0.011697530746459961 secs.
+tags
+{'tags.Count': 'categorical', 'tags.ExcerptPostId': 'categorical'}
+Discretizing table takes 0.043120384216308594 secs
+Structure learning took 0.007689476013183594 secs.
+done, parameter learning took 0.0033397674560546875 secs.
+models save at checkpoints/model_stats_greedy_200.pkl
+Training completed: total training time is 26.129862070083618

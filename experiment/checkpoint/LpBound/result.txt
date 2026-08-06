@@ -1,0 +1,26 @@
+[2026-08-05 23:58:10] LpBound experiment results
+[2026-08-05 23:58:10] Time: 2026-08-05T23:58:10.864234
+[2026-08-05 23:58:10] 
+[2026-08-05 23:58:10] --- Build Time (seconds) ---
+[2026-08-05 23:58:10]   Benchmark               L1 only  All norms
+[2026-08-05 23:58:10]   ----------------------------------------
+[2026-08-05 23:58:10]   STATS                      44.0       50.5
+[2026-08-05 23:58:10]   JOBLight                   24.3       36.3
+[2026-08-05 23:58:10]   JOBLightRanges             78.2       96.9
+[2026-08-05 23:58:10]   JobJoin                    17.1       27.5
+[2026-08-05 23:58:10]   SubgraphMatching            0.8        2.0
+[2026-08-05 23:58:10] 
+--- Estimate Time ---
+[2026-08-05 23:58:10]   Benchmark             Par avg(ms)  Queries   Total(s)  #Subqueries
+[2026-08-05 23:58:10]   -------------------------------------------------------------------
+[2026-08-05 23:58:10]   JobJoin                   21.7516       31     0.6743        12007
+[2026-08-05 23:58:10]   JOBLight                    0.618       70     0.0433         1354
+[2026-08-05 23:58:10]   STATS                      1.4136      146     0.2064         5662
+[2026-08-05 23:58:10] 
+  * Par avg = parallel mode average time per query (ms)
+[2026-08-05 23:58:10]   * Total = Par avg × Queries, i.e., total estimation time (s)
+[2026-08-05 23:58:10] 
+  CSV saved: /home/liwei/starce-final/StarCE/experiment/checkpoint/LpBound/benchmark_times.csv
+[2026-08-05 23:58:10]   JSON saved: /home/liwei/starce-final/StarCE/experiment/checkpoint/LpBound/timing_details.json
+[2026-08-05 23:58:10] 
+Total elapsed: 904s

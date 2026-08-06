@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: >-
+  If you use this artifact, please cite the paper "Cardinality Estimation with
+  Star Degree Summaries" (under submission).
+title: "StarCE: Cardinality Estimation with Star Degree Summaries"
+abstract: >-
+  StarCE is a cardinality estimator built on star degree summaries (StarDS),
+  implemented inside DuckDB. This repository contains the full system, the
+  baselines, all query workloads with true cardinalities and baseline
+  estimates, and scripts that reproduce every experiment in the paper.
+license: Apache-2.0
+date-released: "2026-08-02"
+authors:
+  - given-names: Liwei
+    family-names: Tu
+    affiliation: "Shanghai Jiao Tong University"
+    email: "tuliweiaabb@sjtu.edu.cn"
+  - given-names: Qiang
+    family-names: Yin
+    affiliation: "Shanghai Jiao Tong University"
+    email: "q.yin@sjtu.edu.cn"
+  - given-names: Wenzhi
+    family-names: Fu
+    affiliation: "The University of Edinburgh"
+    email: "wenzhi.fu@ed.ac.uk"
+  - given-names: Chao
+    family-names: Tian
+    affiliation: "Queen's University Belfast"
+    email: "c.tian@qub.ac.uk"

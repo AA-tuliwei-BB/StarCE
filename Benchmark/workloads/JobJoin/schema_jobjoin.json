@@ -1,0 +1,108 @@
+{
+    "PredColumns": [],
+    "EqualSets": [
+        {
+            "Entries": [
+                {"TableName": "company_type", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "company_type_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "title", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "movie_id"},
+                {"TableName": "movie_info_idx", "ColumnName": "movie_id"},
+                {"TableName": "movie_keyword", "ColumnName": "movie_id"},
+                {"TableName": "movie_info", "ColumnName": "movie_id"},
+                {"TableName": "cast_info", "ColumnName": "movie_id"},
+                {"TableName": "movie_link", "ColumnName": "movie_id"},
+                {"TableName": "complete_cast", "ColumnName": "movie_id"},
+                {"TableName": "aka_title", "ColumnName": "movie_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "title", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "movie_id"},
+                {"TableName": "movie_info_idx", "ColumnName": "movie_id"},
+                {"TableName": "movie_keyword", "ColumnName": "movie_id"},
+                {"TableName": "movie_info", "ColumnName": "movie_id"},
+                {"TableName": "cast_info", "ColumnName": "movie_id"},
+                {"TableName": "movie_link", "ColumnName": "linked_movie_id"},
+                {"TableName": "complete_cast", "ColumnName": "movie_id"},
+                {"TableName": "aka_title", "ColumnName": "movie_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "info_type", "ColumnName": "id"},
+                {"TableName": "movie_info_idx", "ColumnName": "info_type_id"},
+                {"TableName": "movie_info", "ColumnName": "info_type_id"},
+                {"TableName": "person_info", "ColumnName": "info_type_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "company_name", "ColumnName": "id"},
+                {"TableName": "movie_companies", "ColumnName": "company_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "keyword", "ColumnName": "id"},
+                {"TableName": "movie_keyword", "ColumnName": "keyword_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "name", "ColumnName": "id"},
+                {"TableName": "cast_info", "ColumnName": "person_id"},
+                {"TableName": "aka_name", "ColumnName": "person_id"},
+                {"TableName": "person_info", "ColumnName": "person_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "link_type", "ColumnName": "id"},
+                {"TableName": "movie_link", "ColumnName": "link_type_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "role_type", "ColumnName": "id"},
+                {"TableName": "cast_info", "ColumnName": "role_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "char_name", "ColumnName": "id"},
+                {"TableName": "cast_info", "ColumnName": "person_role_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "kind_type", "ColumnName": "id"},
+                {"TableName": "title", "ColumnName": "kind_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "comp_cast_type", "ColumnName": "id"},
+                {"TableName": "complete_cast", "ColumnName": "subject_id"},
+                {"TableName": "complete_cast", "ColumnName": "status_id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "aka_title", "ColumnName": "id"},
+                {"TableName": "title", "ColumnName": "id"}
+            ]
+        },
+        {
+            "Entries": [
+                {"TableName": "movie_link", "ColumnName": "linked_movie_id"},
+                {"TableName": "title", "ColumnName": "id"}
+            ]
+        }
+    ]
+}

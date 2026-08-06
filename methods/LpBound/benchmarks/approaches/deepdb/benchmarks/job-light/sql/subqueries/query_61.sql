@@ -1,0 +1,15 @@
+select COUNT(*) from movie_info mi, title t where mi.info_type_id = 3 and mi.movie_id=t.id;
+select COUNT(*) from movie_info_idx mi_idx, title t where mi_idx.info_type_id = 100 and mi_idx.movie_id=t.id;
+select COUNT(*) from cast_info ci, title t where ci.movie_id=t.id;
+select COUNT(*) from movie_keyword mk, title t where mk.movie_id=t.id;
+select COUNT(*) from title t, movie_info mi, movie_info_idx mi_idx where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, cast_info ci where t.id=ci.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_keyword mk where mi.info_type_id = 3 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info_idx mi_idx, cast_info ci where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and t.id=ci.movie_id;
+select COUNT(*) from title t, movie_info_idx mi_idx, movie_keyword mk where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, cast_info ci, movie_keyword mk where t.id=ci.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_info_idx mi_idx, cast_info ci where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and t.id=ci.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_info_idx mi_idx, movie_keyword mk where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, cast_info ci, movie_keyword mk where t.id=ci.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info_idx mi_idx, cast_info ci, movie_keyword mk where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and t.id=ci.movie_id and t.id=mk.movie_id;
+select COUNT(*) from title t, movie_info mi, movie_info_idx mi_idx, cast_info ci, movie_keyword mk where mi_idx.info_type_id = 100 and t.id=mi_idx.movie_id and t.id=ci.movie_id and mi.info_type_id = 3 and t.id=mi.movie_id and t.id=mk.movie_id;

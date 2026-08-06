@@ -1,0 +1,39 @@
+{
+  "benchmark": "JOBLight",
+  "database": "imdblight",
+  "num_queries": 45,
+  "num_calls": 65,
+  "statistics_us": {
+    "mean": 12.6,
+    "median": 12.0,
+    "p95": 24.0,
+    "max": 128
+  },
+  "histogram_us": [
+    {
+      "lo": 4,
+      "hi": 8,
+      "count": 20
+    },
+    {
+      "lo": 8,
+      "hi": 16,
+      "count": 40
+    },
+    {
+      "lo": 16,
+      "hi": 32,
+      "count": 3
+    },
+    {
+      "lo": 32,
+      "hi": 64,
+      "count": 1
+    },
+    {
+      "lo": 64,
+      "hi": 128,
+      "count": 1
+    }
+  ]
+}

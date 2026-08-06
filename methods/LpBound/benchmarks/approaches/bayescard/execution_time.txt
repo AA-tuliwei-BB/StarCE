@@ -1,0 +1,12 @@
+Executed part: evaluate_cardinalities 	Execution time: 5.719301 seconds
+Executed part: evaluate_cardinalities 	Execution time: 3.610469 seconds
+Executed part: evaluate_cardinalities 	Execution time: 3.661452 seconds
+Executed part: evaluate_cardinalities 	Execution time: 3.632557 seconds
+Executed part: evaluate_cardinalities 	Execution time: 3.528111 seconds
+Executed part: evaluate_cardinalities 	Execution time: 3.571563 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.869343 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.826122 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.672767 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.693839 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.651597 seconds
+Executed part: evaluate_cardinalities_subqueries 	Execution time: 5.726189 seconds
